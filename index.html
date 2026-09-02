@@ -136,6 +136,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
     <button class="tab" data-t="conferir">Conferir <span class="badge" id="bPend"></span></button>
     <button class="tab" data-t="vinculos">Vínculos</button>
     <button class="tab" data-t="vendas">Vendas</button>
+    <button class="tab" data-t="projecao">Projeção</button>
     <button class="tab" data-t="entradas">Entradas</button>
     <button class="tab" data-t="importar">Importar</button>
   </nav>
@@ -205,6 +206,18 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
     </div>
     <div class="tbl-wrap"><table id="tblVendas"></table></div>
   </div>
+</section>
+
+<section id="s-projecao" hidden>
+  <div class="card">
+    <div class="card-h"><h2>Projeção de envios</h2>
+      <div class="sp">
+        <label class="f">Janela recente (dias)<input type="number" id="pjRec" value="10" min="1" style="width:70px"></label>
+        <label class="f">Cobertura alvo (dias)<input type="number" id="pjAlvo" value="30" min="1" style="width:70px"></label>
+      </div></div>
+    <div class="tbl-wrap"><table id="tblProj"></table></div>
+  </div>
+  <p class="note">Ritmo geral = média dos últimos 30 dias de venda; ritmo recente = média da janela escolhida. Recente acima do geral = produto acelerando. "Enviar" = quanto falta pra cobrir a cobertura alvo no ritmo recente, já descontando o saldo. Respeita a empresa selecionada no topo.</p>
 </section>
 
 <section id="s-entradas" hidden>
@@ -394,7 +407,8 @@ const fmtMes = mk => { if(!/^\d{4}-\d{2}$/.test(mk)) return mk; const n=['','jan
 
 /* ================= cálculo central ================= */
 function compute(){
-  const saidas={}, pend={}, vendPorAn={};
+  const saidas={}, pend={}, vendPorAn={}, porDia={};
+  let refD='';
   let totItens=0, totCanc=0;
   {
     for(const r of S.vendasRows){
@@ -413,12 +427,13 @@ function compute(){
         continue;
       }
       if(!baixa) continue;
-      for(const it of v.itens){ saidas[it.pid] = (saidas[it.pid]||0) + (r.un||0)*(it.fator||0); }
+      for(const it of v.itens){ saidas[it.pid] = (saidas[it.pid]||0) + (r.un||0)*(it.fator||0);
+        const dd=(r.d||'').slice(0,10); if(dd){ (porDia[it.pid]=porDia[it.pid]||{})[dd]=(porDia[it.pid][dd]||0)+(r.un||0)*(it.fator||0); if(dd>refD) refD=dd; } }
     }
   }
   const entr={};
   for(const e of S.entradas){ if(!empOk(e)) continue; entr[e.pid]=(entr[e.pid]||0)+(e.qtd||0); }
-  S.calc = {saidas, pend, entr, vendPorAn, totItens, totCanc};
+  S.calc = {saidas, pend, entr, vendPorAn, totItens, totCanc, porDia, refD};
   return S.calc;
 }
 
@@ -427,7 +442,7 @@ function render(){
   compute();
   const nPend = Object.keys(S.calc.pend).length;
   $('bPend').textContent = nPend||'';
-  renderEstoque(); renderProdutos(); renderConferir(); renderVinculos(); renderVendas(); renderEntradas();
+  renderEstoque(); renderProdutos(); renderConferir(); renderVinculos(); renderVendas(); renderProjecao(); renderEntradas();
   $('limiarTxt').textContent = fmt(S.cfg.limiar);
 }
 function saldoDe(pid){
@@ -605,6 +620,39 @@ function renderProdutos(){
   }
   h+=`<tr><td colspan="4" style="font-weight:600">Total comprado</td><td class="r num" style="font-weight:600">${fmtBRL(tc)}</td><td class="r" style="font-weight:600">vendido</td><td class="r num" style="font-weight:600">${fmtBRL(tv)}</td></tr>`;
   $('tblProdutos').innerHTML=any?h:'<tr><td><div class="empty">Nenhum produto.</div></td></tr>';
+}
+function renderProjecao(){
+  const rec=Math.max(1,+($('pjRec').value)||10), alvo=Math.max(1,+($('pjAlvo').value)||30);
+  const pd=S.calc.porDia||{}, ref=S.calc.refD;
+  if(!ref){ $('tblProj').innerHTML='<tr><td><div class="empty"><b>Sem vendas importadas.</b> Importe o relatório ML na aba Importar pra projeção funcionar.</div></td></tr>'; return; }
+  const ms=86400000, refT=new Date(ref+'T00:00:00').getTime();
+  let h=`<tr><th>SKU</th><th>Produto</th><th class="r">Vendido 30d</th><th class="r">Média/dia 30d</th><th class="r">Média/dia ${rec}d</th><th>Tendência</th><th class="r">Saldo</th><th class="r">Cobertura</th><th class="r">Enviar p/ ${alvo}d</th><th class="r" title="pacotes fechados de 100">Pct</th></tr>`;
+  const pids=Object.keys(pd).sort((a,b)=>(S.produtos[a]?.sku||a).localeCompare(S.produtos[b]?.sku||b));
+  let any=false;
+  for(const pid of pids){
+    let t30=0,tR=0;
+    for(const dd in pd[pid]){
+      const dias=(refT-new Date(dd+'T00:00:00').getTime())/ms;
+      if(dias<30) t30+=pd[pid][dd];
+      if(dias<rec) tR+=pd[pid][dd];
+    }
+    if(!t30 && !tR) continue;
+    any=true;
+    const m30=t30/30, mR=tR/rec;
+    const varp = m30>0 ? (mR/m30-1)*100 : 100;
+    const chip = varp>15?`<span class="chip warn">↑ +${fmt(varp)}% acelerando</span>`:(varp<-15?`<span class="chip mut">↓ −${fmt(-varp)}%</span>`:`<span class="chip ok">estável</span>`);
+    const s=saldoDe(pid);
+    const cob = mR>0 ? s/mR : Infinity;
+    const enviar = Math.max(0, Math.ceil(mR*alvo - s));
+    const p=S.produtos[pid]||{};
+    h+=`<tr><td class="mono">${esc(p.sku||pid)}</td><td>${esc(p.nome||'')}</td>
+      <td class="r num">${fmt(t30)}</td><td class="r num">${fmt(m30)}</td><td class="r num">${fmt(mR)}</td>
+      <td>${chip}</td><td class="r num">${fmt(s)}</td>
+      <td class="r num ${cob<alvo?'low':''}">${cob===Infinity?'—':fmt(cob)+' d'}</td>
+      <td class="r num ${enviar>0?'neg':''}">${enviar>0?fmt(enviar):'ok'}</td>
+      <td class="r num dim">${p.unidade==='folhas'&&enviar>0?fmt(Math.ceil(enviar/100)):'—'}</td></tr>`;
+  }
+  $('tblProj').innerHTML=any?h:'<tr><td><div class="empty">Sem vendas com vínculo nos últimos 30 dias.</div></td></tr>';
 }
 function renderEntradas(){
   $('enProd').innerHTML = prodOptions('').replace('<option value="__novo__">➕ criar produto novo…</option>','');
@@ -822,6 +870,8 @@ $('tabs').addEventListener('click', e=>{
 });
 $('qProd').addEventListener('input', renderEstoque);
 $('qProd2').addEventListener('input', renderProdutos);
+$('pjRec').addEventListener('input', renderProjecao);
+$('pjAlvo').addEventListener('input', renderProjecao);
 $('qVinc').addEventListener('input', renderVinculos);
 $('qVendas').addEventListener('input', renderVendas);
 $('selMes').addEventListener('change', e=>{ S.mesSel=e.target.value; renderVendas(); });
