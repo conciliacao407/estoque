@@ -175,7 +175,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
       <div class="sp"><input type="text" id="qProd2" placeholder="buscar…"></div></div>
     <div class="tbl-wrap"><table id="tblProdutos"></table></div>
   </div>
-  <p class="note">Custo comprado soma cada entrada pelo preço da própria NF; custo vendido = saídas × custo unitário atual. Tudo respeita a empresa selecionada no topo.</p>
+  <p class="note">Custo unitário = preço de 1 unidade (folha/peça) na última NF de compra. Produto sem custo de nota ganha aviso. Respeita a empresa selecionada no topo.</p>
 </section>
 
 <section id="s-conferir" hidden>
@@ -604,21 +604,21 @@ function renderProdutos(){
     compQ[e.pid]=(compQ[e.pid]||0)+(e.qtd||0);
     compV[e.pid]=(compV[e.pid]||0)+(e.qtd||0)*c;
   }
-  let h=`<tr><th>SKU</th><th>Produto</th><th class="r">Custo un.</th><th class="r">Comprado (un)</th><th class="r">Custo comprado</th><th class="r">Vendido (un)</th><th class="r">Custo vendido</th></tr>`;
-  let tc=0,tv=0,any=false;
+  let h=`<tr><th>SKU</th><th>Produto</th><th class="r" title="preço de 1 unidade na última NF de compra">Custo unitário (NF)</th><th class="r">Comprado (un)</th><th class="r">Vendido (un)</th><th></th></tr>`;
+  let any=false, semCusto=0;
   for(const pid of pids){
     const p=S.produtos[pid];
     if(q && !(p.sku.toLowerCase().includes(q)||(p.nome||'').toLowerCase().includes(q))) continue;
     any=true;
     const sai=S.calc.saidas[pid]||0;
-    const cv=sai*(p.custo||0);
-    tc+=compV[pid]||0; tv+=cv;
+    if(!p.custo) semCusto++;
     h+=`<tr><td class="mono">${esc(p.sku)}</td><td>${esc(p.nome||'')}</td>
-      <td class="r num">${p.custo?fmtBRL(p.custo):'—'}</td>
-      <td class="r num">${fmt(compQ[pid]||0)}</td><td class="r num">${fmtBRL(compV[pid]||0)}</td>
-      <td class="r num">${fmt(sai)}</td><td class="r num">${fmtBRL(cv)}</td></tr>`;
+      <td class="r num">${p.custo?fmtBRL(p.custo)+'/un':'—'}</td>
+      <td class="r num">${fmt(compQ[pid]||0)}</td>
+      <td class="r num">${fmt(sai)}</td>
+      <td>${p.custo?'':'<span class="chip warn">sem custo na NF — me avise</span>'}</td></tr>`;
   }
-  h+=`<tr><td colspan="4" style="font-weight:600">Total comprado</td><td class="r num" style="font-weight:600">${fmtBRL(tc)}</td><td class="r" style="font-weight:600">vendido</td><td class="r num" style="font-weight:600">${fmtBRL(tv)}</td></tr>`;
+  if(semCusto) h+=`<tr><td colspan="6" class="dim">${semCusto} produto(s) sem custo de nota — informe o custo unitário ou envie a NF de compra.</td></tr>`;
   $('tblProdutos').innerHTML=any?h:'<tr><td><div class="empty">Nenhum produto.</div></td></tr>';
 }
 function renderProjecao(){
