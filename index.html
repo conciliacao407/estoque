@@ -495,6 +495,29 @@ function vincRowHTML(an, tit, skuPlat, v, sug){
     sugChip = `<div style="margin-bottom:6px"><span class="chip ok" title="pelas Regras de Título 31/08">💡 sugestão: ${sug.map(s=>`${esc(s.sku)} × ${fmt(s.fator)}`).join(' + ')}</span></div>`;
   }
   else itens = [{pid:'',fator:''}];
+  // resumo de custo por item (unidade + custo do produto), p/ conferir se o fator esta na unidade certa
+  let custoH='';
+  if(v && v.itens && v.itens.length){
+    let tot=0, linhas=[], falta=false;
+    for(const it of v.itens){
+      const p=S.produtos[it.pid];
+      if(!p){ linhas.push(`${esc(it.pid)}: produto não encontrado`); falta=true; continue; }
+      const un=p.unidade||'un';
+      if(p.custo){ const sub=(it.fator||0)*p.custo; tot+=sub;
+        linhas.push(`${fmt(it.fator||0)} ${esc(un)} de ${esc(p.nome||it.pid)} · ${fmtBRL(p.custo)}/${esc(un.replace(/s$/,''))} = <b>${fmtBRL(sub)}</b>`);
+      } else { linhas.push(`${fmt(it.fator||0)} ${esc(un)} de ${esc(p.nome||it.pid)} · <span style="color:var(--warn,#b58900)">sem custo de nota</span>`); falta=true; }
+    }
+    custoH = `<div class="dim" style="font-size:11.5px;margin-top:6px;line-height:1.5">💰 ${linhas.join('<br>💰 ')}${(!falta&&v.itens.length)?`<br><b>custo por venda: ${fmtBRL(tot)}</b>`:''}</div>`;
+  }
+  if(!v && (!sug || !sug.length)){
+    const tN=(tit||'').toUpperCase();
+    let mot='sem regra de título — vincular na mão';
+    if(/TESOURA.*(ELETRIC|BATERIA|RECARREG|48V)|\bTEL\b/.test(tN)) mot='tesoura elétrica: produto sem regra de título';
+    else if(/TESOURA/.test(tN)) mot='tesoura comum: regra só reconhece o SKU "TESOU"';
+    else if(/BOPP/.test(tN)) mot='bobina BOPP: produto ainda sem regra';
+    else if(/CAPA/.test(tN)) mot='combo de capas com cores: quantidades por cor precisam de vínculo manual';
+    sugChip = `<div style="margin-bottom:6px"><span class="chip mut" title="por que não teve sugestão automática">⚠ sem sugestão — ${esc(mot)}</span></div>`;
+  }
   let itensH = itens.map((it,i)=>{
     const optNovo = it.sug && !it.pid ? `<option value="__sug__" selected>➕ criar ${esc(it.sug.sku)} (sugestão)</option>` : '';
     return `
@@ -504,7 +527,7 @@ function vincRowHTML(an, tit, skuPlat, v, sug){
       <input type="number" class="vi-fator" step="any" min="0" value="${it.fator??''}" placeholder="qtd">
       ${i>0?'<button class="btn sm sec vi-rm" title="remover item">✕</button>':''}
     </div>`;}).join('');
-  itensH = sugChip + itensH;
+  itensH = sugChip + itensH + custoH;
   return `<td class="tit-cell">
       <div style="font-weight:500">${esc(tit||'')}</div>
       <div class="mono dim" style="font-size:11.5px;margin-top:3px">${esc(an)}${skuPlat?' · '+esc(skuPlat):''}</div>
