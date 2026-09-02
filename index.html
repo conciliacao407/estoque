@@ -297,9 +297,9 @@ const S = {
   tab:'estoque', mesSel:'', calc:null
 };
 const $ = id => document.getElementById(id);
-const EMPRESAS=['Makenry','Verboom','Nagare','MEK','Massakazu'];
+const EMPRESAS=['Makenry','Verboom','Nagare','MEK'];
 S.empSel=(()=>{ try{ return localStorage.getItem('empSel')||'Todas'; }catch(e){ return 'Todas'; } })();
-const empDe = x => x.empresa || x.emp || ((x.obs||'').match(/→\s*([A-Za-zÀ-ÿ]+)/)||[])[1] || 'Makenry';
+const empDe = x => { const e = x.empresa || x.emp || ((x.obs||'').match(/→\s*([A-Za-zÀ-ÿ]+)/)||[])[1] || 'Makenry'; return e==='Massakazu'?'MEK':e; };
 const empOk = x => S.empSel==='Todas' || empDe(x)===S.empSel;
 const esc = s => String(s??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt = n => (Math.round((n+Number.EPSILON)*100)/100).toLocaleString('pt-BR');
