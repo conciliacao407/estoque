@@ -132,6 +132,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
   </div>
   <nav class="tabs" id="tabs">
     <button class="tab on" data-t="estoque">Estoque</button>
+    <button class="tab" data-t="produtos">Produtos</button>
     <button class="tab" data-t="conferir">Conferir <span class="badge" id="bPend"></span></button>
     <button class="tab" data-t="vinculos">Vínculos</button>
     <button class="tab" data-t="vendas">Vendas</button>
@@ -165,6 +166,15 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
     <div class="tbl-wrap"><table id="tblEstoque"></table></div>
   </div>
   <p class="note">Saldo = inicial + entradas − saídas das vendas (unidades × fator do vínculo). Alerta quando o saldo fica abaixo de <span id="limiarTxt">50</span>. Cancelada não baixa; devolução baixa e a volta você lança como entrada.</p>
+</section>
+
+<section id="s-produtos" hidden>
+  <div class="card">
+    <div class="card-h"><h2>Produtos — custo comprado × custo vendido</h2>
+      <div class="sp"><input type="text" id="qProd2" placeholder="buscar…"></div></div>
+    <div class="tbl-wrap"><table id="tblProdutos"></table></div>
+  </div>
+  <p class="note">Custo comprado soma cada entrada pelo preço da própria NF; custo vendido = saídas × custo unitário atual. Tudo respeita a empresa selecionada no topo.</p>
 </section>
 
 <section id="s-conferir" hidden>
@@ -417,7 +427,7 @@ function render(){
   compute();
   const nPend = Object.keys(S.calc.pend).length;
   $('bPend').textContent = nPend||'';
-  renderEstoque(); renderConferir(); renderVinculos(); renderVendas(); renderEntradas();
+  renderEstoque(); renderProdutos(); renderConferir(); renderVinculos(); renderVendas(); renderEntradas();
   $('limiarTxt').textContent = fmt(S.cfg.limiar);
 }
 function saldoDe(pid){
@@ -567,6 +577,33 @@ function renderVendas(){
       <td class="r num">${fmt(r.un||0)}</td><td>${baixaTxt}</td><td class="r num">${fmtBRL(r.tot)}</td><td>${esc(r.cmp||'')}</td></tr>`;
   }
   $('tblVendas').innerHTML = h;
+}
+function renderProdutos(){
+  const q=($('qProd2').value||'').toLowerCase();
+  const pids=Object.keys(S.produtos).sort((a,b)=>S.produtos[a].sku.localeCompare(S.produtos[b].sku));
+  const compQ={}, compV={};
+  for(const e of S.entradas){ if(!empOk(e)) continue;
+    const cu=(((e.obs||'').match(/R\$\s*([\d.]+)\/un/)||[])[1]);
+    const c=cu?parseFloat(cu):(S.produtos[e.pid]?.custo||0);
+    compQ[e.pid]=(compQ[e.pid]||0)+(e.qtd||0);
+    compV[e.pid]=(compV[e.pid]||0)+(e.qtd||0)*c;
+  }
+  let h=`<tr><th>SKU</th><th>Produto</th><th class="r">Custo un.</th><th class="r">Comprado (un)</th><th class="r">Custo comprado</th><th class="r">Vendido (un)</th><th class="r">Custo vendido</th></tr>`;
+  let tc=0,tv=0,any=false;
+  for(const pid of pids){
+    const p=S.produtos[pid];
+    if(q && !(p.sku.toLowerCase().includes(q)||(p.nome||'').toLowerCase().includes(q))) continue;
+    any=true;
+    const sai=S.calc.saidas[pid]||0;
+    const cv=sai*(p.custo||0);
+    tc+=compV[pid]||0; tv+=cv;
+    h+=`<tr><td class="mono">${esc(p.sku)}</td><td>${esc(p.nome||'')}</td>
+      <td class="r num">${p.custo?fmtBRL(p.custo):'—'}</td>
+      <td class="r num">${fmt(compQ[pid]||0)}</td><td class="r num">${fmtBRL(compV[pid]||0)}</td>
+      <td class="r num">${fmt(sai)}</td><td class="r num">${fmtBRL(cv)}</td></tr>`;
+  }
+  h+=`<tr><td colspan="4" style="font-weight:600">Total comprado</td><td class="r num" style="font-weight:600">${fmtBRL(tc)}</td><td class="r" style="font-weight:600">vendido</td><td class="r num" style="font-weight:600">${fmtBRL(tv)}</td></tr>`;
+  $('tblProdutos').innerHTML=any?h:'<tr><td><div class="empty">Nenhum produto.</div></td></tr>';
 }
 function renderEntradas(){
   $('enProd').innerHTML = prodOptions('').replace('<option value="__novo__">➕ criar produto novo…</option>','');
@@ -783,6 +820,7 @@ $('tabs').addEventListener('click', e=>{
   document.querySelectorAll('main > section').forEach(s=>s.hidden = s.id!=='s-'+S.tab);
 });
 $('qProd').addEventListener('input', renderEstoque);
+$('qProd2').addEventListener('input', renderProdutos);
 $('qVinc').addEventListener('input', renderVinculos);
 $('qVendas').addEventListener('input', renderVendas);
 $('selMes').addEventListener('change', e=>{ S.mesSel=e.target.value; renderVendas(); });
@@ -814,12 +852,22 @@ document.addEventListener('click', async e=>{
   // excluir com confirmação em dois cliques
   const del = e.target.closest('.del-ent, .del-prod');
   if(del){
-    if(del.dataset.arm!=='1'){ del.dataset.arm='1'; del.textContent='confirmar?'; del.classList.add('danger'); del.classList.remove('sec');
-      setTimeout(()=>{ del.dataset.arm=''; del.textContent='excluir'; del.classList.remove('danger'); del.classList.add('sec'); },3000);
-      return; }
-    if(needDb()) return;
-    if(del.classList.contains('del-ent')) await S.db.doc('entradas/'+del.dataset.id).delete();
-    else await S.db.doc('produtos/'+del.dataset.pid).delete();
+    if(!del.dataset.arm){
+      del.dataset.arm='1'; del.textContent='senha:';
+      const inp=document.createElement('input'); inp.type='password'; inp.style.width='70px'; inp.placeholder='senha';
+      del.after(inp); inp.focus();
+      const volta=()=>{ del.dataset.arm=''; del.textContent='excluir'; inp.remove(); };
+      const timer=setTimeout(volta,10000);
+      inp.addEventListener('keydown', async ev=>{
+        if(ev.key==='Escape'){ clearTimeout(timer); volta(); return; }
+        if(ev.key!=='Enter') return;
+        if(inp.value!=='1234'){ inp.value=''; inp.placeholder='senha errada'; return; }
+        clearTimeout(timer); volta();
+        if(needDb()) return;
+        if(del.classList.contains('del-ent')) await S.db.doc('entradas/'+del.dataset.id).delete();
+        else await S.db.doc('produtos/'+del.dataset.pid).delete();
+      });
+    }
     return;
   }
   // ajustar estoque inicial / custo (clique no número)
