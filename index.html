@@ -127,6 +127,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
 <div class="topbar"><div class="topbar-in">
   <div class="brand">
     <h1>Estoque Makenry</h1><span class="co">conciliação de vendas · ML · Supabase</span>
+    <select id="selEmp" title="empresa" style="font-size:12px;padding:3px 6px"></select>
     <span id="connState">conectando ao banco…</span>
   </div>
   <nav class="tabs" id="tabs">
@@ -203,6 +204,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
       <div class="frow">
         <label class="f">Produto<select id="enProd"></select></label>
         <label class="f">Quantidade<input type="number" id="enQtd" step="any"></label>
+        <label class="f">Empresa<select id="enEmp"></select></label>
         <label class="f">Em<select id="enUnFmt"><option value="pct">pacotes fechados (1 = 100 folhas)</option><option value="un">folhas / unidades</option></select></label>
         <label class="f">Data<input type="date" id="enData"></label>
         <label class="f">Fornecedor<input type="text" id="enForn" style="width:150px"></label>
@@ -221,7 +223,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
 
 <section id="s-importar" hidden>
   <div class="card">
-    <div class="card-h"><h2>Relatório de vendas (Mercado Livre)</h2></div>
+    <div class="card-h"><h2>Relatório de vendas (Mercado Livre)</h2><div class="sp"><label class="f">Empresa da conta<select id="impEmp"></select></label></div></div>
     <div class="card-b">
       <div class="drop" id="dropVendas">Clique ou arraste o Excel do relatório de vendas ML aqui<br><span style="font-size:12px">(o arquivo "Vendas_BR_Mercado_Libre…xlsx", sem mexer em nada)</span></div>
       <input type="file" id="fileVendas" accept=".xlsx,.xls" hidden>
@@ -272,6 +274,10 @@ const S = {
   tab:'estoque', mesSel:'', calc:null
 };
 const $ = id => document.getElementById(id);
+const EMPRESAS=['Makenry','Verboom','Nagare','MEK','Massakazu'];
+S.empSel=(()=>{ try{ return localStorage.getItem('empSel')||'Todas'; }catch(e){ return 'Todas'; } })();
+const empDe = x => x.empresa || x.emp || ((x.obs||'').match(/→\s*([A-Za-zÀ-ÿ]+)/)||[])[1] || 'Makenry';
+const empOk = x => S.empSel==='Todas' || empDe(x)===S.empSel;
 const esc = s => String(s??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt = n => (Math.round((n+Number.EPSILON)*100)/100).toLocaleString('pt-BR');
 const fmtBRL = n => n==null?'—':Number(n).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
@@ -383,6 +389,7 @@ function compute(){
   {
     for(const r of S.vendasRows){
       if(r.tp!=='item') continue;
+      if(!empOk(r)) continue;
       totItens++;
       const baixa = isCanc(r.est) ? S.cfg.canc : (isDev(r.est) ? S.cfg.dev : true);
       if(isCanc(r.est)) totCanc++;
@@ -400,7 +407,7 @@ function compute(){
     }
   }
   const entr={};
-  for(const e of S.entradas){ entr[e.pid]=(entr[e.pid]||0)+(e.qtd||0); }
+  for(const e of S.entradas){ if(!empOk(e)) continue; entr[e.pid]=(entr[e.pid]||0)+(e.qtd||0); }
   S.calc = {saidas, pend, entr, vendPorAn, totItens, totCanc};
   return S.calc;
 }
@@ -534,7 +541,7 @@ function renderVendas(){
   sel.innerHTML = meses.map(m=>`<option value="${m}" ${m===cur?'selected':''}>${fmtMes(m)}</option>`).join('') || '<option>—</option>';
   const q = ($('qVendas').value||'').toLowerCase();
   const rows = [];
-  for(const r of S.vendasRows){ if(r.mes===cur) rows.push(r); }
+  for(const r of S.vendasRows){ if(r.mes===cur && empOk(r)) rows.push(r); }
   rows.sort((a,b)=>(b.d||'').localeCompare(a.d||''));
   if(!rows.length){ $('tblVendas').innerHTML = `<tr><td><div class="empty"><b>Nenhuma venda importada.</b><br>Suba o relatório do ML na aba Importar.</div></td></tr>`; return; }
   let h = `<tr><th>Data</th><th>N.º venda</th><th>Estado</th><th># anúncio</th><th>Título</th><th class="r">Un.</th><th>Baixa</th><th class="r">Total</th><th>Comprador</th></tr>`;
@@ -565,10 +572,10 @@ function renderEntradas(){
   $('enProd').innerHTML = prodOptions('').replace('<option value="__novo__">➕ criar produto novo…</option>','');
   const es = [...S.entradas].sort((a,b)=>(b.data||'').localeCompare(a.data||''));
   if(!es.length){ $('tblEntradas').innerHTML = `<tr><td><div class="empty"><b>Nenhuma entrada lançada.</b></div></td></tr>`; return; }
-  let h = `<tr><th>Data</th><th>SKU</th><th class="r">Qtd</th><th>Fornecedor</th><th>NF</th><th>Obs</th><th></th></tr>`;
+  let h = `<tr><th>Data</th><th>SKU</th><th>Empresa</th><th class="r">Qtd</th><th>Fornecedor</th><th>NF</th><th>Obs</th><th></th></tr>`;
   for(const e of es){
     h += `<tr><td class="num">${fmtData(e.data)}</td><td class="mono">${esc(S.produtos[e.pid]?.sku||e.pid)}</td>
-      <td class="r num">${fmt(e.qtd||0)}</td><td>${esc(e.forn||'')}</td><td class="mono">${esc(e.nf||'')}</td><td>${esc(e.obs||'')}</td>
+      <td>${esc(empDe(e))}</td><td class="r num">${fmt(e.qtd||0)}</td><td>${esc(e.forn||'')}</td><td class="mono">${esc(e.nf||'')}</td><td>${esc(e.obs||'')}</td>
       <td><button class="btn sm sec del-ent" data-id="${esc(e._id)}">excluir</button></td></tr>`;
   }
   $('tblEntradas').innerHTML = h;
@@ -696,7 +703,7 @@ async function importVendas(file){
       const mk = mesKey(d);
       if(S.vendasIds.has(id)){ nDup++; continue; }
       if(novas[mk] && novas[mk].some(x=>x.id===id)){ nDup++; continue; }
-      const row = {id, d, tp,
+      const row = {id, d, tp, emp:$('impEmp').value,
         dep:String(r[c.dep]??'').trim(), est, dsc:String(r[c.dsc]??'').trim(),
         pac:String(r[c.pac]??'').trim(), kit:String(r[c.kit]??'').trim(),
         un:Number(r[c.un])||0, tot:(r[c.tot]===''||r[c.tot]==null)?null:Number(r[c.tot]),
@@ -756,7 +763,7 @@ async function importEntradas(file){
       const dm=dRaw.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
       if(dm){ const y=dm[3].length===2?('20'+dm[3]):dm[3]; dIso=`${y}-${String(dm[2]).padStart(2,'0')}-${String(dm[1]).padStart(2,'0')}`; }
       else dIso = new Date().toISOString().slice(0,10);
-      await S.db.collection('entradas').add({pid, qtd, data:dIso, forn:String(r[c.forn]??'').trim(), nf:String(r[c.nf]??'').trim(), obs:[String(r[c.obs]??'').trim(),obsPct].filter(Boolean).join(' · '), criado:new Date().toISOString()});
+      await S.db.collection('entradas').add({pid, qtd, empresa:$('enEmp').value, data:dIso, forn:String(r[c.forn]??'').trim(), nf:String(r[c.nf]??'').trim(), obs:[String(r[c.obs]??'').trim(),obsPct].filter(Boolean).join(' · '), criado:new Date().toISOString()});
       ok++;
     }
     let msg = `<div class="msg ok"><b>${ok}</b> entrada(s) lançadas.</div>`;
@@ -797,7 +804,7 @@ $('enSalvar').addEventListener('click', async ()=>{
   const pctInfo = emPct ? `${fmt(qtd)} pct fechados` : '';
   if(emPct) qtd = qtd*100;
   const obs = [$('enObs').value.trim(), pctInfo].filter(Boolean).join(' · ');
-  await S.db.collection('entradas').add({pid, qtd, data:$('enData').value||new Date().toISOString().slice(0,10),
+  await S.db.collection('entradas').add({pid, qtd, empresa:$('enEmp').value, data:$('enData').value||new Date().toISOString().slice(0,10),
     forn:$('enForn').value.trim(), nf:$('enNf').value.trim(), obs, criado:new Date().toISOString()});
   $('enQtd').value='';$('enForn').value='';$('enNf').value='';$('enObs').value='';
   $('enMsg').innerHTML=`<div class="msg ok">Entrada lançada${emPct?` — ${pctInfo} = ${fmt(qtd)} folhas`:''}.</div>`;
@@ -902,6 +909,10 @@ $('cfgDev').addEventListener('change', e=>{ S.cfg.dev=e.target.checked; saveCfg(
 $('cfgLimiar').addEventListener('change', e=>{ S.cfg.limiar=Number(e.target.value)||0; saveCfg(); render(); });
 
 $('scSalvar').addEventListener('click', ()=>{ setCfgLS({url:$('scUrl').value.trim(), key:$('scKey').value.trim()}); $('connState').textContent='conectando…'; initDb(); });
+$('selEmp').innerHTML=['Todas',...EMPRESAS].map(e=>`<option ${e===S.empSel?'selected':''}>${e}</option>`).join('');
+$('enEmp').innerHTML=EMPRESAS.map(e=>`<option>${e}</option>`).join('');
+$('impEmp').innerHTML=EMPRESAS.map(e=>`<option>${e}</option>`).join('');
+$('selEmp').addEventListener('change', e=>{ S.empSel=e.target.value; try{localStorage.setItem('empSel',S.empSel);}catch(_){} render(); });
 render();
 initDb();
 </script>
