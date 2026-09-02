@@ -690,10 +690,20 @@ function shim(){
     collection(col){ return { async add(data){ const {error}=await SUPA.from(col).insert(data); if(error) throw new Error(error.message); await reload(col); } }; }
   };
 }
+async function loadAll(tbl){
+  const out=[];
+  for(let from=0;;from+=1000){
+    const {data,error}=await SUPA.from(tbl).select('*').range(from,from+999);
+    if(error) throw new Error(error.message);
+    out.push(...(data||[]));
+    if(!data || data.length<1000) break;
+  }
+  return out;
+}
 async function loadTable(col){
-  if(col==='produtos'){ const {data,error}=await SUPA.from('produtos').select('*'); if(error) throw new Error(error.message); S.produtos={}; (data||[]).forEach(r=>S.produtos[r.pid]=r); }
-  else if(col==='vinculos'){ const {data,error}=await SUPA.from('vinculos').select('*'); if(error) throw new Error(error.message); S.vinculos={}; (data||[]).forEach(r=>S.vinculos[r.an_key]=r); }
-  else if(col==='entradas'){ const {data,error}=await SUPA.from('entradas').select('*'); if(error) throw new Error(error.message); S.entradas=(data||[]).map(r=>Object.assign({_id:r.id},r)); }
+  if(col==='produtos'){ const data=await loadAll('produtos'); S.produtos={}; data.forEach(r=>S.produtos[r.pid]=r); }
+  else if(col==='vinculos'){ const data=await loadAll('vinculos'); S.vinculos={}; data.forEach(r=>S.vinculos[r.an_key]=r); }
+  else if(col==='entradas'){ const data=await loadAll('entradas'); S.entradas=data.map(r=>Object.assign({_id:r.id},r)); }
   else if(col==='config'){ const {data}=await SUPA.from('config').select('*').eq('k','regras'); const c=data&&data[0]&&data[0].v; if(c){ S.cfg={canc:!!c.canc, dev:c.dev!==false, limiar:c.limiar??50}; $('cfgCanc').checked=S.cfg.canc; $('cfgDev').checked=S.cfg.dev; $('cfgLimiar').value=S.cfg.limiar; } }
 }
 async function loadVendas(){
