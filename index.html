@@ -149,7 +149,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
     <div class="card-h"><h2>Saldo por produto</h2>
       <div class="sp">
         <input type="text" id="qProd" placeholder="buscar SKU ou nome…">
-        <button class="btn sm" id="btnNovoProd">+ Produto</button>
+        <button class="btn sm" id="btnNovoProd">+ Produto</button><button class="btn sm sec xls" data-tbl="tblEstoque" data-nome="estoque" title="baixar em Excel">⬇ Excel</button><button class="btn sm sec ajuda" data-help="estoque" title="como usar esta aba">?</button>
       </div>
     </div>
     <div id="novoProdBox" class="card-b" hidden>
@@ -172,7 +172,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
 <section id="s-produtos" hidden>
   <div class="card">
     <div class="card-h"><h2>Produtos — custo comprado × custo vendido</h2>
-      <div class="sp"><input type="text" id="qProd2" placeholder="buscar…"></div></div>
+      <div class="sp"><input type="text" id="qProd2" placeholder="buscar…"><button class="btn sm sec xls" data-tbl="tblProdutos" data-nome="produtos" title="baixar em Excel">⬇ Excel</button><button class="btn sm sec ajuda" data-help="produtos" title="como usar esta aba">?</button></div></div>
     <div class="tbl-wrap"><table id="tblProdutos"></table></div>
   </div>
   <p class="note">Custo unitário = preço de 1 unidade (folha/peça) na última NF de compra. Produto sem custo de nota ganha aviso. Respeita a empresa selecionada no topo.</p>
@@ -181,7 +181,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
 <section id="s-conferir" hidden>
   <div class="card">
     <div class="card-h"><h2>Anúncios sem vínculo</h2><span class="dim" id="pendSub"></span>
-      <div class="sp"><button class="btn sm" id="btnAplicarSug" hidden></button></div></div>
+      <div class="sp"><button class="btn sm" id="btnAplicarSug" hidden></button><button class="btn sm sec xls" data-tbl="tblPend" data-nome="conferir" title="baixar em Excel">⬇ Excel</button><button class="btn sm sec ajuda" data-help="conferir" title="como usar esta aba">?</button></div></div>
     <div class="tbl-wrap"><table id="tblPend"></table></div>
   </div>
   <p class="note">Vendas desses anúncios ainda não baixam estoque. Vincule o produto e defina o fator (quantidade de folhas/pacotes por unidade vendida) — a baixa é recalculada de todo o histórico na hora.</p>
@@ -190,7 +190,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
 <section id="s-vinculos" hidden>
   <div class="card">
     <div class="card-h"><h2>Vínculos anúncio → produto</h2>
-      <div class="sp"><input type="text" id="qVinc" placeholder="buscar anúncio, SKU ou título…"></div>
+      <div class="sp"><input type="text" id="qVinc" placeholder="buscar anúncio, SKU ou título…"><button class="btn sm sec xls" data-tbl="tblVinc" data-nome="vinculos" title="baixar em Excel">⬇ Excel</button><button class="btn sm sec ajuda" data-help="vinculos" title="como usar esta aba">?</button></div>
     </div>
     <div class="tbl-wrap"><table id="tblVinc"></table></div>
   </div>
@@ -201,7 +201,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
     <div class="card-h"><h2>Vendas importadas</h2>
       <div class="sp">
         <select id="selMes"></select>
-        <input type="text" id="qVendas" placeholder="buscar…">
+        <input type="text" id="qVendas" placeholder="buscar…"><button class="btn sm sec xls" data-tbl="tblVendas" data-nome="vendas" title="baixar em Excel">⬇ Excel</button><button class="btn sm sec ajuda" data-help="vendas" title="como usar esta aba">?</button>
       </div>
     </div>
     <div class="tbl-wrap"><table id="tblVendas"></table></div>
@@ -213,7 +213,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
     <div class="card-h"><h2>Projeção de envios</h2>
       <div class="sp">
         <label class="f">Janela recente (dias)<input type="number" id="pjRec" value="10" min="1" style="width:70px"></label>
-        <label class="f">Cobertura alvo (dias)<input type="number" id="pjAlvo" value="30" min="1" style="width:70px"></label>
+        <label class="f">Cobertura alvo (dias)<input type="number" id="pjAlvo" value="30" min="1" style="width:70px"></label><button class="btn sm sec xls" data-tbl="tblProj" data-nome="projecao" title="baixar em Excel">⬇ Excel</button><button class="btn sm sec ajuda" data-help="projecao" title="como usar esta aba">?</button>
       </div></div>
     <div class="tbl-wrap"><table id="tblProj"></table></div>
   </div>
@@ -222,7 +222,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
 
 <section id="s-entradas" hidden>
   <div class="card">
-    <div class="card-h"><h2>Lançar entrada</h2></div>
+    <div class="card-h"><h2>Lançar entrada</h2><div class="sp"><button class="btn sm sec ajuda" data-help="entradas" title="como usar esta aba">?</button></div></div>
     <div class="card-b">
       <div class="frow">
         <label class="f">Produto<select id="enProd"></select></label>
@@ -239,14 +239,14 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
     </div>
   </div>
   <div class="card">
-    <div class="card-h"><h2>Histórico de entradas</h2></div>
+    <div class="card-h"><h2>Histórico de entradas</h2><div class="sp"><button class="btn sm sec xls" data-tbl="tblEntradas" data-nome="entradas" title="baixar em Excel">⬇ Excel</button><button class="btn sm sec ajuda" data-help="entradas" title="como usar esta aba">?</button></div></div>
     <div class="tbl-wrap"><table id="tblEntradas"></table></div>
   </div>
 </section>
 
 <section id="s-importar" hidden>
   <div class="card">
-    <div class="card-h"><h2>Relatório de vendas (Mercado Livre)</h2><div class="sp"><label class="f">Empresa da conta<select id="impEmp"></select></label></div></div>
+    <div class="card-h"><h2>Relatório de vendas (Mercado Livre)</h2><div class="sp"><label class="f">Empresa da conta<select id="impEmp"></select></label><button class="btn sm sec ajuda" data-help="importar" title="como usar esta aba">?</button></div></div>
     <div class="card-b">
       <div class="drop" id="dropVendas">Clique ou arraste o Excel do relatório de vendas ML aqui<br><span style="font-size:12px">(o arquivo "Vendas_BR_Mercado_Libre…xlsx", sem mexer em nada)</span></div>
       <input type="file" id="fileVendas" accept=".xlsx,.xls" hidden>
@@ -639,7 +639,7 @@ function renderProdutos(){
       <td class="r num">${p.custo?fmtBRL(p.custo)+'/un':'—'}</td>
       <td class="r num">${fmt(compQ[pid]||0)}</td>
       <td class="r num">${fmt(sai)}</td>
-      <td>${p.custo?'':'<span class="chip warn">sem custo na NF — me avise</span>'}</td></tr>`;
+      <td>${p.custo?'':'<span class="chip warn">sem custo na NF — me avise</span>'} <button class="btn sm sec pe-edit" data-pid="${esc(pid)}">editar</button></td></tr>`;
   }
   if(semCusto) h+=`<tr><td colspan="6" class="dim">${semCusto} produto(s) sem custo de nota — informe o custo unitário ou envie a NF de compra.</td></tr>`;
   $('tblProdutos').innerHTML=any?h:'<tr><td><div class="empty">Nenhum produto.</div></td></tr>';
@@ -1003,7 +1003,8 @@ document.addEventListener('click', async e=>{
       if(!itens.length){ msg.innerHTML='<div class="msg bad">Escolha o produto e um fator maior que zero.</div>'; return; }
       const an=row.dataset.an;
       await S.db.doc('vinculos/'+seg(an)).set({anuncio:an, titulo:row.dataset.tit, skuPlat:row.dataset.sku, itens, atualizado:new Date().toISOString()});
-      msg.innerHTML='<div class="msg ok">Vínculo salvo — estoque recalculado.</div>';
+      toast('✔ Vínculo salvo — estoque recalculado');
+      const nm=document.querySelector('tr.vinc-row[data-an="'+an+'"] .vi-msg'); if(nm) nm.innerHTML='<div class="msg ok">Vínculo salvo — estoque recalculado.</div>';
       return;
     }
   }
@@ -1024,6 +1025,78 @@ function hookDrop(dropId, fileId, handler){
   d.addEventListener('dragover', e=>{ e.preventDefault(); });
   d.addEventListener('drop', e=>{ e.preventDefault(); const file=e.dataTransfer.files[0]; if(file) handler(file); });
 }
+
+/* ===== toast, excel, ajuda, editar produto ===== */
+function toast(t){ let el=document.getElementById('toastBox'); if(!el){ el=document.createElement('div'); el.id='toastBox'; el.style.cssText='position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#1a7f37;color:#fff;padding:10px 18px;border-radius:8px;font-size:14px;z-index:9999;box-shadow:0 4px 14px rgba(0,0,0,.3);transition:opacity .3s'; document.body.appendChild(el);} el.textContent=t; el.style.opacity='1'; el.hidden=false; clearTimeout(el._t); el._t=setTimeout(()=>{ el.style.opacity='0'; setTimeout(()=>{el.hidden=true;},350); },2800); }
+function baixarTabela(tblId, nome){
+  const t=document.getElementById(tblId); if(!t||!t.querySelector('tr')){ toast('nada pra exportar'); return; }
+  const aoa=[...t.querySelectorAll('tr')].map(tr=>[...tr.children].map(td=>{
+    const s=td.innerText.replace(/\s*\n\s*/g,' | ').trim();
+    if(/^-?[\d.]*\d,\d+$/.test(s)) return Number(s.replace(/\./g,'').replace(',','.'));
+    if(/^-?\d{1,3}(\.\d{3})+$/.test(s)) return Number(s.replace(/\./g,''));
+    if(/^-?\d+$/.test(s)) return Number(s);
+    return s;
+  }));
+  try{
+    const ws=XLSX.utils.aoa_to_sheet(aoa); const wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, nome.slice(0,30));
+    XLSX.writeFile(wb, nome+'_'+new Date().toISOString().slice(0,10)+'.xlsx');
+    toast('⬇ Excel gerado: '+nome);
+  }catch(err){ toast('✖ não deu pra baixar aqui — use a versão do site'); }
+}
+const HELP={
+ estoque:'Saldo de cada produto: inicial + entradas (notas) − saídas (vendas × fator do vínculo). Clique no número do estoque inicial ou do custo pra editar direto. "+ Produto" cadastra um novo. Linha vermelha = saldo abaixo do alerta mínimo (ajuste em Importar → Regras). Saldo negativo = faltou lançar estoque inicial ou nota de compra.',
+ produtos:'Cadastro dos produtos com o custo da última nota. Clique em "editar" pra mudar nome, unidade, estoque inicial e custo, depois "Salvar" — aparece a confirmação verde embaixo. "Sem custo na NF" = nenhuma nota de compra lançada ainda: me envie o XML da nota ou edite o custo na mão.',
+ conferir:'Anúncios que venderam mas ainda não têm vínculo — essas vendas NÃO baixam estoque até você vincular. Escolha o produto e o fator (quantas folhas/pacotes/peças saem por 1 unidade vendida) e clique Salvar. O chip amarelo ⚠ explica por que não teve sugestão automática. O botão ⚡ aplica todas as sugestões 💡 de uma vez.',
+ vinculos:'Liga cada anúncio do ML a produto(s) do estoque. Fator = quantas unidades do produto saem por venda (ex.: "200 unid capa+contracapa" = 100 PPC + 100 PPL). A linha 💰 mostra unidade e custo de cada item — sirva pra conferir se o fator está na unidade certa (folhas × pacotes). Depois de alterar, clique Salvar: aparece um aviso verde de confirmação.',
+ vendas:'Vendas importadas dos relatórios do ML, mês a mês (selecione o mês no topo). "Baixa" mostra quanto saiu de cada produto. Cancelada não baixa; devolução baixa (regras em Importar). Importar o mesmo relatório de novo não duplica nada. O Excel exporta o mês que está na tela.',
+ projecao:'Quanto enviar pro ML: compara o ritmo recente de venda com o saldo e calcula o que falta pra cobrir os dias de cobertura alvo. Ajuste a janela recente e a cobertura nos campos acima. Respeita a empresa selecionada no topo.',
+ entradas:'Compras e reposições. Lance pelo formulário (pacote fechado = 100 folhas), por planilha na aba Importar, ou me mande o XML da NF-e que eu classifico a empresa e lanço com o custo líquido. Excluir pede a senha.',
+ importar:'Importações e configurações. Relatório de vendas ML: escolha a EMPRESA DA CONTA antes de soltar o arquivo. Entradas por planilha: colunas SKU + Pacotes ou Quantidade. Vendas e notas repetidas são ignoradas automaticamente. Embaixo ficam a conexão do banco e as regras de baixa.'
+};
+document.addEventListener('click', async e=>{
+  const x=e.target.closest('.xls');
+  if(x){ baixarTabela(x.dataset.tbl, x.dataset.nome); return; }
+  const aj=e.target.closest('.ajuda');
+  if(aj){
+    const card=aj.closest('.card')||aj.closest('section');
+    let box=card.querySelector('.help-box');
+    if(box){ box.remove(); return; }
+    box=document.createElement('div');
+    box.className='help-box';
+    box.style.cssText='margin:8px 14px;padding:10px 12px;background:var(--surface2,#eef1f6);border-left:3px solid #4a7dbd;border-radius:6px;font-size:13px;line-height:1.55';
+    box.textContent=HELP[aj.dataset.help]||'';
+    const ch=card.querySelector('.card-h'); if(ch) ch.after(box); else card.prepend(box);
+    return;
+  }
+  const pe=e.target.closest('.pe-edit');
+  if(pe){
+    const pid=pe.dataset.pid, p=S.produtos[pid]||{};
+    const tr=pe.closest('tr');
+    tr.innerHTML=`<td class="mono">${esc(p.sku||pid)}</td><td colspan="5">
+      <div class="frow" style="align-items:flex-end">
+        <label class="f">Nome<input type="text" class="pe-nome" value="${esc(p.nome||'')}" style="width:240px"></label>
+        <label class="f">Unidade<select class="pe-un"><option value="folhas"${p.unidade==='folhas'?' selected':''}>folhas</option><option value="pacotes"${p.unidade==='pacotes'?' selected':''}>pacotes</option><option value="un"${(!p.unidade||p.unidade==='un')?' selected':''}>unidades</option></select></label>
+        <label class="f">Estoque inicial<input type="number" class="pe-ini" step="any" value="${p.inicial||0}" style="width:100px"></label>
+        <label class="f">Custo unit. (R$)<input type="number" class="pe-custo" step="any" value="${p.custo||0}" style="width:110px"></label>
+        <button class="btn sm pe-save" data-pid="${esc(pid)}">Salvar</button>
+        <button class="btn sm sec pe-cancel">Cancelar</button>
+      </div></td>`;
+    return;
+  }
+  if(e.target.closest('.pe-cancel')){ renderProdutos(); return; }
+  const ps=e.target.closest('.pe-save');
+  if(ps){
+    if(needDb()) return;
+    const tr=ps.closest('tr'), pid=ps.dataset.pid;
+    const dados={ nome:tr.querySelector('.pe-nome').value.trim(), unidade:tr.querySelector('.pe-un').value, inicial:Number(tr.querySelector('.pe-ini').value)||0, custo:Number(tr.querySelector('.pe-custo').value)||0 };
+    ps.disabled=true; ps.textContent='salvando…';
+    try{ await S.db.doc('produtos/'+pid).update(dados); toast('✔ Produto '+((S.produtos[pid]||{}).sku||pid)+' salvo'); }
+    catch(err){ toast('✖ erro ao salvar: '+(err.message||err)); renderProdutos(); }
+    return;
+  }
+});
+
 hookDrop('dropVendas','fileVendas',importVendas);
 hookDrop('dropEntradas','fileEntradas',importEntradas);
 
