@@ -554,13 +554,13 @@ function renderVendas(){
   for(const r of S.vendasRows){ if(r.mes===cur && empOk(r)) rows.push(r); }
   rows.sort((a,b)=>(b.d||'').localeCompare(a.d||''));
   if(!rows.length){ $('tblVendas').innerHTML = `<tr><td><div class="empty"><b>Nenhuma venda importada.</b><br>Suba o relatório do ML na aba Importar.</div></td></tr>`; return; }
-  let h = `<tr><th>Data</th><th>N.º venda</th><th>Estado</th><th># anúncio</th><th>Título</th><th class="r">Un.</th><th>Baixa</th><th class="r">Total</th><th>Comprador</th></tr>`;
+  let h = `<tr><th>Data</th><th>N.º venda</th><th>Estado</th><th>Envio</th><th># anúncio</th><th>Título</th><th class="r">Un.</th><th>Baixa</th><th class="r">Total</th><th>Comprador</th></tr>`;
   let shown=0;
   for(const r of rows){
     if(q && !`${r.id} ${r.an||''} ${r.tit||''} ${r.cmp||''} ${r.sku||''} ${r.est||''}`.toLowerCase().includes(q)) continue;
     if(++shown>400){ h+=`<tr><td colspan="9" class="dim">… mais linhas — use a busca para filtrar.</td></tr>`; break; }
     if(r.tp==='pai'){
-      h += `<tr class="dim"><td class="num">${fmtData(r.d)}</td><td class="mono">${esc(r.id)}</td><td><span class="chip mut">${esc(r.est)}</span></td><td colspan="4" class="dim">pacote — itens nas linhas abaixo</td><td class="r num">${fmtBRL(r.tot)}</td><td>${esc(r.cmp||'')}</td></tr>`;
+      h += `<tr class="dim"><td class="num">${fmtData(r.d)}</td><td class="mono">${esc(r.id)}</td><td><span class="chip mut">${esc(r.est)}</span></td><td class="dim"></td><td colspan="4" class="dim">pacote — itens nas linhas abaixo</td><td class="r num">${fmtBRL(r.tot)}</td><td>${esc(r.cmp||'')}</td></tr>`;
       continue;
     }
     const canc=isCanc(r.est), dev=isDev(r.est);
@@ -573,6 +573,7 @@ function renderVendas(){
     const chip = canc?'bad':(dev?'warn':'ok');
     h += `<tr><td class="num">${fmtData(r.d)}</td><td class="mono">${esc(r.id)}</td>
       <td><span class="chip ${chip}" title="${esc(r.dsc||'')}">${esc(r.est||'')}</span></td>
+      <td class="dim" style="font-size:12px">${esc(r.env||'')}</td>
       <td class="mono">${esc(r.an||'')}</td><td class="tit-cell" title="${esc(r.tit||'')}">${esc(r.tit||'')}</td>
       <td class="r num">${fmt(r.un||0)}</td><td>${baixaTxt}</td><td class="r num">${fmtBRL(r.tot)}</td><td>${esc(r.cmp||'')}</td></tr>`;
   }
@@ -725,7 +726,7 @@ async function importVendas(file){
     const c = {id:col('N.º de venda'), d:col('Data da venda'), dep:col('Depósito'), est:col('Estado'), dsc:col('Descrição do status'),
       pac:col('Pacote de diversos produtos'), kit:col('Pertence a um kit'), un:col('Unidades'), tot:col('Total (BRL)'),
       mf:col('Mês de faturamento das suas tarifas'), ped:col('Pedido de compra'), pub:col('Venda por publicidade'),
-      sku:col('SKU'), an:col('# de anúncio'), tit:col('Título do anúncio'), vr:col('Variação'), cmp:col('Comprador')};
+      sku:col('SKU'), an:col('# de anúncio'), tit:col('Título do anúncio'), vr:col('Variação'), cmp:col('Comprador'), env:col('Forma de entrega')};
     if(c.id<0||c.an<0||c.un<0) throw new Error('Cabeçalho incompleto no arquivo.');
     const novas={}; let nDup=0,nPai=0,nItem=0,nCanc=0;
     for(let i=hi+1;i<rows.length;i++){
@@ -745,7 +746,7 @@ async function importVendas(file){
         pac:String(r[c.pac]??'').trim(), kit:String(r[c.kit]??'').trim(),
         un:Number(r[c.un])||0, tot:(r[c.tot]===''||r[c.tot]==null)?null:Number(r[c.tot]),
         mf:String(r[c.mf]??'').trim(), ped:String(r[c.ped]??'').trim(), pub:String(r[c.pub]??'').trim(),
-        sku:String(r[c.sku]??'').trim(), an, tit:String(r[c.tit]??'').trim(), vr:String(r[c.vr]??'').trim(),
+        sku:String(r[c.sku]??'').trim(), an, tit:String(r[c.tit]??'').trim(), vr:String(r[c.vr]??'').trim(), env:String(r[c.env]??'').trim(),
         cmp:String(r[c.cmp]??'').trim()};
       (novas[mk]=novas[mk]||[]).push(row);
       if(tp==='pai') nPai++; else { nItem++; if(isCanc(est)) nCanc++; }
