@@ -133,8 +133,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
   <nav class="tabs" id="tabs">
     <button class="tab on" data-t="estoque">Estoque</button>
     <button class="tab" data-t="produtos">Produtos</button>
-    <button class="tab" data-t="conferir">Conferir <span class="badge" id="bPend"></span></button>
-    <button class="tab" data-t="vinculos">Vínculos</button>
+    <button class="tab" data-t="vinculos">Vínculos <span class="badge" id="bPend"></span></button>
     <button class="tab" data-t="vendas">Vendas</button>
     <button class="tab" data-t="projecao">Projeção</button>
     <button class="tab" data-t="entradas">Entradas</button>
@@ -180,22 +179,27 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
   <p class="note">Custo unitário = preço de 1 unidade (folha/peça) na última NF de compra. Produto sem custo de nota ganha aviso. Respeita a empresa selecionada no topo.</p>
 </section>
 
-<section id="s-conferir" hidden>
-  <div class="card">
-    <div class="card-h"><h2>Anúncios sem vínculo</h2><span class="dim" id="pendSub"></span>
-      <div class="sp"><button class="btn sm" id="btnAplicarSug" hidden></button><button class="btn sm sec xls" data-tbl="tblPend" data-nome="conferir" title="baixar em Excel">⬇ Excel</button><button class="btn sm sec ajuda" data-help="conferir" title="como usar esta aba">?</button></div></div>
-    <div class="tbl-wrap"><table id="tblPend"></table></div>
-  </div>
-  <p class="note">Vendas desses anúncios ainda não baixam estoque. Vincule o produto e defina o fator (quantidade de folhas/pacotes por unidade vendida) — a baixa é recalculada de todo o histórico na hora.</p>
-</section>
-
 <section id="s-vinculos" hidden>
   <div class="card">
-    <div class="card-h"><h2>Vínculos anúncio → produto</h2>
-      <div class="sp"><input type="text" id="qVinc" placeholder="buscar anúncio, SKU ou título…"><button class="btn sm sec xls" data-tbl="tblVinc" data-nome="vinculos" title="baixar em Excel">⬇ Excel</button><button class="btn sm sec ajuda" data-help="vinculos" title="como usar esta aba">?</button></div>
+    <div class="card-h"><h2>1 · Anúncios sem vínculo</h2><span class="dim" id="pendSub"></span>
+      <div class="sp"><button class="btn sm" id="btnAplicarSug" hidden></button><button class="btn sm sec xls" data-tbl="tblPend" data-nome="sem_vinculo" title="baixar em Excel">⬇ Excel</button><button class="btn sm sec ajuda" data-help="conferir" title="como usar">?</button></div></div>
+    <div class="tbl-wrap"><table id="tblPend"></table></div>
+  </div>
+  <p class="note">Vendas desses anúncios ainda não baixam estoque. Vincule o produto e defina o fator (quantidade de folhas/pacotes por unidade vendida) — a baixa é recalculada de todo o histórico na hora. Depois de salvar, o vínculo desce pra lista "a verificar".</p>
+  <div class="card">
+    <div class="card-h"><h2>2 · Vínculos a verificar</h2><span class="dim" id="vincSub"></span>
+      <div class="sp"><input type="text" id="qVinc" placeholder="buscar anúncio, SKU ou título…"><button class="btn sm sec xls" data-tbl="tblVinc" data-nome="vinculos_a_verificar" title="baixar em Excel">⬇ Excel</button><button class="btn sm sec ajuda" data-help="vinculos" title="como usar">?</button></div>
     </div>
     <div class="tbl-wrap"><table id="tblVinc"></table></div>
   </div>
+  <p class="note">Confira produto e fator de cada um. Quando estiver certo, clique <b>✔ conferido</b> — ele desce pro bloco de conferidos e sai daqui.</p>
+  <div class="card">
+    <div class="card-h"><h2>3 · Conferidos — já estão corretos</h2><span class="dim" id="vincOkSub"></span>
+      <div class="sp"><button class="btn sm sec xls" data-tbl="tblVincOk" data-nome="vinculos_conferidos" title="baixar em Excel">⬇ Excel</button></div>
+    </div>
+    <div class="tbl-wrap"><table id="tblVincOk"></table></div>
+  </div>
+  <p class="note">Vínculos que você já conferiu. Se salvar uma alteração num deles, volta pra lista "a verificar". O ↩ reabre na mão.</p>
 </section>
 
 <section id="s-vendas" hidden>
@@ -275,18 +279,24 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
   </div>
   <div class="card">
     <div class="card-h"><h2>Pedidos pendentes</h2><span class="dim" id="pedSub"></span></div>
+    <div id="pedBanner"></div>
     <div class="tbl-wrap"><table id="tblPedPend"></table></div>
   </div>
+  <div id="pedUltimas"></div>
   <p class="note">Pendente segura a régua (conta como "já pedido") mas <b>não</b> soma no estoque. Só o APROVADO lança a entrada. Recusado sai da régua e não mexe em nada. Regra de ouro: nada vira estoque sem decisão humana.</p>
 </section>
 
 <section id="s-aprovados" hidden>
   <div class="card">
+    <div class="card-h"><h2>Pedidos a mandar — por fornecedor</h2><span class="dim" id="apGrpSub"></span></div>
+    <div id="apGrupos"></div>
+  </div>
+  <div class="card">
     <div class="card-h"><h2>Aprovados — histórico de decisões</h2>
       <div class="sp"><label class="tog" style="font-size:12px"><input type="checkbox" id="apRec"> mostrar recusados</label><button class="btn sm sec xls" data-tbl="tblAprov" data-nome="pedidos_aprovados" title="baixar em Excel">⬇ Excel</button><button class="btn sm sec ajuda" data-help="aprovados" title="como usar esta aba">?</button></div></div>
     <div class="tbl-wrap"><table id="tblAprov"></table></div>
   </div>
-  <p class="note">Todo aprovado já virou entrada no estoque (na data da decisão, origem "Pedido de …"). O ✉ monta a mensagem pronta pro fornecedor.</p>
+  <p class="note">Todo aprovado já virou entrada no estoque (na data da decisão, origem "Pedido de …"). Em cima, os pedidos aprovados que ainda não foram mandados, agrupados por fornecedor — um botão copia a mensagem com todos os produtos daquele fornecedor de uma vez. Copiar marca como enviado.</p>
 </section>
 
 <section id="s-importar" hidden>
@@ -305,6 +315,15 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
       <input type="file" id="fileEntradas" accept=".xlsx,.xls,.csv" hidden>
       <p class="note">Colunas esperadas (a ordem não importa): <b>SKU</b> · <b>Pacotes</b> (pacote fechado = 100 folhas) ou <b>Quantidade</b> (em folhas) · Data · Fornecedor · NF · Obs. SKU tem que ser igual ao do cadastro de produtos.</p>
       <div id="impEntradasMsg"></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-h"><h2>Vínculos revisados (planilha do Kenni)</h2></div>
+    <div class="card-b">
+      <div class="drop" id="dropVincRev">Clique ou arraste a planilha de vínculos revisados aqui<br><span style="font-size:12px">(aba "por_produto": Status · Vínculo CORRETO · ID anúncio · Título)</span></div>
+      <input type="file" id="fileVincRev" accept=".xlsx,.xls" hidden>
+      <p class="note">Só entra linha com Status <b>KK</b>. "Vínculo CORRETO" vira o vínculo do anúncio (ex.: <span class="mono">A4-05 ×50</span>, <span class="mono">PPC ×100 + PPL ×100</span>, <span class="mono">CALC X2</span>). <b>N</b> = não vende mais: o anúncio some da lista "sem vínculo" e não baixa estoque. SKU que não existe no cadastro fica de fora e aparece na lista. Todo vínculo importado já entra como <b>conferido</b>.</p>
+      <div id="impVincRevMsg"></div>
     </div>
   </div>
   <div class="card">
@@ -470,6 +489,7 @@ function compute(){
     const an = r.an;
     if(_inSel) vendPorAn[an] = (vendPorAn[an]||0) + (baixa ? (r.un||0) : 0);
     const v = S.vinculos[seg(an)];
+    if(S.descont[seg(an)]) continue; /* não vende mais: não baixa nem cobra vínculo */
     if(!v || !v.itens || !v.itens.length){
       if(_inSel){
         const p = pend[an] || (pend[an]={an, tit:r.tit, sku:r.sku, un:0, n:0, ult:''});
@@ -553,7 +573,7 @@ function renderEstoque(){
       <td><button class="btn sm sec del-prod" data-pid="${esc(pid)}">excluir</button></td></tr>`;
   }
   $('tblEstoque').innerHTML = any ? h : '';
-  if(!any) $('tblEstoque').innerHTML = `<tr><td><div class="empty"><b>Nenhum produto ainda.</b><br>Cadastre em “+ Produto” ou crie na hora ao vincular um anúncio na aba Conferir.</div></td></tr>`;
+  if(!any) $('tblEstoque').innerHTML = `<tr><td><div class="empty"><b>Nenhum produto ainda.</b><br>Cadastre em “+ Produto” ou crie na hora ao vincular um anúncio na aba Vínculos.</div></td></tr>`;
 }
 function prodOptions(sel){
   const pids = Object.keys(S.produtos).sort((a,b)=>S.produtos[a].sku.localeCompare(S.produtos[b].sku));
@@ -641,20 +661,35 @@ function renderConferir(){
   b.hidden = !nSug;
   if(nSug && b.dataset.arm!=='1') b.textContent = `⚡ Aplicar as ${nSug} sugestões`;
 }
+S.conferidos = S.conferidos || {}; S.descont = S.descont || {};
+async function loadConferidos(){
+  if(typeof SUPA!=='undefined' && SUPA){ const {data,error}=await SUPA.from('config').select('*').in('k',['conferidos','descontinuados']); if(!error){ S.conferidos={}; S.descont={}; (data||[]).forEach(r=>{ if(r.k==='conferidos') S.conferidos=r.v||{}; if(r.k==='descontinuados') S.descont=r.v||{}; }); } }
+}
+async function descontWrite(){
+  if(typeof SUPA!=='undefined' && SUPA){ const {error}=await SUPA.from('config').upsert({k:'descontinuados', v:S.descont}); if(error) throw new Error(error.message); }
+  else { await S.db.doc('config/descontinuados').set(S.descont); }
+}
+async function conferidosWrite(){
+  if(typeof SUPA!=='undefined' && SUPA){ const {error}=await SUPA.from('config').upsert({k:'conferidos', v:S.conferidos}); if(error) throw new Error(error.message); }
+  else { await S.db.doc('config/conferidos').set(S.conferidos); }
+}
 function renderVinculos(){
   const q = ($('qVinc').value||'').toLowerCase();
   const ks = Object.keys(S.vinculos).sort((a,b)=>(S.vinculos[a].anuncio||'').localeCompare(S.vinculos[b].anuncio||''));
-  if(!ks.length){ $('tblVinc').innerHTML = `<tr><td><div class="empty"><b>Nenhum vínculo ainda.</b><br>Importe um relatório de vendas e vincule os anúncios na aba Conferir.</div></td></tr>`; return; }
-  let h = `<tr><th>Anúncio</th><th>Produto + fator</th><th class="r">Unid. vendidas</th></tr>`;
-  let any=false;
-  for(const k of ks){
+  const aVer=ks.filter(k=>!S.conferidos[k]&&!S.descont[k]), ok=ks.filter(k=>S.conferidos[k]||S.descont[k]);
+  $('vincSub').textContent = aVer.length?`${aVer.length} vínculo(s) esperando sua conferência`:'';
+  $('vincOkSub').textContent = ok.length?`${ok.length} conferido(s)`:'';
+  const linha=(k,conf)=>{
     const v=S.vinculos[k];
-    const blob = `${v.anuncio} ${v.skuPlat||''} ${v.titulo||''}`.toLowerCase();
-    if(q && !blob.includes(q)) continue;
-    any=true;
-    h += `<tr class="vinc-row" data-an="${esc(v.anuncio)}" data-tit="${esc(v.titulo)}" data-sku="${esc(v.skuPlat)}">${vincRowHTML(v.anuncio,v.titulo,v.skuPlat,v)}<td class="r num">${fmt(S.calc.vendPorAn[v.anuncio]||0)}</td></tr>`;
-  }
-  $('tblVinc').innerHTML = any?h:`<tr><td><div class="empty">Nada encontrado para a busca.</div></td></tr>`;
+    if(S.descont[k]) return `<tr data-key="${esc(k)}"><td><div>${esc(v.titulo||'')}</div><div class="mono dim" style="font-size:11px">${esc(v.anuncio)} · ${esc(v.skuPlat||'')}</div></td><td><span class="chip mut">não vende mais — sem baixa</span></td><td class="r num">${fmt(S.calc.vendPorAn[v.anuncio]||0)}</td><td><button class="btn sm sec vi-reativar" title="volta a exigir vínculo">reativar</button></td></tr>`;
+    return `<tr class="vinc-row" data-an="${esc(v.anuncio)}" data-key="${esc(k)}" data-tit="${esc(v.titulo)}" data-sku="${esc(v.skuPlat)}">${vincRowHTML(v.anuncio,v.titulo,v.skuPlat,v)}<td class="r num">${fmt(S.calc.vendPorAn[v.anuncio]||0)}</td><td style="white-space:nowrap">${conf?`<span class="chip ok" title="conferido em ${esc(fmtData(String(S.conferidos[k]).slice(0,10)))}">✔ ${esc(fmtData(String(S.conferidos[k]).slice(0,10)))}</span> <button class="btn sm sec vi-reabrir" title="voltar pra lista a verificar">↩</button>`:`<button class="btn sm vi-conferido" title="produto e fator estão certos">✔ conferido</button>`}</td></tr>`;
+  };
+  const filtra=k=>{ const v=S.vinculos[k]; return !q || `${v.anuncio} ${v.skuPlat||''} ${v.titulo||''}`.toLowerCase().includes(q); };
+  const hdr='<tr><th>Anúncio</th><th>Produto + fator</th><th class="r">Unid. vendidas</th><th></th></tr>';
+  if(!ks.length){ $('tblVinc').innerHTML = `<tr><td><div class="empty"><b>Nenhum vínculo ainda.</b><br>Importe um relatório de vendas e vincule os anúncios no bloco 1, aqui em cima.</div></td></tr>`; $('tblVincOk').innerHTML=''; return; }
+  const l1=aVer.filter(filtra), l2=ok.filter(filtra);
+  $('tblVinc').innerHTML = l1.length ? hdr+l1.map(k=>linha(k,false)).join('') : `<tr><td><div class="empty">${aVer.length?'Nada encontrado para a busca.':'<b>Tudo conferido.</b> Nenhum vínculo esperando verificação.'}</div></td></tr>`;
+  $('tblVincOk').innerHTML = l2.length ? hdr+l2.map(k=>linha(k,true)).join('') : `<tr><td><div class="empty">${ok.length?'Nada encontrado para a busca.':'Nenhum vínculo conferido ainda.'}</div></td></tr>`;
 }
 function renderVendas(){
   const meses = [...new Set(S.vendasRows.map(r=>r.mes))].sort().reverse();
@@ -702,7 +737,7 @@ function renderProdutos(){
     compQ[e.pid]=(compQ[e.pid]||0)+(e.qtd||0);
     compV[e.pid]=(compV[e.pid]||0)+(e.qtd||0)*c;
   }
-  let h=`<tr><th>SKU</th><th>Produto</th><th class="r" title="preço de 1 unidade na última NF de compra">Custo unitário (NF)</th><th class="r">Comprado (un)</th><th class="r">Vendido (un)</th><th></th></tr>`;
+  let h=`<tr><th>SKU</th><th>Produto</th><th class="r" title="preço de 1 unidade na última NF de compra">Custo unitário (NF)</th><th class="r">Comprado (un)</th><th class="r">Vendido (un)</th><th title="fornecedor fixo deste produto — vem preenchido no pedido">Fornecedor</th><th>Telefone</th><th></th></tr>`;
   let any=false, semCusto=0;
   for(const pid of pids){
     const p=S.produtos[pid];
@@ -714,9 +749,10 @@ function renderProdutos(){
       <td class="r num">${p.custo?fmtBRL(p.custo)+'/un':'—'}</td>
       <td class="r num">${fmt(compQ[pid]||0)}</td>
       <td class="r num">${fmt(sai)}</td>
+      <td>${esc(fornDe(pid).nome||'')}${fornDe(pid).vendedor?` <span class="dim">· ${esc(fornDe(pid).vendedor)}</span>`:''}${!fornDe(pid).nome?'<span class="dim">—</span>':''}</td><td class="mono">${esc(fornDe(pid).telefone||'')}</td>
       <td>${p.custo?'':'<span class="chip warn">sem custo na NF — me avise</span>'} <button class="btn sm sec pe-edit" data-pid="${esc(pid)}">editar</button></td></tr>`;
   }
-  if(semCusto) h+=`<tr><td colspan="6" class="dim">${semCusto} produto(s) sem custo de nota — informe o custo unitário ou envie a NF de compra.</td></tr>`;
+  if(semCusto) h+=`<tr><td colspan="8" class="dim">${semCusto} produto(s) sem custo de nota — informe o custo unitário ou envie a NF de compra.</td></tr>`;
   $('tblProdutos').innerHTML=any?h:'<tr><td><div class="empty">Nenhum produto.</div></td></tr>';
 }
 function renderProjecao(){
@@ -919,13 +955,74 @@ async function importVendas(file){
     for(const r of all){ S.vendasRows.push(r); S.vendasIds.add(r.id); }
     render();
     const nPend = Object.keys(S.calc.pend).length;
-    box.innerHTML = `<div class="msg ok"><b>${totalNovas}</b> linha(s) importadas (${nItem} itens, ${nPai} pacotes, ${nCanc} canceladas) · ${nDup} duplicadas ignoradas.${nPend?` <b>${nPend} anúncio(s) sem vínculo</b> — resolva na aba Conferir.`:''}</div>`;
+    box.innerHTML = `<div class="msg ok"><b>${totalNovas}</b> linha(s) importadas (${nItem} itens, ${nPai} pacotes, ${nCanc} canceladas) · ${nDup} duplicadas ignoradas.${nPend?` <b>${nPend} anúncio(s) sem vínculo</b> — resolva na aba Vínculos (bloco 1).`:''}</div>`;
   }catch(err){
     box.innerHTML = `<div class="msg bad">Erro na importação: ${esc(err.message||err)}</div>`;
   }
 }
 
 /* ================= importação de entradas ================= */
+function parseVincCorreto(txt){
+  const out=[], erros=[];
+  for(let part of String(txt||'').split('+')){
+    part=part.trim().toUpperCase(); if(!part) continue;
+    let m;
+    if((m=part.match(/^(\d+)\s*FB?\s*(38X50|50X50)$/))) { out.push({sku:'F'+m[2], fator:+m[1]}); continue; }
+    if((m=part.match(/^([A-Z0-9\-]+)\s*×\s*(\d+(?:[.,]\d+)?)$/))) { out.push({sku:m[1], fator:+m[2].replace(',','.')}); continue; }
+    if((m=part.match(/^(\d+)\s*X\s*([A-Z][A-Z0-9\-]*)$/))) { out.push({sku:m[2], fator:+m[1]}); continue; }
+    if((m=part.match(/^([A-Z]+(?:-\d+)?)\s*X\s*(\d+)$/))) { out.push({sku:m[1], fator:+m[2]}); continue; }
+    if(/^[A-Z][A-Z0-9\-]*$/.test(part)) { out.push({sku:part, fator:1}); continue; }
+    erros.push(part);
+  }
+  return {itens:out, erros};
+}
+async function importVinculosRevisados(file){
+  const box=document.getElementById('impVincRevMsg');
+  if(needDb(box)) return;
+  box.innerHTML='<div class="msg ok">Lendo planilha…</div>';
+  try{
+    const wb = XLSX.read(await file.arrayBuffer(), {type:'array'});
+    const ws = wb.Sheets['por_produto'] || wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws,{header:1,raw:false,defval:''});
+    const hi = rows.findIndex(r=>r.some(c=>/^id an[uú]ncio$/i.test(String(c).trim())));
+    if(hi<0) throw new Error('Não achei a coluna "ID anúncio".');
+    const H = rows[hi].map(x=>String(x).trim().toLowerCase());
+    const f = re => H.findIndex(h=>re.test(h));
+    const c = {st:f(/^status$/), cor:f(/^v[ií]nculo correto$/), an:f(/^id an[uú]ncio$/), sku:f(/^sku an[uú]ncio$/), tit:f(/^t[ií]tulo/)};
+    if(c.cor<0||c.st<0) throw new Error('Faltou a coluna "Vínculo CORRETO" ou "Status".');
+    const upserts=[], skip={naoKK:[], semVinc:[], skuDesc:{}, formato:[]}; let iguais=0, nDesc=0; const descIds=[];
+    const now=new Date().toISOString();
+    for(let i=hi+1;i<rows.length;i++){
+      const r=rows[i]; const an=String(r[c.an]||'').trim(); if(!an) continue;
+      const st=String(r[c.st]||'').trim().toUpperCase(), cor=String(r[c.cor]||'').trim();
+      if(st!=='KK'){ skip.naoKK.push(an+(st?' ('+st+')':'')); continue; }
+      if(!cor){ skip.semVinc.push(an); continue; }
+      if(cor.toUpperCase()==='N'){ const k=seg(an), cur=S.vinculos[k]; if(!S.descont[k]){ descIds.push(k); upserts.push({an_key:k, anuncio:an, titulo:String(r[c.tit]||'').trim()||(cur&&cur.titulo)||'', skuPlat:String(r[c.sku]||'').trim()||(cur&&cur.skuPlat)||'', itens:[], atualizado:now, origem:'planilha revisada'}); } else iguais++; nDesc++; continue; }
+      const {itens,erros}=parseVincCorreto(cor);
+      if(erros.length){ skip.formato.push(an+': '+cor); continue; }
+      const its=[]; let falta=null;
+      for(const it of itens){ const pid=pidBySku(it.sku); if(!pid){ falta=it.sku; break; } its.push({pid, fator:it.fator}); }
+      if(falta){ (skip.skuDesc[falta]=skip.skuDesc[falta]||[]).push(an); continue; }
+      const k=seg(an), cur=S.vinculos[k];
+      const same = cur && cur.itens && cur.itens.length===its.length && its.every((it,j)=>cur.itens[j].pid===it.pid && +cur.itens[j].fator===+it.fator);
+      if(same && S.conferidos[k]){ iguais++; continue; }
+      upserts.push({an_key:k, anuncio:an, titulo:String(r[c.tit]||'').trim()||(cur&&cur.titulo)||'', skuPlat:String(r[c.sku]||'').trim()||(cur&&cur.skuPlat)||'', itens:its, atualizado:now, origem:'planilha revisada'});
+    }
+    box.innerHTML=`<div class="msg ok">Gravando ${upserts.length} vínculo(s)…</div>`;
+    for(let i=0;i<upserts.length;i+=200){ const {error}=await SUPA.from('vinculos').upsert(upserts.slice(i,i+200)); if(error) throw new Error(error.message); }
+    for(const u of upserts) if(!descIds.includes(u.an_key)) S.conferidos[u.an_key]=now;
+    for(const k of descIds){ S.descont[k]=now; delete S.conferidos[k]; }
+    await conferidosWrite(); if(descIds.length) await descontWrite();
+    await loadTable('vinculos'); render();
+    const li=(t,a)=>a.length?`<li><b>${a.length}</b> ${t}: <span class="mono" style="font-size:11px">${esc(a.slice(0,40).join(', '))}${a.length>40?' …':''}</span></li>`:'';
+    const sd=Object.keys(skip.skuDesc);
+    box.innerHTML=`<div class="msg ok"><b>${upserts.length-descIds.length}</b> vínculo(s) gravados e marcados como conferidos · <b>${nDesc}</b> anúncio(s) N = não vende mais (não baixam estoque e não cobram vínculo) · ${iguais} já estavam iguais.</div>
+      ${(skip.naoKK.length||skip.semVinc.length||sd.length||skip.formato.length)?`<div class="msg warn" style="margin-top:6px">Ficaram de fora:<ul style="margin:4px 0 0 18px;padding:0">
+      ${li('sem Status KK',skip.naoKK)}${li('Vínculo CORRETO vazio',skip.semVinc)}${li('formato que não entendi',skip.formato)}
+      ${sd.map(k=>`<li>SKU <b>${esc(k)}</b> não existe no cadastro de produtos — ${skip.skuDesc[k].length} anúncio(s): <span class="mono" style="font-size:11px">${esc(skip.skuDesc[k].slice(0,20).join(', '))}${skip.skuDesc[k].length>20?' …':''}</span></li>`).join('')}
+      </ul></div>`:''}`;
+  }catch(err){ box.innerHTML='<div class="msg bad">Erro: '+esc(err.message||err)+'</div>'; }
+}
 async function importEntradas(file){
   const box={ set innerHTML(v){ for(const id of ['impEntradasMsg','impEntradasMsg2']){ const el=document.getElementById(id); if(el) el.innerHTML=v; } } };
   if(needDb(box)) return;
@@ -1086,6 +1183,8 @@ document.addEventListener('click', async e=>{
       if(abrirNovo){ row.querySelector('.vi-novo').hidden=false; msg.innerHTML='<div class="msg warn">Crie o produto novo aí embaixo primeiro.</div>'; return; }
       if(!itens.length){ msg.innerHTML='<div class="msg bad">Escolha o produto e um fator maior que zero.</div>'; return; }
       const an=row.dataset.an;
+      if(S.conferidos[seg(an)]){ delete S.conferidos[seg(an)]; try{ await conferidosWrite(); }catch(err){} }
+      if(S.descont[seg(an)]){ delete S.descont[seg(an)]; try{ await descontWrite(); }catch(err){} }
       await S.db.doc('vinculos/'+seg(an)).set({anuncio:an, titulo:row.dataset.tit, skuPlat:row.dataset.sku, itens, atualizado:new Date().toISOString()});
       toast('✔ Vínculo salvo — estoque recalculado');
       const nm=document.querySelector('tr.vinc-row[data-an="'+an+'"] .vi-msg'); if(nm) nm.innerHTML='<div class="msg ok">Vínculo salvo — estoque recalculado.</div>';
@@ -1131,8 +1230,8 @@ function baixarTabela(tblId, nome){
 const HELP={
  estoque:'Saldo INDIVIDUAL POR EMPRESA: escolha a empresa no topo e a tabela mostra inicial + entradas − vendas daquela empresa; em Todas aparece a soma do grupo. Pra lançar o estoque inicial de uma empresa, selecione ela no topo e clique no número da coluna Inicial (vira uma entrada Estoque inicial). Clique no custo pra ajustar. Linha vermelha = abaixo do alerta mínimo (Importar → Regras). Saldo negativo = falta lançar inicial ou nota de compra daquela empresa.',
  produtos:'Cadastro dos produtos com o custo da última nota. Clique em "editar" pra mudar nome, unidade, estoque inicial e custo, depois "Salvar" — aparece a confirmação verde embaixo. "Sem custo na NF" = nenhuma nota de compra lançada ainda: me envie o XML da nota ou edite o custo na mão.',
- conferir:'Anúncios que venderam mas ainda não têm vínculo — essas vendas NÃO baixam estoque até você vincular. Escolha o produto e o fator (quantas folhas/pacotes/peças saem por 1 unidade vendida) e clique Salvar. O chip amarelo ⚠ explica por que não teve sugestão automática. O botão ⚡ aplica todas as sugestões 💡 de uma vez.',
- vinculos:'Liga cada anúncio do ML a produto(s) do estoque. Fator = quantas unidades do produto saem por venda (ex.: "200 unid capa+contracapa" = 100 PPC + 100 PPL). A linha 💰 mostra unidade e custo de cada item — sirva pra conferir se o fator está na unidade certa (folhas × pacotes). Depois de alterar, clique Salvar: aparece um aviso verde de confirmação.',
+ conferir:'Bloco 1 — anúncios que venderam mas ainda não têm vínculo — essas vendas NÃO baixam estoque até você vincular. Escolha o produto e o fator (quantas folhas/pacotes/peças saem por 1 unidade vendida) e clique Salvar. O chip amarelo ⚠ explica por que não teve sugestão automática. O botão ⚡ aplica todas as sugestões 💡 de uma vez.',
+ vinculos:'Bloco 2 (a verificar) e bloco 3 (conferidos). Todo vínculo salvo cai no bloco 2; você confere e clica ✔ conferido pra ele descer pro bloco 3. Salvar alteração num conferido devolve ele pro bloco 2; ↩ reabre na mão. Liga cada anúncio do ML a produto(s) do estoque. Fator = quantas unidades do produto saem por venda (ex.: "200 unid capa+contracapa" = 100 PPC + 100 PPL). A linha 💰 mostra unidade e custo de cada item — sirva pra conferir se o fator está na unidade certa (folhas × pacotes). Depois de alterar, clique Salvar: aparece um aviso verde de confirmação.',
  vendas:'Vendas importadas dos relatórios do ML, mês a mês (selecione o mês no topo). "Baixa" mostra quanto saiu de cada produto. Cancelada não baixa; devolução baixa (regras em Importar). Importar o mesmo relatório de novo não duplica nada. O Excel exporta o mês que está na tela.',
  projecao:'Quanto enviar pro ML: compara o ritmo recente de venda com o saldo e calcula o que falta pra cobrir os dias de cobertura alvo. Ajuste a janela recente e a cobertura nos campos acima. Respeita a empresa selecionada no topo.',
  entradas:'Compras e reposições. Lance pelo formulário (pacote fechado = 100 folhas), por planilha na aba Importar, ou me mande o XML da NF-e que eu classifico a empresa e lanço com o custo líquido. Excluir pede a senha.',
@@ -1157,12 +1256,16 @@ document.addEventListener('click', async e=>{
   if(pe){
     const pid=pe.dataset.pid, p=S.produtos[pid]||{};
     const tr=pe.closest('tr');
-    tr.innerHTML=`<td class="mono">${esc(p.sku||pid)}</td><td colspan="5">
+    const fo=fornDe(pid);
+    tr.innerHTML=`<td class="mono">${esc(p.sku||pid)}</td><td colspan="7">
       <div class="frow" style="align-items:flex-end">
         <label class="f">Nome<input type="text" class="pe-nome" value="${esc(p.nome||'')}" style="width:240px"></label>
         <label class="f">Unidade<select class="pe-un"><option value="folhas"${p.unidade==='folhas'?' selected':''}>folhas</option><option value="pacotes"${p.unidade==='pacotes'?' selected':''}>pacotes</option><option value="un"${(!p.unidade||p.unidade==='un')?' selected':''}>unidades</option></select></label>
         <label class="f">Estoque inicial<input type="number" class="pe-ini" step="any" value="${p.inicial||0}" style="width:100px"></label>
         <label class="f">Custo unit. (R$)<input type="number" class="pe-custo" step="any" value="${p.custo||0}" style="width:110px"></label>
+        <label class="f" title="fornecedor fixo: vem preenchido sempre que fizer pedido deste produto">Fornecedor<input type="text" class="pe-forn" value="${esc(fo.nome||'')}" style="width:150px"></label>
+        <label class="f">Vendedor<input type="text" class="pe-vend" value="${esc(fo.vendedor||'')}" style="width:120px"></label>
+        <label class="f">Telefone<input type="text" class="pe-tel" value="${esc(fo.telefone||'')}" placeholder="11999998888" style="width:120px"></label>
         <button class="btn sm pe-save" data-pid="${esc(pid)}">Salvar</button>
         <button class="btn sm sec pe-cancel">Cancelar</button>
       </div></td>`;
@@ -1175,7 +1278,8 @@ document.addEventListener('click', async e=>{
     const tr=ps.closest('tr'), pid=ps.dataset.pid;
     const dados={ nome:tr.querySelector('.pe-nome').value.trim(), unidade:tr.querySelector('.pe-un').value, inicial:Number(tr.querySelector('.pe-ini').value)||0, custo:Number(tr.querySelector('.pe-custo').value)||0 };
     ps.disabled=true; ps.textContent='salvando…';
-    try{ await S.db.doc('produtos/'+pid).update(dados); toast('✔ Produto '+((S.produtos[pid]||{}).sku||pid)+' salvo'); }
+    const fdat={nome:tr.querySelector('.pe-forn').value, vendedor:tr.querySelector('.pe-vend').value, telefone:tr.querySelector('.pe-tel').value};
+    try{ await fornWrite(pid,fdat); await S.db.doc('produtos/'+pid).update(dados); toast('✔ Produto '+((S.produtos[pid]||{}).sku||pid)+' salvo'); }
     catch(err){ toast('✖ erro ao salvar: '+(err.message||err)); renderProdutos(); }
     return;
   }
@@ -1216,6 +1320,25 @@ async function pedWrite(id,p){
 }
 async function loadPedidos(){
   if(typeof SUPA!=='undefined' && SUPA){ const {data,error}=await SUPA.from('config').select('*').like('k','pedido:%'); if(!error){ S.pedidos={}; (data||[]).forEach(r=>S.pedidos[r.k.slice(7)]=r.v); } }
+  await loadForn(); await loadConferidos();
+}
+/* fornecedor cadastrado por produto (nome, vendedor, telefone) — guardado em config k='forn:<pid>' */
+S.forn = S.forn || {};
+async function loadForn(){
+  if(typeof SUPA!=='undefined' && SUPA){ const {data,error}=await SUPA.from('config').select('*').like('k','forn:%'); if(!error){ S.forn={}; (data||[]).forEach(r=>S.forn[r.k.slice(5)]=r.v||{}); } }
+}
+async function fornWrite(pid,f){
+  const v={nome:(f.nome||'').trim(), vendedor:(f.vendedor||'').trim(), telefone:(f.telefone||'').trim()};
+  if(typeof SUPA!=='undefined' && SUPA){ const {error}=await SUPA.from('config').upsert({k:'forn:'+pid, v}); if(error) throw new Error(error.message); }
+  else { await S.db.doc('forn/'+pid).set(v); }
+  S.forn[pid]=v;
+}
+function fornDe(pid){ return S.forn[pid]||{}; }
+function saudacao(){ const h=new Date().getHours(); return h<12?'bom dia':(h<18?'boa tarde':'boa noite'); }
+function pedQtdTxt(p){ const pr=S.produtos[p.pid]||{}; const q=p.qtd_aprovada!=null?p.qtd_aprovada:p.qtd; let t=`${fmt(q)} ${pr.unidade||'un'}`; if(pr.unidade==='folhas') t+=` (${fmt(q/100)} pacote${q/100===1?'':'s'})`; return t; }
+function pedGrupoTexto(nomeForn, lista){
+  const linhas=lista.map(p=>{ const pr=S.produtos[p.pid]||{}; return `- ${pedQtdTxt(p)} de ${pr.nome||pr.sku||p.pid}${pr.sku&&pr.nome?` (${pr.sku})`:''}`; });
+  return `Oi, ${saudacao()}, tudo bem? Gostaria de fazer um pedido:\n${linhas.join('\n')}\nObrigado!`;
 }
 function saiPorEmp(pid){
   const out={}; const ref=S.calc&&S.calc.refD; if(!ref) return out;
@@ -1250,13 +1373,16 @@ function reguaDe(pid){
 function reguaHTML(pid){
   const p=S.produtos[pid]; if(!p) return '';
   const r=reguaDe(pid);
-  let h=`<div style="margin-top:10px;font-size:12.5px"><b>Régua da reposição — ${esc(p.sku)}</b> · saldo do grupo ${fmt(r.saldo)} ${esc(p.unidade||'un')}${p.unidade==='folhas'?` <b>(${fmt(r.saldo/100)} pct)</b>`:''} · lead 7 dias úteis + cobertura ${PED_ALVO} dias<table style="margin-top:6px;width:100%"><tr><th>Empresa</th><th class="r">saldo</th><th class="r">sai/dia</th><th class="r">já pedido</th><th class="r">cobertura</th><th class="r">quanto comprar</th><th>situação</th><th></th></tr>`;
+  const fl=p.unidade==='folhas';
+  const dois=v=>fl?`<b>${fmt(v)}</b> folhas <span class="dim">·</span> <b>${fmt(v/100)}</b> pct`:`<b>${fmt(v)}</b> ${esc(p.unidade||'un')}`;
+  const total=r.linhas.reduce((t,l)=>t+l.comprar,0);
+  let h=`<div style="margin-top:10px;font-size:12.5px"><b>Régua da reposição — ${esc(p.sku)}</b> · saldo do grupo ${dois(r.saldo)}<table style="margin-top:6px;width:100%"><tr><th>Empresa</th><th class="r">saldo</th><th class="r">já pedido</th><th class="r">quanto comprar (deve)</th><th>situação</th><th></th></tr>`;
   for(const l of r.linhas){
-    const _fl=p.unidade==='folhas';
-    const _pc=v=>_fl?`<div class="dim" style="font-size:11px;font-weight:400">${fmt(v/100)} pct</div>`:'';
-    h+=`<tr><td>${esc(l.emp)}</td><td class="r num ${l.aloc<0?'neg':''}"><div>${fmt(l.aloc)}</div>${_pc(l.aloc)}</td><td class="r num">${fmt(l.sd)}</td><td class="r num"><div>${fmt(l.jp)}</div>${l.jp?_pc(l.jp):''}</td><td class="r num">${l.cob===Infinity?'—':fmt(l.cob)+' d'}</td><td class="r num"><b>${l.comprar?fmt(l.comprar):'—'}</b>${l.comprar?_pc(l.comprar):''}</td><td><span style="color:${l.cor}">●</span> ${esc(l.sit)}</td><td>${l.comprar?`<button class="btn sm sec pd-usar" data-emp="${esc(l.emp)}" data-q="${l.comprar}">usar</button>`:''}</td></tr>`;
+    h+=`<tr><td>${esc(l.emp)}</td><td class="r num ${l.aloc<0?'neg':''}">${dois(l.aloc)}</td><td class="r num">${l.jp?dois(l.jp):'—'}</td><td class="r num">${l.comprar?dois(l.comprar):'—'}</td><td><span style="color:${l.cor}">●</span> ${esc(l.sit)}</td><td>${l.comprar?`<button class="btn sm sec pd-usar" data-emp="${esc(l.emp)}" data-q="${l.comprar}">usar</button>`:''}</td></tr>`;
   }
-  return h+'</table><div class="dim" style="margin-top:4px;font-size:11.5px">saldo individual por empresa: estoque inicial da empresa + entradas dela − vendas dela'+(p.unidade==='folhas'?' · número de cima em folhas, embaixo em pacotes fechados (100 folhas = 1 pct)':' · produto em '+(p.unidade||'un')+' — não tem pacote fechado')+'</div></div>';
+  const partes=r.linhas.filter(l=>l.comprar>0).map(l=>`${esc(l.emp)} ${fl?fmt(l.comprar/100)+' pct':fmt(l.comprar)+' '+esc(p.unidade||'un')}`).join(' · ');
+  h+=`<tr style="background:var(--surface2)"><td><b>Pedido total</b></td><td></td><td></td><td class="r num">${total?dois(total):'—'}</td><td colspan="2" class="dim" style="font-size:12px">${total?'cada uma deve: '+partes:'nenhuma empresa precisa comprar agora'}</td></tr>`;
+  return h+'</table><div class="dim" style="margin-top:4px;font-size:11.5px">saldo por empresa = estoque inicial dela + entradas dela − vendas dela · quanto comprar = o que falta pra cobrir lead 7 dias úteis + '+PED_ALVO+' dias no ritmo atual'+(fl?' · 100 folhas = 1 pacote fechado':' · produto em '+(p.unidade||'un')+' — não tem pacote fechado')+'</div></div>';
 }
 function pctHTML(pid,v){ const u=(S.produtos[pid]||{}).unidade; if(u!=='folhas'||!v) return ''; return `<div class="dim" style="font-size:11px;font-weight:400">${fmt(v/100)} pct</div>`; }
 function renderPedidos(){
@@ -1269,6 +1395,17 @@ function renderPedidos(){
   const bp=document.getElementById('bPed'); if(bp) bp.textContent=pend.length||'';
   const sub=document.getElementById('pedSub'); if(sub) sub.textContent=pend.length?`${pend.length} pedido(s) esperando decisão — só aprovado vira estoque`:'';
   const t=document.getElementById('tblPedPend'); if(!t) return;
+  const ban=document.getElementById('pedBanner');
+  if(ban){
+    const ua=S.ultimoAprovado&&S.pedidos[S.ultimoAprovado.id]&&(Date.now()-S.ultimoAprovado.quando<10*60*1000)?S.pedidos[S.ultimoAprovado.id]:null;
+    if(ua){ const sku=S.produtos[ua.pid]?.sku||ua.pid; ban.innerHTML=`<div class="msg ok" style="font-size:14px;padding:12px 14px;border-left:5px solid #1a7f37"><b>✅ PEDIDO APROVADO</b> — ${pedQtdTxt(ua)} de <b>${esc(sku)}</b> (${esc(ua.empresa||'')})${ua.fornecedor?` · fornecedor <b>${esc(ua.fornecedor)}</b>`:''}. Entrada lançada no estoque. <button class="btn sm sec" data-goto="aprovados" style="margin-left:8px">ver em Aprovados → copiar pedido</button> <button class="btn sm sec ped-ban-x" title="fechar">×</button></div>`; }
+    else ban.innerHTML='';
+  }
+  const ult=document.getElementById('pedUltimas');
+  if(ult){
+    const dec=Object.entries(S.pedidos).filter(([,p])=>p.status==='aprovado'||p.status==='recusado').sort((a,b)=>(b[1].decidido_em||'').localeCompare(a[1].decidido_em||'')).slice(0,6);
+    ult.innerHTML=dec.length?`<div class="dim" style="font-size:12px;margin-top:10px">Últimas decisões: ${dec.map(([id,p])=>{ const sku=S.produtos[p.pid]?.sku||p.pid; return `<span class="chip ${p.status==='aprovado'?'ok':'bad'}" title="${esc(fmtData((p.decidido_em||'').slice(0,10)))} · ${esc(p.empresa||'')}">${p.status==='aprovado'?'✅':'✖'} ${esc(sku)} ${fmt(p.qtd_aprovada!=null?p.qtd_aprovada:p.qtd)}</span>`; }).join(' ')}</div>`:'';
+  }
   if(!pend.length){ t.innerHTML='<tr><td><div class="empty"><b>Nenhum pedido pendente.</b><br>Crie um acima, ou use ⚡ Gerar pedidos pra régua sugerir sozinha.</div></td></tr>'; }
   else{
     let h='<tr><th>Pedido em</th><th>SKU</th><th class="r">Qtd</th><th>Empresa</th><th>Solicitante</th><th>Obs</th><th></th></tr>';
@@ -1278,10 +1415,11 @@ function renderPedidos(){
         <td style="white-space:nowrap"><button class="btn sm pd-aprov">Aprovar</button> <button class="btn sm sec pd-recusa">Recusar</button></td></tr>
         <tr class="pd-form" data-pedid="${esc(id)}" hidden><td colspan="7"><div class="frow" style="background:var(--surface2);border-radius:6px;padding:10px">
           <label class="f">Qtd aprovada<input type="number" class="pa-qtd" step="any" value="${p.qtd}" style="width:100px">${pctHTML(p.pid,p.qtd)}</label>
-          <label class="f">Fornecedor<input type="text" class="pa-forn" style="width:130px"></label>
-          <label class="f">Vendedor<input type="text" class="pa-vend" style="width:120px"></label>
-          <label class="f">Telefone<input type="text" class="pa-tel" style="width:120px"></label>
+          <label class="f">Fornecedor<input type="text" class="pa-forn" value="${esc(fornDe(p.pid).nome||'')}" style="width:130px"></label>
+          <label class="f">Vendedor<input type="text" class="pa-vend" value="${esc(fornDe(p.pid).vendedor||'')}" style="width:120px"></label>
+          <label class="f">Telefone<input type="text" class="pa-tel" value="${esc(fornDe(p.pid).telefone||'')}" style="width:120px"></label>
           <label class="f">Aprovado por<input type="text" class="pa-por" value="Kenni" style="width:100px"></label>
+          <label class="tog" style="font-size:12px" title="grava fornecedor/vendedor/telefone no cadastro do produto — nos próximos pedidos já vem preenchido"><input type="checkbox" class="pa-fixar" checked> fixar fornecedor no produto</label>
           <button class="btn sm pd-aprov-ok">✔ Confirmar aprovação</button>
         </div><div class="pd-msg"></div></td></tr>`;
     }
@@ -1289,24 +1427,55 @@ function renderPedidos(){
   }
   const rg=document.getElementById('pdRegua'); if(rg&&selEl.value&&S.ready) rg.innerHTML=reguaHTML(selEl.value);
 }
+function renderApGrupos(){
+  const box=document.getElementById('apGrupos'); if(!box) return;
+  const sub=document.getElementById('apGrpSub');
+  const aFazer=Object.entries(S.pedidos).filter(([,p])=>p.status==='aprovado'&&!p.enviado_em).sort((a,b)=>(a[1].decidido_em||'').localeCompare(b[1].decidido_em||''));
+  if(!aFazer.length){ box.innerHTML='<div class="empty"><b>Nada a mandar.</b> Todo pedido aprovado já foi copiado/enviado.</div>'; if(sub) sub.textContent=''; return; }
+  const grupos={};
+  for(const [id,p] of aFazer){ const f=(p.fornecedor||fornDe(p.pid).nome||'').trim(); const k=f||'(sem fornecedor)'; (grupos[k]=grupos[k]||[]).push(Object.assign({_id:id},p)); }
+  if(sub) sub.textContent=`${aFazer.length} pedido(s) em ${Object.keys(grupos).length} fornecedor(es)`;
+  let h='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:10px">';
+  for(const k of Object.keys(grupos).sort()){
+    const lista=grupos[k];
+    const tel=(lista.map(p=>p.telefone||fornDe(p.pid).telefone||'').find(x=>x)||'').replace(/\D/g,'');
+    const vend=lista.map(p=>p.vendedor||fornDe(p.pid).vendedor||'').find(x=>x)||'';
+    const txt=pedGrupoTexto(k,lista);
+    const ids=lista.map(p=>p._id).join(',');
+    h+=`<div style="background:var(--surface2);border-radius:8px;padding:12px;border:1px solid var(--line)">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><div><b style="font-size:15px">${esc(k)}</b>${vend?` <span class="dim">· ${esc(vend)}</span>`:''}${tel?` <span class="mono dim">· ${esc(tel)}</span>`:''}</div><span class="chip ok">${lista.length} item(ns)</span></div>
+      <ul style="margin:8px 0 10px 18px;padding:0;font-size:13px">${lista.map(p=>{ const pr=S.produtos[p.pid]||{}; return `<li>${pedQtdTxt(p)} de ${esc(pr.nome||pr.sku||p.pid)} <span class="dim">(${esc(pr.sku||'')} · ${esc(p.empresa||'')})</span></li>`; }).join('')}</ul>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><button class="btn sm ap-grp-copy" data-ids="${esc(ids)}" data-txt="${esc(txt)}">📋 copiar pedido de ${esc(k)}</button>${tel?`<a class="btn sm sec ap-grp-wa" data-ids="${esc(ids)}" target="_blank" href="https://wa.me/55${tel}?text=${encodeURIComponent(txt)}">WhatsApp</a>`:''}<button class="btn sm sec ap-grp-ver" title="ver o texto">ver texto</button></div>
+      <pre class="ap-grp-txt" hidden style="white-space:pre-wrap;font-family:inherit;font-size:12.5px;margin:8px 0 0;background:var(--surface);padding:8px;border-radius:6px">${esc(txt)}</pre>
+    </div>`;
+  }
+  box.innerHTML=h+'</div>';
+}
+async function marcarEnviados(ids){
+  const now=new Date().toISOString();
+  for(const id of ids){ const p=S.pedidos[id]; if(!p||p.enviado_em) continue; if(typeof SUPA!=='undefined'&&SUPA){ await SUPA.from('config').upsert({k:'pedido:'+id, v:Object.assign({},p,{enviado_em:now})}); } else { await S.db.doc('pedidos/'+id).set(Object.assign({},p,{enviado_em:now})); } S.pedidos[id]=Object.assign({},p,{enviado_em:now}); }
+  render();
+}
 function renderAprovados(){
+  renderApGrupos();
   const t=document.getElementById('tblAprov'); if(!t) return;
   const incRec=document.getElementById('apRec')&&document.getElementById('apRec').checked;
   const rows=Object.entries(S.pedidos).filter(([,p])=>p.status==='aprovado'||(incRec&&p.status==='recusado')).sort((a,b)=>(b[1].decidido_em||'').localeCompare(a[1].decidido_em||''));
   if(!rows.length){ t.innerHTML='<tr><td><div class="empty"><b>Nenhum pedido aprovado ainda.</b><br>Aprove na aba Pedidos — o aprovado lança a entrada no estoque e aparece aqui.</div></td></tr>'; return; }
-  let h='<tr><th>Decidido</th><th>Status</th><th>SKU</th><th class="r">Pedida → aprovada</th><th>Empresa</th><th>Solicitante</th><th>Fornecedor</th><th>Vendedor</th><th>Telefone</th><th></th></tr>';
+  let h='<tr><th>Decidido</th><th>Status</th><th>SKU</th><th class="r">Pedida → aprovada</th><th>Empresa</th><th>Solicitante</th><th>Fornecedor</th><th>Vendedor</th><th>Telefone</th><th>Mandado</th><th></th></tr>';
   for(const [id,p] of rows){
     const sku=S.produtos[p.pid]?.sku||p.pid;
     const chip=p.status==='aprovado'?'<span class="chip ok">aprovado</span>':'<span class="chip bad">recusado</span>';
     h+=`<tr data-pedid="${esc(id)}"><td class="num">${fmtData((p.decidido_em||'').slice(0,10))}</td><td>${chip}</td><td class="mono">${esc(sku)}</td><td class="r num"><div>${fmt(p.qtd)} → <b>${fmt(p.qtd_aprovada!=null?p.qtd_aprovada:p.qtd)}</b></div>${pctHTML(p.pid,p.qtd_aprovada!=null?p.qtd_aprovada:p.qtd)}</td><td>${esc(p.empresa||'')}</td><td>${esc(p.solicitante||'')}</td><td>${esc(p.fornecedor||'')}</td><td>${esc(p.vendedor||'')}</td><td class="mono">${esc(p.telefone||'')}</td>
-      <td>${p.status==='aprovado'?'<button class="btn sm sec ap-msg">✉ mensagem</button>':''}</td></tr>`;
+      <td>${p.status==='aprovado'?(p.enviado_em?`<span class="chip ok" title="${esc(p.enviado_em)}">✉ ${esc(fmtData(p.enviado_em.slice(0,10)))}</span> <button class="btn sm sec ap-reabrir" title="volta pra lista de pedidos a mandar">↩</button>`:'<span class="chip warn">a mandar</span>'):''}</td>
+      <td>${p.status==='aprovado'?'<button class="btn sm sec ap-msg">✉ só este</button>':''}</td></tr>`;
   }
   t.innerHTML=h;
 }
 function pedMsgTexto(p){
   const pr=S.produtos[p.pid]||{};
   const nome=pr.nome||pr.sku||p.pid;
-  return `Olá, boa tarde, tudo bem? Gostaria de fazer um pedido: ${fmt(p.qtd_aprovada!=null?p.qtd_aprovada:p.qtd)} ${pr.unidade||'un'} de ${nome}. Obrigado!`;
+  return `Oi, ${saudacao()}, tudo bem? Gostaria de fazer um pedido: ${pedQtdTxt(p)} de ${nome}. Obrigado!`;
 }
 document.addEventListener('click', async e=>{
   const us=e.target.closest('.pd-usar');
@@ -1358,9 +1527,12 @@ document.addEventListener('click', async e=>{
     try{
       const hoje=new Date().toISOString().slice(0,10);
       await S.db.collection('entradas').add({pid:p.pid, qtd:qa, empresa:p.empresa, data:hoje, forn:forn||'Pedido', nf:'', obs:`Pedido de ${p.solicitante} · aprovado por ${por}${vend?' · vendedor '+vend:''}${tel?' · tel '+tel:''} (→ ${p.empresa})`, criado:new Date().toISOString()});
+      const fixar=tr.querySelector('.pa-fixar')&&tr.querySelector('.pa-fixar').checked;
+      if(fixar && (forn||vend||tel)){ const cur=fornDe(p.pid); if(cur.nome!==forn||cur.vendedor!==vend||cur.telefone!==tel) await fornWrite(p.pid,{nome:forn,vendedor:vend,telefone:tel}); }
+      S.ultimoAprovado={id, quando:Date.now()};
       await pedWrite(id,Object.assign({},p,{status:'aprovado', qtd_aprovada:qa, fornecedor:forn, vendedor:vend, telefone:tel, aprovado_por:por, decidido_em:new Date().toISOString()}));
       slackAvisa(`✅ Pedido APROVADO — ${fmt(qa)} × ${(S.produtos[p.pid]||{}).sku||p.pid} (${p.empresa}) · por ${por}`);
-      toast('✅ Aprovado — entrada lançada no estoque');
+      toast('✅ APROVADO — entrada lançada no estoque');
     }catch(err){ if(msg) msg.innerHTML='<div class="msg bad">Erro: '+esc(err.message||err)+'</div>'; ok.disabled=false; ok.textContent='✔ Confirmar aprovação'; }
     return;
   }
@@ -1380,10 +1552,29 @@ document.addEventListener('click', async e=>{
     const txt=pedMsgTexto(p);
     const tel=(p.telefone||'').replace(/\D/g,'');
     box=document.createElement('tr'); box.className='ap-msg-row';
-    box.innerHTML=`<td colspan="10"><div style="background:var(--surface2);border-radius:6px;padding:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span>${esc(txt)}</span><button class="btn sm ap-copy">copiar</button>${tel?`<a class="btn sm sec" target="_blank" href="https://wa.me/55${tel}?text=${encodeURIComponent(txt)}">WhatsApp</a>`:''}</div></td>`;
+    box.innerHTML=`<td colspan="11"><div style="background:var(--surface2);border-radius:6px;padding:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span>${esc(txt)}</span><button class="btn sm ap-copy">copiar</button>${tel?`<a class="btn sm sec" target="_blank" href="https://wa.me/55${tel}?text=${encodeURIComponent(txt)}">WhatsApp</a>`:''}</div></td>`;
     tr.after(box);
     return;
   }
+  const gc=e.target.closest('.ap-grp-copy');
+  if(gc){ const txt=gc.dataset.txt, ids=gc.dataset.ids.split(',').filter(Boolean); let okc=true; try{ await navigator.clipboard.writeText(txt); }catch(err){ okc=false; }
+    if(!okc){ const pre=gc.closest('div').parentElement.querySelector('.ap-grp-txt'); if(pre){ pre.hidden=false; const r=document.createRange(); r.selectNodeContents(pre); const sel=getSelection(); sel.removeAllRanges(); sel.addRange(r); } toast('não deu pra copiar sozinho — texto selecionado, use Cmd/Ctrl+C'); return; }
+    toast(`📋 copiado — ${ids.length} item(ns) marcados como mandados`); if(!needDb()) await marcarEnviados(ids); return; }
+  const gw=e.target.closest('.ap-grp-wa');
+  if(gw){ const ids=gw.dataset.ids.split(',').filter(Boolean); setTimeout(()=>{ if(!needDb()) marcarEnviados(ids); },800); return; }
+  const gv=e.target.closest('.ap-grp-ver');
+  if(gv){ const pre=gv.closest('div').parentElement.querySelector('.ap-grp-txt'); if(pre) pre.hidden=!pre.hidden; return; }
+  const rb=e.target.closest('.ap-reabrir');
+  if(rb){ const id=rb.closest('tr').dataset.pedid; const p=S.pedidos[id]; if(!p||needDb()) return; const np=Object.assign({},p); delete np.enviado_em; await pedWrite(id,np); toast('↩ voltou pra lista de pedidos a mandar'); return; }
+  if(e.target.closest('.ped-ban-x')){ S.ultimoAprovado=null; renderPedidos(); return; }
+  const vc=e.target.closest('.vi-conferido');
+  if(vc){ if(needDb()) return; const k=vc.closest('tr').dataset.key; S.conferidos[k]=new Date().toISOString(); vc.disabled=true; vc.textContent='…'; try{ await conferidosWrite(); toast('✔ conferido — desceu pro bloco 3'); }catch(err){ delete S.conferidos[k]; toast('✖ erro: '+(err.message||err)); } renderVinculos(); return; }
+  const rv=e.target.closest('.vi-reativar');
+  if(rv){ if(needDb()) return; const k=rv.closest('tr').dataset.key; delete S.descont[k]; await descontWrite(); await S.db.doc('vinculos/'+k).delete(); toast('reativado — volta pra lista sem vínculo se tiver venda'); return; }
+  const vr=e.target.closest('.vi-reabrir');
+  if(vr){ if(needDb()) return; const k=vr.closest('tr').dataset.key; delete S.conferidos[k]; try{ await conferidosWrite(); toast('↩ voltou pra lista a verificar'); }catch(err){ toast('✖ erro: '+(err.message||err)); } renderVinculos(); return; }
+  const gt=e.target.closest('[data-goto]');
+  if(gt){ const b=document.querySelector(`.tab[data-t="${gt.dataset.goto}"]`); if(b) b.click(); return; }
   const cp=e.target.closest('.ap-copy');
   if(cp){ const txt=cp.closest('div').querySelector('span').textContent; try{ await navigator.clipboard.writeText(txt); toast('mensagem copiada'); }catch(err){ cp.textContent='selecione o texto e copie'; } return; }
 });
@@ -1396,9 +1587,10 @@ try{ const cs=document.getElementById('cfgSlack'); if(cs) cs.value=localStorage.
 
 hookDrop('dropVendas','fileVendas',importVendas);
 hookDrop('dropEntradas','fileEntradas',importEntradas);
-HELP.pedidos='Ciclo: o pedido nasce Pendente (manual ou pela sugestão ⚡) e só vira estoque quando alguém APROVA. Ao escolher o produto aparece a régua da reposição por empresa: sai/dia, já pedido, cobertura e quanto comprar (lead de 7 dias úteis + cobertura de 30 dias; vermelho = urgente, laranja = atenção, verde = ok, cinza = sem giro; o botão usar preenche a quantidade). Pendente conta no já pedido da régua pra não pedir duas vezes, mas NÃO soma no estoque. No Aprovar dá pra ajustar a quantidade e preencher fornecedor, vendedor e telefone. Recusar não mexe em nada. Regra de ouro: nada vira estoque sem decisão humana.';
-HELP.aprovados='Histórico das decisões. Pedido APROVADO já lançou a entrada no estoque na data da decisão, com origem "Pedido de <solicitante>" — vale a quantidade aprovada (pode ser diferente da pedida). O botão ✉ mensagem monta o texto pronto pro fornecedor, com copiar e WhatsApp se tiver telefone. Marque mostrar recusados pra ver também o que foi negado.';
+HELP.pedidos='Ciclo: o pedido nasce Pendente (manual ou pela sugestão ⚡) e só vira estoque quando alguém APROVA. Ao escolher o produto aparece a régua da reposição por empresa: sai/dia, já pedido, cobertura e quanto comprar (lead de 7 dias úteis + cobertura de 30 dias; vermelho = urgente, laranja = atenção, verde = ok, cinza = sem giro; o botão usar preenche a quantidade). Pendente conta no já pedido da régua pra não pedir duas vezes, mas NÃO soma no estoque. No Aprovar dá pra ajustar a quantidade; fornecedor, vendedor e telefone já vêm do cadastro do produto (aba Produtos → editar) e, com "fixar fornecedor no produto" marcado, o que você digitar fica gravado pros próximos pedidos. Depois de aprovar aparece a faixa verde PEDIDO APROVADO e o pedido vai pra aba Aprovados, na lista "a mandar". Recusar não mexe em nada. Regra de ouro: nada vira estoque sem decisão humana.';
+HELP.aprovados='Histórico das decisões. Pedido APROVADO já lançou a entrada no estoque na data da decisão, com origem "Pedido de <solicitante>" — vale a quantidade aprovada (pode ser diferente da pedida). Em cima, "Pedidos a mandar — por fornecedor": um cartão por fornecedor com todos os produtos aprovados que ainda não foram mandados; o botão copiar pega a mensagem inteira ("Oi, bom dia, tudo bem? Gostaria de fazer um pedido: …" com a lista) e marca os itens como mandados (coluna Mandado; ↩ desfaz). WhatsApp abre a conversa se tiver telefone. O ✉ só este manda um item sozinho. Marque mostrar recusados pra ver também o que foi negado.';
 hookDrop('dropEntradas2','fileEntradas2',importEntradas);
+hookDrop('dropVincRev','fileVincRev',importVinculosRevisados);
 
 
 $('btnAplicarSug').addEventListener('click', async e=>{
