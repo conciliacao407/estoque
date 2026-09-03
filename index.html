@@ -273,6 +273,11 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
       <p class="note">Fica salvo só neste navegador. Antes, rode o arquivo <b>estoque_supabase.sql</b> no SQL Editor do projeto (cria as tabelas).</p>
     </div>
   </div>
+    <div class="card">
+    <div class="card-h"><h2>Histórico de importações — o que já foi lançado</h2>
+      <div class="sp"><button class="btn sm sec xls" data-tbl="tblHistImp" data-nome="historico_importacoes" title="baixar em Excel">⬇ Excel</button><button class="btn sm sec ajuda" data-help="historico" title="como usar">?</button></div></div>
+    <div class="tbl-wrap"><table id="tblHistImp"></table></div>
+  </div>
   <div class="card">
     <div class="card-h"><h2>Regras</h2></div>
     <div class="card-b" id="regrasBox">
@@ -442,7 +447,7 @@ function render(){
   compute();
   const nPend = Object.keys(S.calc.pend).length;
   $('bPend').textContent = nPend||'';
-  renderEstoque(); renderProdutos(); renderConferir(); renderVinculos(); renderVendas(); renderProjecao(); renderEntradas();
+  renderEstoque(); renderProdutos(); renderConferir(); renderVinculos(); renderVendas(); renderProjecao(); renderEntradas(); renderHistImp();
   $('limiarTxt').textContent = fmt(S.cfg.limiar);
 }
 function saldoDe(pid){
@@ -1096,6 +1101,29 @@ document.addEventListener('click', async e=>{
     return;
   }
 });
+
+
+/* ===== histórico de importações ===== */
+HELP.historico='Resumo do que já foi importado, por empresa: cada coluna é um mês e o número diz quantas vendas (linha "vendas") ou itens de nota (linha "notas") entraram naquele mês. "Período lançado" vai do primeiro ao último mês com dados — se uma empresa para num mês, falta importar o relatório dali pra frente. Célula com — = nada lançado naquele mês.';
+function renderHistImp(){
+  const t=document.getElementById('tblHistImp'); if(!t) return;
+  const vend={}, ent={};
+  for(const r of S.vendasRows){ if(!r.mes) continue; const e=r.emp||'(sem empresa)'; (vend[e]=vend[e]||{})[r.mes]=(vend[e][r.mes]||0)+1; }
+  for(const e of S.entradas){ const em=empDe(e)||'(sem empresa)'; const mk=(e.data||'').slice(0,7); if(!/^\d{4}-\d{2}$/.test(mk)) continue; (ent[em]=ent[em]||{})[mk]=(ent[em][mk]||0)+1; }
+  const todos=[...new Set([].concat(...Object.values(vend).map(o=>Object.keys(o)), ...Object.values(ent).map(o=>Object.keys(o))))].sort();
+  if(!todos.length){ t.innerHTML='<tr><td><div class="empty">Nada importado ainda.</div></td></tr>'; return; }
+  const emps=[...new Set([...Object.keys(vend),...Object.keys(ent)])].sort();
+  let h='<tr><th></th><th>Empresa</th>'+todos.map(m=>`<th class="r">${fmtMes(m)}</th>`).join('')+'<th class="r">Total</th><th>Período lançado</th></tr>';
+  const linha=(rot,e,obj,unid)=>{
+    const ms=todos.map(m=>obj[e]&&obj[e][m]?`<td class="r num">${fmt(obj[e][m])}</td>`:'<td class="r dim">—</td>').join('');
+    const ks=Object.keys(obj[e]).sort();
+    const tot=ks.reduce((s,k)=>s+obj[e][k],0);
+    return `<tr><td class="dim">${rot}</td><td><b>${esc(e)}</b></td>${ms}<td class="r num">${fmt(tot)}</td><td>${fmtMes(ks[0])} → ${fmtMes(ks[ks.length-1])} <span class="dim">(${fmt(tot)} ${unid})</span></td></tr>`;
+  };
+  for(const e of emps) if(vend[e]) h+=linha('vendas',e,vend,'vendas');
+  for(const e of emps) if(ent[e]) h+=linha('notas',e,ent,'itens de NF');
+  t.innerHTML=h;
+}
 
 hookDrop('dropVendas','fileVendas',importVendas);
 hookDrop('dropEntradas','fileEntradas',importEntradas);
