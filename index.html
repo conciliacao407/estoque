@@ -185,21 +185,21 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
       <div class="sp"><button class="btn sm" id="btnAplicarSug" hidden></button><button class="btn sm sec xls" data-tbl="tblPend" data-nome="sem_vinculo" title="baixar em Excel">⬇ Excel</button><button class="btn sm sec ajuda" data-help="conferir" title="como usar">?</button></div></div>
     <div class="tbl-wrap"><table id="tblPend"></table></div>
   </div>
-  <p class="note">Vendas desses anúncios ainda não baixam estoque. Vincule o produto e defina o fator (quantidade de folhas/pacotes por unidade vendida) — a baixa é recalculada de todo o histórico na hora. Depois de salvar, o vínculo desce pra lista "a verificar".</p>
+  <p class="note">Vendas desses anúncios ainda não baixam estoque. Vincule o produto e defina o fator (quantidade de folhas/pacotes por unidade vendida) — a baixa é recalculada de todo o histórico na hora. Depois de salvar, o vínculo já vai direto pro bloco 3 (conferidos).</p>
   <div class="card">
     <div class="card-h"><h2>2 · Vínculos a verificar</h2><span class="dim" id="vincSub"></span>
       <div class="sp"><input type="text" id="qVinc" placeholder="buscar anúncio, SKU ou título…"><button class="btn sm sec xls" data-tbl="tblVinc" data-nome="vinculos_a_verificar" title="baixar em Excel">⬇ Excel</button><button class="btn sm sec ajuda" data-help="vinculos" title="como usar">?</button></div>
     </div>
     <div class="tbl-wrap"><table id="tblVinc"></table></div>
   </div>
-  <p class="note">Confira produto e fator de cada um. Quando estiver certo, clique <b>✔ conferido</b> — ele desce pro bloco de conferidos e sai daqui.</p>
+  <p class="note">Aqui ficam os vínculos que entraram sem passar por você (sugestão ⚡ ou antigos). Confira produto e fator: <b>Salvar</b> ou <b>✔ conferido</b> mandam pro bloco 3 e tiram daqui.</p>
   <div class="card">
     <div class="card-h"><h2>3 · Conferidos — já estão corretos</h2><span class="dim" id="vincOkSub"></span>
       <div class="sp"><button class="btn sm sec xls" data-tbl="tblVincOk" data-nome="vinculos_conferidos" title="baixar em Excel">⬇ Excel</button></div>
     </div>
     <div class="tbl-wrap"><table id="tblVincOk"></table></div>
   </div>
-  <p class="note">Vínculos que você já conferiu. Se salvar uma alteração num deles, volta pra lista "a verificar". O ↩ reabre na mão.</p>
+  <p class="note">Vínculos que você já conferiu (e os anúncios que não vende mais). Salvar alteração aqui continua conferido. O ↩ manda de volta pro bloco 2.</p>
 </section>
 
 <section id="s-vendas" hidden>
@@ -988,16 +988,21 @@ async function importVinculosRevisados(file){
     if(hi<0) throw new Error('Não achei a coluna "ID anúncio".');
     const H = rows[hi].map(x=>String(x).trim().toLowerCase());
     const f = re => H.findIndex(h=>re.test(h));
-    const c = {st:f(/^status$/), cor:f(/^v[ií]nculo correto$/), an:f(/^id an[uú]ncio$/), sku:f(/^sku an[uú]ncio$/), tit:f(/^t[ií]tulo/)};
+    const c = {st:f(/^status$/), cor:f(/^v[ií]nculo correto$/), pad:f(/^v[ií]nculo \(formato padr[aã]o\)$/), chk:f(/^check claude$/), an:f(/^id an[uú]ncio$/), sku:f(/^sku an[uú]ncio$/), tit:f(/^t[ií]tulo/)};
     if(c.cor<0||c.st<0) throw new Error('Faltou a coluna "Vínculo CORRETO" ou "Status".');
     const upserts=[], skip={naoKK:[], semVinc:[], skuDesc:{}, formato:[]}; let iguais=0, nDesc=0; const descIds=[];
     const now=new Date().toISOString();
     for(let i=hi+1;i<rows.length;i++){
       const r=rows[i]; const an=String(r[c.an]||'').trim(); if(!an) continue;
-      const st=String(r[c.st]||'').trim().toUpperCase(), cor=String(r[c.cor]||'').trim();
-      if(st!=='KK'){ skip.naoKK.push(an+(st?' ('+st+')':'')); continue; }
-      if(!cor){ skip.semVinc.push(an); continue; }
-      if(cor.toUpperCase()==='N'){ const k=seg(an), cur=S.vinculos[k]; if(!S.descont[k]){ descIds.push(k); upserts.push({an_key:k, anuncio:an, titulo:String(r[c.tit]||'').trim()||(cur&&cur.titulo)||'', skuPlat:String(r[c.sku]||'').trim()||(cur&&cur.skuPlat)||'', itens:[], atualizado:now, origem:'planilha revisada'}); } else iguais++; nDesc++; continue; }
+      const st=String(r[c.st]||'').trim().toUpperCase();
+      let cor=String(r[c.cor]||'').trim();
+      if(c.pad>=0 && String(r[c.pad]||'').trim()) cor=String(r[c.pad]).trim();
+      const chk=c.chk>=0?String(r[c.chk]||'').trim().toUpperCase():'';
+      const isN = cor.toUpperCase()==='N' || chk==='N';
+      const aceito = isN || (chk ? chk.startsWith('OK') : st==='KK');
+      if(!aceito){ skip.naoKK.push(an+(st?' ('+st+')':'')); continue; }
+      if(!cor && !isN){ skip.semVinc.push(an); continue; }
+      if(isN){ const k=seg(an), cur=S.vinculos[k]; if(!S.descont[k]){ descIds.push(k); upserts.push({an_key:k, anuncio:an, titulo:String(r[c.tit]||'').trim()||(cur&&cur.titulo)||'', skuPlat:String(r[c.sku]||'').trim()||(cur&&cur.skuPlat)||'', itens:[], atualizado:now}); } else iguais++; nDesc++; continue; }
       const {itens,erros}=parseVincCorreto(cor);
       if(erros.length){ skip.formato.push(an+': '+cor); continue; }
       const its=[]; let falta=null;
@@ -1006,7 +1011,7 @@ async function importVinculosRevisados(file){
       const k=seg(an), cur=S.vinculos[k];
       const same = cur && cur.itens && cur.itens.length===its.length && its.every((it,j)=>cur.itens[j].pid===it.pid && +cur.itens[j].fator===+it.fator);
       if(same && S.conferidos[k]){ iguais++; continue; }
-      upserts.push({an_key:k, anuncio:an, titulo:String(r[c.tit]||'').trim()||(cur&&cur.titulo)||'', skuPlat:String(r[c.sku]||'').trim()||(cur&&cur.skuPlat)||'', itens:its, atualizado:now, origem:'planilha revisada'});
+      upserts.push({an_key:k, anuncio:an, titulo:String(r[c.tit]||'').trim()||(cur&&cur.titulo)||'', skuPlat:String(r[c.sku]||'').trim()||(cur&&cur.skuPlat)||'', itens:its, atualizado:now});
     }
     box.innerHTML=`<div class="msg ok">Gravando ${upserts.length} vínculo(s)…</div>`;
     for(let i=0;i<upserts.length;i+=200){ const {error}=await SUPA.from('vinculos').upsert(upserts.slice(i,i+200)); if(error) throw new Error(error.message); }
@@ -1183,10 +1188,10 @@ document.addEventListener('click', async e=>{
       if(abrirNovo){ row.querySelector('.vi-novo').hidden=false; msg.innerHTML='<div class="msg warn">Crie o produto novo aí embaixo primeiro.</div>'; return; }
       if(!itens.length){ msg.innerHTML='<div class="msg bad">Escolha o produto e um fator maior que zero.</div>'; return; }
       const an=row.dataset.an;
-      if(S.conferidos[seg(an)]){ delete S.conferidos[seg(an)]; try{ await conferidosWrite(); }catch(err){} }
+      S.conferidos[seg(an)]=new Date().toISOString(); try{ await conferidosWrite(); }catch(err){}
       if(S.descont[seg(an)]){ delete S.descont[seg(an)]; try{ await descontWrite(); }catch(err){} }
       await S.db.doc('vinculos/'+seg(an)).set({anuncio:an, titulo:row.dataset.tit, skuPlat:row.dataset.sku, itens, atualizado:new Date().toISOString()});
-      toast('✔ Vínculo salvo — estoque recalculado');
+      toast('✔ Vínculo salvo e conferido — estoque recalculado');
       const nm=document.querySelector('tr.vinc-row[data-an="'+an+'"] .vi-msg'); if(nm) nm.innerHTML='<div class="msg ok">Vínculo salvo — estoque recalculado.</div>';
       return;
     }
@@ -1231,7 +1236,7 @@ const HELP={
  estoque:'Saldo INDIVIDUAL POR EMPRESA: escolha a empresa no topo e a tabela mostra inicial + entradas − vendas daquela empresa; em Todas aparece a soma do grupo. Pra lançar o estoque inicial de uma empresa, selecione ela no topo e clique no número da coluna Inicial (vira uma entrada Estoque inicial). Clique no custo pra ajustar. Linha vermelha = abaixo do alerta mínimo (Importar → Regras). Saldo negativo = falta lançar inicial ou nota de compra daquela empresa.',
  produtos:'Cadastro dos produtos com o custo da última nota. Clique em "editar" pra mudar nome, unidade, estoque inicial e custo, depois "Salvar" — aparece a confirmação verde embaixo. "Sem custo na NF" = nenhuma nota de compra lançada ainda: me envie o XML da nota ou edite o custo na mão.',
  conferir:'Bloco 1 — anúncios que venderam mas ainda não têm vínculo — essas vendas NÃO baixam estoque até você vincular. Escolha o produto e o fator (quantas folhas/pacotes/peças saem por 1 unidade vendida) e clique Salvar. O chip amarelo ⚠ explica por que não teve sugestão automática. O botão ⚡ aplica todas as sugestões 💡 de uma vez.',
- vinculos:'Bloco 2 (a verificar) e bloco 3 (conferidos). Todo vínculo salvo cai no bloco 2; você confere e clica ✔ conferido pra ele descer pro bloco 3. Salvar alteração num conferido devolve ele pro bloco 2; ↩ reabre na mão. Liga cada anúncio do ML a produto(s) do estoque. Fator = quantas unidades do produto saem por venda (ex.: "200 unid capa+contracapa" = 100 PPC + 100 PPL). A linha 💰 mostra unidade e custo de cada item — sirva pra conferir se o fator está na unidade certa (folhas × pacotes). Depois de alterar, clique Salvar: aparece um aviso verde de confirmação.',
+ vinculos:'Bloco 2 (a verificar) e bloco 3 (conferidos). Todo vínculo salvo cai no bloco 2; você confere e clica ✔ conferido pra ele descer pro bloco 3. Salvar sempre marca como conferido; ↩ manda de volta pro bloco 2. Liga cada anúncio do ML a produto(s) do estoque. Fator = quantas unidades do produto saem por venda (ex.: "200 unid capa+contracapa" = 100 PPC + 100 PPL). A linha 💰 mostra unidade e custo de cada item — sirva pra conferir se o fator está na unidade certa (folhas × pacotes). Depois de alterar, clique Salvar: aparece um aviso verde de confirmação.',
  vendas:'Vendas importadas dos relatórios do ML, mês a mês (selecione o mês no topo). "Baixa" mostra quanto saiu de cada produto. Cancelada não baixa; devolução baixa (regras em Importar). Importar o mesmo relatório de novo não duplica nada. O Excel exporta o mês que está na tela.',
  projecao:'Quanto enviar pro ML: compara o ritmo recente de venda com o saldo e calcula o que falta pra cobrir os dias de cobertura alvo. Ajuste a janela recente e a cobertura nos campos acima. Respeita a empresa selecionada no topo.',
  entradas:'Compras e reposições. Lance pelo formulário (pacote fechado = 100 folhas), por planilha na aba Importar, ou me mande o XML da NF-e que eu classifico a empresa e lanço com o custo líquido. Excluir pede a senha.',
