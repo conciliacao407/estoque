@@ -138,6 +138,8 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
     <button class="tab" data-t="vendas">Vendas</button>
     <button class="tab" data-t="projecao">Projeção</button>
     <button class="tab" data-t="entradas">Entradas</button>
+    <button class="tab" data-t="pedidos">Pedidos</button>
+    <button class="tab" data-t="aprovados">Aprovados</button>
     <button class="tab" data-t="importar">Importar</button>
   </nav>
 </div></div>
@@ -239,8 +241,31 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
     </div>
   </div>
   <div class="card">
+    <div class="card-h"><h2>Entradas por Excel</h2></div>
+    <div class="card-b">
+      <div class="drop" id="dropEntradas2">Clique ou arraste a planilha de entradas aqui</div>
+      <input type="file" id="fileEntradas2" accept=".xlsx,.xls,.csv" hidden>
+      <p class="note">Colunas (a ordem não importa): <b>SKU</b> · <b>Pacotes</b> (pacote fechado = 100 folhas) ou <b>Quantidade</b> (em folhas) · Data · Fornecedor · NF · Obs. O SKU tem que ser igual ao do cadastro de produtos.</p>
+      <div id="impEntradasMsg2"></div>
+    </div>
+  </div>
+  <div class="card">
     <div class="card-h"><h2>Histórico de entradas</h2><div class="sp"><button class="btn sm sec xls" data-tbl="tblEntradas" data-nome="entradas" title="baixar em Excel">⬇ Excel</button><button class="btn sm sec ajuda" data-help="entradas" title="como usar esta aba">?</button></div></div>
     <div class="tbl-wrap"><table id="tblEntradas"></table></div>
+  </div>
+</section>
+
+<section id="s-pedidos" hidden>
+  <div class="card">
+    <div class="card-h"><h2>Pedidos</h2><div class="sp"><button class="btn sm sec ajuda" data-help="pedidos" title="como usar esta aba">?</button></div></div>
+    <div class="card-b"><div class="empty"><b>Aba criada — aguardando a regra.</b><br>Me diga como funciona o pedido (o que entra aqui, de onde vem, quais colunas e status) que eu monto esta tela.</div></div>
+  </div>
+</section>
+
+<section id="s-aprovados" hidden>
+  <div class="card">
+    <div class="card-h"><h2>Aprovados</h2><div class="sp"><button class="btn sm sec ajuda" data-help="aprovados" title="como usar esta aba">?</button></div></div>
+    <div class="card-b"><div class="empty"><b>Aba criada — aguardando a regra.</b><br>Me diga a regra do "aprovado" que eu monto esta tela.</div></div>
   </div>
 </section>
 
@@ -467,7 +492,8 @@ function renderEstoque(){
     <div class="tile"><div class="v num">${fmtBRL(valorTot)}</div><div class="l">valor em estoque</div></div>`;
   let h = `<tr><th>SKU</th><th>Produto</th><th>Unid.</th><th class="r">Inicial</th><th class="r">Entradas</th><th class="r">Saídas</th><th class="r">Saldo</th><th class="r" title="1 pacote fechado = 100 folhas">Pct fechados</th><th class="r">Custo un.</th><th class="r">Valor</th><th></th></tr>`;
   let any=false;
-  for(const pid of pids){
+  const pidsOrd=[...pids].sort((a,b)=>{ const sa=saldoDe(a), sb=saldoDe(b); const na=sa<0?0:1, nb=sb<0?0:1; if(na!==nb) return na-nb; if(!na) return sa-sb; return S.produtos[a].sku.localeCompare(S.produtos[b].sku); });
+  for(const pid of pidsOrd){
     const p=S.produtos[pid];
     if(q && !(p.sku.toLowerCase().includes(q)||(p.nome||'').toLowerCase().includes(q))) continue;
     any=true;
@@ -857,7 +883,7 @@ async function importVendas(file){
 
 /* ================= importação de entradas ================= */
 async function importEntradas(file){
-  const box=$('impEntradasMsg');
+  const box={ set innerHTML(v){ for(const id of ['impEntradasMsg','impEntradasMsg2']){ const el=document.getElementById(id); if(el) el.innerHTML=v; } } };
   if(needDb(box)) return;
   box.innerHTML='<div class="msg ok">Lendo arquivo…</div>';
   try{
@@ -1127,6 +1153,10 @@ function renderHistImp(){
 
 hookDrop('dropVendas','fileVendas',importVendas);
 hookDrop('dropEntradas','fileEntradas',importEntradas);
+HELP.pedidos='Aba nova, ainda sem regra — me diga como o pedido funciona (o que entra aqui, de onde vem, quais colunas e status) que eu monto a tela.';
+HELP.aprovados='Aba nova, ainda sem regra — me diga o que é um "aprovado" e o que deve aparecer aqui que eu monto a tela.';
+hookDrop('dropEntradas2','fileEntradas2',importEntradas);
+
 
 $('btnAplicarSug').addEventListener('click', async e=>{
   const b=e.currentTarget;
