@@ -138,7 +138,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
     <button class="tab" data-t="vendas">Vendas</button>
     <button class="tab" data-t="projecao">Projeção</button>
     <button class="tab" data-t="entradas">Entradas</button>
-    <button class="tab" data-t="pedidos">Pedidos</button>
+    <button class="tab" data-t="pedidos">Pedidos <span class="badge" id="bPed"></span></button>
     <button class="tab" data-t="aprovados">Aprovados</button>
     <button class="tab" data-t="importar">Importar</button>
   </nav>
@@ -257,16 +257,36 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
 
 <section id="s-pedidos" hidden>
   <div class="card">
-    <div class="card-h"><h2>Pedidos</h2><div class="sp"><button class="btn sm sec ajuda" data-help="pedidos" title="como usar esta aba">?</button></div></div>
-    <div class="card-b"><div class="empty"><b>Aba criada — aguardando a regra.</b><br>Me diga como funciona o pedido (o que entra aqui, de onde vem, quais colunas e status) que eu monto esta tela.</div></div>
+    <div class="card-h"><h2>Fazer pedido</h2>
+      <div class="sp"><button class="btn sm" id="btnGerarPed">⚡ Gerar pedidos (sugestão)</button><button class="btn sm sec xls" data-tbl="tblPedPend" data-nome="pedidos_pendentes" title="baixar em Excel">⬇ Excel</button><button class="btn sm sec ajuda" data-help="pedidos" title="como usar esta aba">?</button></div></div>
+    <div class="card-b">
+      <div class="frow">
+        <label class="f">Solicitante<input type="text" id="pdSolic" placeholder="quem pediu" style="width:130px"></label>
+        <label class="f">Produto<select id="pdProd"></select></label>
+        <label class="f">Quantidade<input type="number" id="pdQtd" step="any" min="0" style="width:110px"></label>
+        <label class="f">Empresa<select id="pdEmp"></select></label>
+        <label class="f">Data<input type="date" id="pdData"></label>
+        <label class="f">Obs<input type="text" id="pdObs" style="width:180px"></label>
+        <button class="btn" id="pdCriar">Criar pedido (Pendente)</button>
+      </div>
+      <div id="pdRegua"></div>
+      <div id="pdMsg"></div>
+    </div>
   </div>
+  <div class="card">
+    <div class="card-h"><h2>Pedidos pendentes</h2><span class="dim" id="pedSub"></span></div>
+    <div class="tbl-wrap"><table id="tblPedPend"></table></div>
+  </div>
+  <p class="note">Pendente segura a régua (conta como "já pedido") mas <b>não</b> soma no estoque. Só o APROVADO lança a entrada. Recusado sai da régua e não mexe em nada. Regra de ouro: nada vira estoque sem decisão humana.</p>
 </section>
 
 <section id="s-aprovados" hidden>
   <div class="card">
-    <div class="card-h"><h2>Aprovados</h2><div class="sp"><button class="btn sm sec ajuda" data-help="aprovados" title="como usar esta aba">?</button></div></div>
-    <div class="card-b"><div class="empty"><b>Aba criada — aguardando a regra.</b><br>Me diga a regra do "aprovado" que eu monto esta tela.</div></div>
+    <div class="card-h"><h2>Aprovados — histórico de decisões</h2>
+      <div class="sp"><label class="tog" style="font-size:12px"><input type="checkbox" id="apRec"> mostrar recusados</label><button class="btn sm sec xls" data-tbl="tblAprov" data-nome="pedidos_aprovados" title="baixar em Excel">⬇ Excel</button><button class="btn sm sec ajuda" data-help="aprovados" title="como usar esta aba">?</button></div></div>
+    <div class="tbl-wrap"><table id="tblAprov"></table></div>
   </div>
+  <p class="note">Todo aprovado já virou entrada no estoque (na data da decisão, origem "Pedido de …"). O ✉ monta a mensagem pronta pro fornecedor.</p>
 </section>
 
 <section id="s-importar" hidden>
@@ -309,6 +329,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
       <div class="tog"><input type="checkbox" id="cfgCanc"><label for="cfgCanc">Venda <b>cancelada</b> baixa estoque</label></div>
       <div class="tog" style="margin-top:6px"><input type="checkbox" id="cfgDev" checked><label for="cfgDev"><b>Devolução</b> baixa estoque (a volta você lança como entrada)</label></div>
       <div class="tog" style="margin-top:6px"><label for="cfgLimiar">Alerta de estoque mínimo:</label><input type="number" id="cfgLimiar" value="50" min="0"></div>
+      <div class="tog" style="margin-top:6px"><label for="cfgSlack">Webhook do Slack (avisos de pedido, opcional):</label><input type="text" id="cfgSlack" placeholder="https://hooks.slack.com/..." style="width:320px"></div>
     </div>
   </div>
 </section>
@@ -472,7 +493,7 @@ function render(){
   compute();
   const nPend = Object.keys(S.calc.pend).length;
   $('bPend').textContent = nPend||'';
-  renderEstoque(); renderProdutos(); renderConferir(); renderVinculos(); renderVendas(); renderProjecao(); renderEntradas(); renderHistImp();
+  renderEstoque(); renderProdutos(); renderConferir(); renderVinculos(); renderVendas(); renderProjecao(); renderEntradas(); renderHistImp(); renderPedidos(); renderAprovados();
   $('limiarTxt').textContent = fmt(S.cfg.limiar);
 }
 function saldoDe(pid){
@@ -776,7 +797,7 @@ async function initDb(){
   try{
     SUPA = window.supabase.createClient(cfg.url.trim(), cfg.key.trim());
     S.db = shim();
-    await loadTable('produtos'); await loadTable('vinculos'); await loadTable('entradas'); await loadTable('config'); await loadVendas();
+    await loadTable('produtos'); await loadTable('vinculos'); await loadTable('entradas'); await loadTable('config'); await loadVendas(); await loadPedidos();
     S.ready=true;
     $('connState').textContent='Supabase conectado'; $('connState').className='ok';
     render();
@@ -1151,10 +1172,198 @@ function renderHistImp(){
   t.innerHTML=h;
 }
 
+
+/* ===== Pedidos & Aprovados — mesma regra para todas as empresas ===== */
+S.pedidos = S.pedidos || {};
+const PED_EMP = ()=> (typeof EMPRESAS!=='undefined'?EMPRESAS:['Makenry','Verboom','Nagare','MEK']);
+const PED_LEAD=10, PED_ALVO=30; /* 7 dias úteis ≈ 10 corridos de lead + 30 de cobertura */
+function slackAvisa(txt){ try{ const u=localStorage.getItem('slack_webhook'); if(!u) return; fetch(u,{method:'POST',mode:'no-cors',body:JSON.stringify({text:txt})}); }catch(e){} }
+async function pedWrite(id,p){
+  if(typeof SUPA!=='undefined' && SUPA){ const {error}=await SUPA.from('config').upsert({k:'pedido:'+id, v:p}); if(error) throw new Error(error.message); S.pedidos[id]=p; render(); }
+  else { await S.db.doc('pedidos/'+id).set(p); S.pedidos[id]=p; render(); }
+}
+async function loadPedidos(){
+  if(typeof SUPA!=='undefined' && SUPA){ const {data,error}=await SUPA.from('config').select('*').like('k','pedido:%'); if(!error){ S.pedidos={}; (data||[]).forEach(r=>S.pedidos[r.k.slice(7)]=r.v); } }
+}
+function saiPorEmp(pid){
+  const out={}; const ref=S.calc&&S.calc.refD; if(!ref) return out;
+  const d0=new Date(ref+'T00:00'); d0.setDate(d0.getDate()-30); const d0s=d0.toISOString().slice(0,10);
+  for(const r of S.vendasRows){
+    if(r.tp!=='item'||!r.an) continue;
+    const v=S.vinculos[seg(r.an)]; if(!v||!v.itens) continue;
+    const canc=isCanc(r.est), dev=isDev(r.est);
+    if(!(canc?S.cfg.canc:(dev?S.cfg.dev:true))) continue;
+    const dd=(r.d||'').slice(0,10); if(!dd||dd<d0s||dd>ref) continue;
+    for(const it of v.itens){ if(it.pid!==pid) continue; const e=r.emp||'?'; out[e]=(out[e]||0)+(r.un||0)*(it.fator||0); }
+  }
+  for(const e in out) out[e]=out[e]/30;
+  return out;
+}
+function jaPedido(pid){ const out={}; for(const id in S.pedidos){ const p=S.pedidos[id]; if(p.status==='pendente'&&p.pid===pid) out[p.empresa||'?']=(out[p.empresa||'?']||0)+(+p.qtd||0); } return out; }
+function reguaDe(pid){
+  const sai=saiPorEmp(pid), ped=jaPedido(pid);
+  const saldo=saldoDe(pid);
+  const tot=Object.values(sai).reduce((s,x)=>s+x,0);
+  const linhas=[];
+  for(const e of PED_EMP()){
+    const sd=sai[e]||0, jp=ped[e]||0;
+    const aloc = tot>0 ? saldo*(sd/tot) : saldo/PED_EMP().length;
+    const cob = sd>0 ? (aloc+jp)/sd : Infinity;
+    const comprar = sd>0 ? Math.max(0, Math.ceil(sd*(PED_LEAD+PED_ALVO)-aloc-jp)) : 0;
+    let cor='#8a8f98', sit='sem giro';
+    if(sd>0){ if(cob<PED_LEAD){cor='#d64545';sit='URGENTE — acaba antes do pedido chegar';} else if(cob<PED_LEAD+10){cor='#c78a1b';sit='atenção';} else {cor='#1a7f37';sit='ok';} }
+    linhas.push({emp:e, sd, jp, aloc, cob, comprar, cor, sit});
+  }
+  return {saldo, linhas};
+}
+function reguaHTML(pid){
+  const p=S.produtos[pid]; if(!p) return '';
+  const r=reguaDe(pid);
+  let h=`<div style="margin-top:10px;font-size:12.5px"><b>Régua da reposição — ${esc(p.sku)}</b> · saldo total ${fmt(r.saldo)} ${esc(p.unidade||'un')} · lead 7 dias úteis + cobertura ${PED_ALVO} dias<table style="margin-top:6px;width:100%"><tr><th>Empresa</th><th class="r">sai/dia</th><th class="r">já pedido</th><th class="r">cobertura</th><th class="r">quanto comprar</th><th>situação</th><th></th></tr>`;
+  for(const l of r.linhas){
+    h+=`<tr><td>${esc(l.emp)}</td><td class="r num">${fmt(l.sd)}</td><td class="r num">${fmt(l.jp)}</td><td class="r num">${l.cob===Infinity?'—':fmt(l.cob)+' d'}</td><td class="r num"><b>${l.comprar?fmt(l.comprar):'—'}</b></td><td><span style="color:${l.cor}">●</span> ${esc(l.sit)}</td><td>${l.comprar?`<button class="btn sm sec pd-usar" data-emp="${esc(l.emp)}" data-q="${l.comprar}">usar</button>`:''}</td></tr>`;
+  }
+  return h+'</table><div class="dim" style="margin-top:4px;font-size:11.5px">saldo é do grupo — a cobertura de cada empresa usa a fatia proporcional ao ritmo de venda dela</div></div>';
+}
+function renderPedidos(){
+  const selEl=document.getElementById('pdProd'); if(!selEl) return;
+  const nProd=String(Object.keys(S.produtos).length);
+  if(selEl.dataset.n!==nProd){ const cur=selEl.value; selEl.innerHTML=prodOptions('').replace('<option value="__novo__">➕ criar produto novo…</option>',''); selEl.value=cur; selEl.dataset.n=nProd; }
+  const eEmp=document.getElementById('pdEmp'); if(eEmp&&!eEmp.options.length) eEmp.innerHTML=PED_EMP().map(x=>`<option>${x}</option>`).join('');
+  const eDt=document.getElementById('pdData'); if(eDt&&!eDt.value) eDt.value=new Date().toISOString().slice(0,10);
+  const pend=Object.entries(S.pedidos).filter(([,p])=>p.status==='pendente').sort((a,b)=>(b[1].criado||'').localeCompare(a[1].criado||''));
+  const bp=document.getElementById('bPed'); if(bp) bp.textContent=pend.length||'';
+  const sub=document.getElementById('pedSub'); if(sub) sub.textContent=pend.length?`${pend.length} pedido(s) esperando decisão — só aprovado vira estoque`:'';
+  const t=document.getElementById('tblPedPend'); if(!t) return;
+  if(!pend.length){ t.innerHTML='<tr><td><div class="empty"><b>Nenhum pedido pendente.</b><br>Crie um acima, ou use ⚡ Gerar pedidos pra régua sugerir sozinha.</div></td></tr>'; }
+  else{
+    let h='<tr><th>Pedido em</th><th>SKU</th><th class="r">Qtd</th><th>Empresa</th><th>Solicitante</th><th>Obs</th><th></th></tr>';
+    for(const [id,p] of pend){
+      const sku=S.produtos[p.pid]?.sku||p.pid;
+      h+=`<tr data-pedid="${esc(id)}"><td class="num">${fmtData(p.data)}</td><td class="mono">${esc(sku)}</td><td class="r num">${fmt(p.qtd)}</td><td>${esc(p.empresa||'')}</td><td>${esc(p.solicitante||'')}</td><td class="dim" style="font-size:12px">${esc(p.obs||'')}</td>
+        <td style="white-space:nowrap"><button class="btn sm pd-aprov">Aprovar</button> <button class="btn sm sec pd-recusa">Recusar</button></td></tr>
+        <tr class="pd-form" data-pedid="${esc(id)}" hidden><td colspan="7"><div class="frow" style="background:var(--surface2);border-radius:6px;padding:10px">
+          <label class="f">Qtd aprovada<input type="number" class="pa-qtd" step="any" value="${p.qtd}" style="width:100px"></label>
+          <label class="f">Fornecedor<input type="text" class="pa-forn" style="width:130px"></label>
+          <label class="f">Vendedor<input type="text" class="pa-vend" style="width:120px"></label>
+          <label class="f">Telefone<input type="text" class="pa-tel" style="width:120px"></label>
+          <label class="f">Aprovado por<input type="text" class="pa-por" value="Kenni" style="width:100px"></label>
+          <button class="btn sm pd-aprov-ok">✔ Confirmar aprovação</button>
+        </div><div class="pd-msg"></div></td></tr>`;
+    }
+    t.innerHTML=h;
+  }
+  const rg=document.getElementById('pdRegua'); if(rg&&selEl.value&&S.ready) rg.innerHTML=reguaHTML(selEl.value);
+}
+function renderAprovados(){
+  const t=document.getElementById('tblAprov'); if(!t) return;
+  const incRec=document.getElementById('apRec')&&document.getElementById('apRec').checked;
+  const rows=Object.entries(S.pedidos).filter(([,p])=>p.status==='aprovado'||(incRec&&p.status==='recusado')).sort((a,b)=>(b[1].decidido_em||'').localeCompare(a[1].decidido_em||''));
+  if(!rows.length){ t.innerHTML='<tr><td><div class="empty"><b>Nenhum pedido aprovado ainda.</b><br>Aprove na aba Pedidos — o aprovado lança a entrada no estoque e aparece aqui.</div></td></tr>'; return; }
+  let h='<tr><th>Decidido</th><th>Status</th><th>SKU</th><th class="r">Pedida → aprovada</th><th>Empresa</th><th>Solicitante</th><th>Fornecedor</th><th>Vendedor</th><th>Telefone</th><th></th></tr>';
+  for(const [id,p] of rows){
+    const sku=S.produtos[p.pid]?.sku||p.pid;
+    const chip=p.status==='aprovado'?'<span class="chip ok">aprovado</span>':'<span class="chip bad">recusado</span>';
+    h+=`<tr data-pedid="${esc(id)}"><td class="num">${fmtData((p.decidido_em||'').slice(0,10))}</td><td>${chip}</td><td class="mono">${esc(sku)}</td><td class="r num">${fmt(p.qtd)} → <b>${fmt(p.qtd_aprovada!=null?p.qtd_aprovada:p.qtd)}</b></td><td>${esc(p.empresa||'')}</td><td>${esc(p.solicitante||'')}</td><td>${esc(p.fornecedor||'')}</td><td>${esc(p.vendedor||'')}</td><td class="mono">${esc(p.telefone||'')}</td>
+      <td>${p.status==='aprovado'?'<button class="btn sm sec ap-msg">✉ mensagem</button>':''}</td></tr>`;
+  }
+  t.innerHTML=h;
+}
+function pedMsgTexto(p){
+  const pr=S.produtos[p.pid]||{};
+  const nome=pr.nome||pr.sku||p.pid;
+  return `Olá, boa tarde, tudo bem? Gostaria de fazer um pedido: ${fmt(p.qtd_aprovada!=null?p.qtd_aprovada:p.qtd)} ${pr.unidade||'un'} de ${nome}. Obrigado!`;
+}
+document.addEventListener('click', async e=>{
+  const us=e.target.closest('.pd-usar');
+  if(us){ const q=document.getElementById('pdQtd'), emp=document.getElementById('pdEmp'); if(q) q.value=us.dataset.q; if(emp) emp.value=us.dataset.emp; return; }
+  if(e.target.closest('#pdCriar')){
+    const msg=document.getElementById('pdMsg'); if(needDb(msg)) return;
+    const pid=document.getElementById('pdProd').value, qtd=Number(document.getElementById('pdQtd').value);
+    if(!pid||!(qtd>0)){ msg.innerHTML='<div class="msg bad">Escolha o produto e uma quantidade maior que zero.</div>'; return; }
+    const p={pid, qtd, empresa:document.getElementById('pdEmp').value, solicitante:document.getElementById('pdSolic').value.trim()||'—',
+      obs:document.getElementById('pdObs').value.trim(), data:document.getElementById('pdData').value||new Date().toISOString().slice(0,10),
+      status:'pendente', criado:new Date().toISOString()};
+    const id='p'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+    await pedWrite(id,p);
+    slackAvisa(`🛒 Novo pedido — ${p.solicitante}: ${fmt(qtd)} × ${(S.produtos[pid]||{}).sku||pid} (${p.empresa})`);
+    toast('🛒 Pedido criado — Pendente');
+    document.getElementById('pdQtd').value=''; document.getElementById('pdObs').value=''; msg.innerHTML='';
+    return;
+  }
+  const gp=e.target.closest('#btnGerarPed');
+  if(gp){
+    if(needDb()) return;
+    if(gp.dataset.arm!=='1'){ gp.dataset.arm='1'; gp.textContent='confirmar? (cria pendentes pela régua)'; setTimeout(()=>{gp.dataset.arm='';gp.textContent='⚡ Gerar pedidos (sugestão)';},5000); return; }
+    gp.dataset.arm=''; gp.disabled=true; gp.textContent='gerando…';
+    try{
+      let n=0;
+      for(const pid of Object.keys(S.produtos)){
+        const r=reguaDe(pid);
+        for(const l of r.linhas){
+          if(l.comprar>0){
+            const id='p'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)+(n++);
+            await pedWrite(id,{pid, qtd:l.comprar, empresa:l.emp, solicitante:'Sugestão', obs:`sugestão automática — cobre ${PED_LEAD+PED_ALVO} dias no ritmo atual`, data:new Date().toISOString().slice(0,10), status:'pendente', criado:new Date().toISOString()});
+            slackAvisa(`🛒 Novo pedido — Sugestão: ${fmt(l.comprar)} × ${(S.produtos[pid]||{}).sku||pid} (${l.emp})`);
+          }
+        }
+      }
+      toast(n?`⚡ ${n} pedido(s) da sugestão criados — Pendentes`:'a régua não sugere nada agora');
+    } finally { gp.disabled=false; gp.textContent='⚡ Gerar pedidos (sugestão)'; }
+    return;
+  }
+  const ab=e.target.closest('.pd-aprov');
+  if(ab){ const id=ab.closest('tr').dataset.pedid; const f=document.querySelector(`tr.pd-form[data-pedid="${id}"]`); if(f) f.hidden=!f.hidden; return; }
+  const ok=e.target.closest('.pd-aprov-ok');
+  if(ok){
+    const tr=ok.closest('tr.pd-form'); const id=tr.dataset.pedid; const p=S.pedidos[id]; const msg=tr.querySelector('.pd-msg');
+    if(!p||needDb(msg)) return;
+    const qa=Number(tr.querySelector('.pa-qtd').value)||p.qtd;
+    const forn=tr.querySelector('.pa-forn').value.trim(), vend=tr.querySelector('.pa-vend').value.trim(), tel=tr.querySelector('.pa-tel').value.trim(), por=tr.querySelector('.pa-por').value.trim()||'Kenni';
+    ok.disabled=true; ok.textContent='aprovando…';
+    try{
+      const hoje=new Date().toISOString().slice(0,10);
+      await S.db.collection('entradas').add({pid:p.pid, qtd:qa, empresa:p.empresa, data:hoje, forn:forn||'Pedido', nf:'', obs:`Pedido de ${p.solicitante} · aprovado por ${por}${vend?' · vendedor '+vend:''}${tel?' · tel '+tel:''} (→ ${p.empresa})`, criado:new Date().toISOString()});
+      await pedWrite(id,Object.assign({},p,{status:'aprovado', qtd_aprovada:qa, fornecedor:forn, vendedor:vend, telefone:tel, aprovado_por:por, decidido_em:new Date().toISOString()}));
+      slackAvisa(`✅ Pedido APROVADO — ${fmt(qa)} × ${(S.produtos[p.pid]||{}).sku||p.pid} (${p.empresa}) · por ${por}`);
+      toast('✅ Aprovado — entrada lançada no estoque');
+    }catch(err){ if(msg) msg.innerHTML='<div class="msg bad">Erro: '+esc(err.message||err)+'</div>'; ok.disabled=false; ok.textContent='✔ Confirmar aprovação'; }
+    return;
+  }
+  const rc=e.target.closest('.pd-recusa');
+  if(rc){
+    if(rc.dataset.arm!=='1'){ rc.dataset.arm='1'; rc.textContent='confirmar recusa?'; setTimeout(()=>{rc.dataset.arm='';rc.textContent='Recusar';},4000); return; }
+    const id=rc.closest('tr').dataset.pedid; const p=S.pedidos[id]; if(!p||needDb()) return;
+    await pedWrite(id,Object.assign({},p,{status:'recusado', decidido_em:new Date().toISOString()}));
+    toast('Pedido recusado — não mexe no estoque');
+    return;
+  }
+  const am=e.target.closest('.ap-msg');
+  if(am){
+    const tr=am.closest('tr'); const id=tr.dataset.pedid; const p=S.pedidos[id]; if(!p) return;
+    let box=tr.nextElementSibling;
+    if(box&&box.classList.contains('ap-msg-row')){ box.remove(); return; }
+    const txt=pedMsgTexto(p);
+    const tel=(p.telefone||'').replace(/\D/g,'');
+    box=document.createElement('tr'); box.className='ap-msg-row';
+    box.innerHTML=`<td colspan="10"><div style="background:var(--surface2);border-radius:6px;padding:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span>${esc(txt)}</span><button class="btn sm ap-copy">copiar</button>${tel?`<a class="btn sm sec" target="_blank" href="https://wa.me/55${tel}?text=${encodeURIComponent(txt)}">WhatsApp</a>`:''}</div></td>`;
+    tr.after(box);
+    return;
+  }
+  const cp=e.target.closest('.ap-copy');
+  if(cp){ const txt=cp.closest('div').querySelector('span').textContent; try{ await navigator.clipboard.writeText(txt); toast('mensagem copiada'); }catch(err){ cp.textContent='selecione o texto e copie'; } return; }
+});
+document.addEventListener('change', e=>{
+  if(e.target && e.target.id==='pdProd'){ const el=document.getElementById('pdRegua'); if(el) el.innerHTML=e.target.value?reguaHTML(e.target.value):''; }
+  if(e.target && e.target.id==='apRec'){ renderAprovados(); }
+  if(e.target && e.target.id==='cfgSlack'){ try{ localStorage.setItem('slack_webhook', e.target.value.trim()); toast('webhook salvo neste navegador'); }catch(err){} }
+});
+try{ const cs=document.getElementById('cfgSlack'); if(cs) cs.value=localStorage.getItem('slack_webhook')||''; }catch(e){}
+
 hookDrop('dropVendas','fileVendas',importVendas);
 hookDrop('dropEntradas','fileEntradas',importEntradas);
-HELP.pedidos='Aba nova, ainda sem regra — me diga como o pedido funciona (o que entra aqui, de onde vem, quais colunas e status) que eu monto a tela.';
-HELP.aprovados='Aba nova, ainda sem regra — me diga o que é um "aprovado" e o que deve aparecer aqui que eu monto a tela.';
+HELP.pedidos='Ciclo: o pedido nasce Pendente (manual ou pela sugestão ⚡) e só vira estoque quando alguém APROVA. Ao escolher o produto aparece a régua da reposição por empresa: sai/dia, já pedido, cobertura e quanto comprar (lead de 7 dias úteis + cobertura de 30 dias; vermelho = urgente, laranja = atenção, verde = ok, cinza = sem giro; o botão usar preenche a quantidade). Pendente conta no já pedido da régua pra não pedir duas vezes, mas NÃO soma no estoque. No Aprovar dá pra ajustar a quantidade e preencher fornecedor, vendedor e telefone. Recusar não mexe em nada. Regra de ouro: nada vira estoque sem decisão humana.';
+HELP.aprovados='Histórico das decisões. Pedido APROVADO já lançou a entrada no estoque na data da decisão, com origem "Pedido de <solicitante>" — vale a quantidade aprovada (pode ser diferente da pedida). O botão ✉ mensagem monta o texto pronto pro fornecedor, com copiar e WhatsApp se tiver telefone. Marque mostrar recusados pra ver também o que foi negado.';
 hookDrop('dropEntradas2','fileEntradas2',importEntradas);
 
 
