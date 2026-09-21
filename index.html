@@ -1585,6 +1585,7 @@ document.addEventListener('change', e=>{
   if(v&&!v.value&&c.vendedor) v.value=c.vendedor; if(t&&!t.value&&c.telefone) t.value=c.telefone;
 });
 S.forn = S.forn || {};
+try{ S.reguaBase=localStorage.getItem('reguaBase')||'mes'; }catch(_){ S.reguaBase='mes'; }
 async function loadForn(){
   if(typeof SUPA!=='undefined' && SUPA){ const {data:fc}=await SUPA.from('config').select('*').eq('k','fornecedores'); if(fc&&fc[0]&&fc[0].v) S.fornCat=Object.assign({},FORN_PADRAO,fc[0].v); }
   if(typeof SUPA!=='undefined' && SUPA){ const {data,error}=await SUPA.from('config').select('*').like('k','forn:%'); if(!error){ S.forn={}; (data||[]).forEach(r=>S.forn[r.k.slice(5)]=r.v||{}); } }
@@ -1640,21 +1641,23 @@ function mesFechadoDe(pid){
   return {mes:M, dias, E, Sd};
 }
 function reguaDe(pid){
-  const mf=mesFechadoDe(pid), ped=jaPedido(pid);
+  const modo=S.reguaBase||'mes';                       // 'mes' = mês fechado · 'total' = período todo
+  const mf=mesFechadoDe(pid), ped=jaPedido(pid), sai30=saiPorEmp(pid);
   const PED_LEAD=leadDe(pid);
   const saldo=PED_EMP().reduce((s,e2)=>s+saldoEmpDe(pid,e2),0);
   const linhas=[];
   for(const e of PED_EMP()){
-    const ent=mf.E[e]||0, saiu=mf.Sd[e]||0, jp=ped[e]||0;
-    const sd = saiu/mf.dias;
-    const aloc = ent-saiu;
+    const jp=ped[e]||0;
+    let ent, saiu, sd, aloc;
+    if(modo==='total'){ ent=(S.calc.entrE[pid]||{})[e]||0; saiu=(S.calc.saiE[pid]||{})[e]||0; sd=sai30[e]||0; aloc=saldoEmpDe(pid,e); }
+    else { ent=mf.E[e]||0; saiu=mf.Sd[e]||0; sd=saiu/mf.dias; aloc=ent-saiu; }
     const cob = sd>0 ? (aloc+jp)/sd : Infinity;
     const _m=embDe(pid).mult||1; const comprar = (sd>0||aloc<0) ? Math.max(0, Math.ceil(Math.max(0, sd*(PED_LEAD+PED_ALVO)-aloc-jp)/_m)*_m) : 0;
     let cor='#8a8f98', sit='sem giro';
-    if(aloc<0){cor='#d64545';sit='vendeu mais do que comprou no mês';} else if(sd>0){ if(cob<PED_LEAD){cor='#d64545';sit='URGENTE — acaba antes do pedido chegar';} else if(cob<PED_LEAD+10){cor='#c78a1b';sit='atenção';} else {cor='#1a7f37';sit='ok';} }
+    if(aloc<0){cor='#d64545';sit=modo==='total'?'JÁ FALTOU — saldo negativo':'vendeu mais do que comprou no mês';} else if(sd>0){ if(cob<PED_LEAD){cor='#d64545';sit='URGENTE — acaba antes do pedido chegar';} else if(cob<PED_LEAD+10){cor='#c78a1b';sit='atenção';} else {cor='#1a7f37';sit='ok';} }
     linhas.push({emp:e, sd, jp, aloc, ent, saiu, cob, comprar, cor, sit});
   }
-  return {saldo, linhas, mes:mf.mes};
+  return {saldo, linhas, mes:mf.mes, modo};
 }
 function reguaHTML(pid){
   const p=S.produtos[pid]; if(!p) return '';
@@ -1662,15 +1665,16 @@ function reguaHTML(pid){
   const fl=p.unidade==='folhas';
   const dois=v=>fl?`<b>${fmt(v)}</b> folhas <span class="dim">·</span> <b>${fmt(v/100)}</b> pct`:`<b>${fmt(v)}</b> ${esc(p.unidade||'un')}`;
   const total=((S.empSel&&S.empSel!=='Todas')?r.linhas.filter(l=>l.emp===S.empSel):r.linhas).reduce((t,l)=>t+l.comprar,0);
-  const mesTxt=`${r.mes.slice(5)}/${r.mes.slice(0,4)}`;
-  let h=`<div style="margin-top:10px;font-size:12.5px"><b>Régua da reposição — ${esc(p.sku)}</b> · base: <b>mês fechado ${mesTxt}</b> · saldo acumulado do grupo ${dois(r.saldo)}<table style="margin-top:6px;width:100%"><tr><th>Empresa</th><th class="r">entrou ${mesTxt}</th><th class="r">saiu ${mesTxt}</th><th class="r">diferença</th><th class="r">já pedido</th><th class="r">quanto comprar (deve)</th><th>situação</th><th></th></tr>`;
+  const mesTxt=`${r.mes.slice(5)}/${r.mes.slice(0,4)}`; const T=r.modo==='total';
+  const btn=(id,lab,on)=>`<button class="btn sm ${on?'':'sec'} rg-modo" data-modo="${id}" style="padding:3px 10px">${lab}</button>`;
+  let h=`<div style="margin-top:10px;font-size:12.5px"><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><b>Régua da reposição — ${esc(p.sku)}</b> <span class="dim">base:</span> ${btn('mes','Mês fechado '+mesTxt,!T)} ${btn('total','Período todo',T)} <span class="dim">· saldo acumulado do grupo ${dois(r.saldo)}</span></div><table style="margin-top:6px;width:100%"><tr><th>Empresa</th><th class="r">${T?'entrou (total)':'entrou '+mesTxt}</th><th class="r">${T?'saiu (total)':'saiu '+mesTxt}</th><th class="r">${T?'saldo':'diferença'}</th><th class="r">já pedido</th><th class="r">quanto comprar (deve)</th><th>situação</th><th></th></tr>`;
   const _lin=(S.empSel&&S.empSel!=='Todas')?r.linhas.filter(l=>l.emp===S.empSel):r.linhas;
   for(const l of _lin){
     h+=`<tr><td>${esc(l.emp)}</td><td class="r num">${dois(l.ent)}</td><td class="r num">${dois(l.saiu)}</td><td class="r num ${l.aloc<0?'neg':''}">${dois(l.aloc)}</td><td class="r num">${l.jp?dois(l.jp):'—'}</td><td class="r num">${l.comprar?dois(l.comprar):'—'}</td><td><span style="color:${l.cor}">●</span> ${esc(l.sit)}</td><td>${l.comprar?`<button class="btn sm sec pd-usar" data-emp="${esc(l.emp)}" data-q="${l.comprar}">usar</button>`:''}</td></tr>`;
   }
   const partes=_lin.filter(l=>l.comprar>0).map(l=>`${esc(l.emp)} ${fl?fmt(l.comprar/100)+' pct':fmt(l.comprar)+' '+esc(p.unidade||'un')}`).join(' · ');
   h+=`<tr style="background:var(--surface2)"><td><b>Pedido total</b></td><td></td><td></td><td></td><td></td><td class="r num">${total?dois(total):'—'}</td><td colspan="2" class="dim" style="font-size:12px">${total?'cada uma deve: '+partes:'nenhuma empresa precisa comprar agora'}</td></tr>`;
-  return h+'</table><div class="dim" style="margin-top:4px;font-size:11.5px">base = mês fechado: entrou = notas da empresa no mês · saiu = vendas dela no mês × fator · diferença = entrou − saiu · quanto comprar = ritmo do mês × (prazo do fornecedor + '+PED_ALVO+' dias) − diferença − já pedido · quanto comprar = o que falta pra cobrir lead 7 dias úteis + '+PED_ALVO+' dias no ritmo atual'+(fl?' · 100 folhas = 1 pacote fechado':' · produto em '+(p.unidade||'un')+' — não tem pacote fechado')+'</div></div>';
+  return h+'</table><div class="dim" style="margin-top:4px;font-size:11.5px">'+(T?'base = período todo: entrou e saiu desde a primeira nota · saldo = inicial + entradas − saídas · ritmo = últimos 30 dias · quanto comprar = ritmo × (prazo do fornecedor + '+PED_ALVO+' dias) − saldo − já pedido':'base = mês fechado: entrou = notas da empresa no mês · saiu = vendas dela no mês × fator · diferença = entrou − saiu · quanto comprar = ritmo do mês × (prazo do fornecedor + '+PED_ALVO+' dias) − diferença − já pedido')+(fl?' · 100 folhas = 1 pacote fechado':' · produto em '+(p.unidade||'un')+' — não tem pacote fechado')+'</div></div>';
 }
 function dupla(v,pid){ const p=S.produtos[pid]; const fl=p&&p.unidade==='folhas'; return fl? `<span style="display:inline-block;white-space:nowrap;line-height:1.2">${fmt(v)} fl<br><span class="dim" style="font-size:11px;font-weight:400">${fmt(v/100)} pct</span></span>` : fmt(v); }
 function pctHTML(pid,v){ const u=(S.produtos[pid]||{}).unidade; if(u!=='folhas'||!v) return ''; return `<div class="dim" style="font-size:11px;font-weight:400">${fmt(v/100)} pct</div>`; }
@@ -1777,6 +1781,8 @@ function pedMsgTexto(p){
   return `Olá, ${saudacao()}${pessoa?', '+pessoa:''}, tudo bem? Gostaria de fazer um pedido: ${pedQtdTxt(p)} de ${nome}, para a empresa ${p.empresa||''}. Obrigado!`;
 }
 document.addEventListener('click', async e=>{
+  const rg=e.target.closest('.rg-modo');
+  if(rg){ S.reguaBase=rg.dataset.modo; try{ localStorage.setItem('reguaBase',S.reguaBase); }catch(_){ } renderPedidos(); return; }
   const us=e.target.closest('.pd-usar');
   if(us){ const q=document.getElementById('pdQtd'), emp=document.getElementById('pdEmp'), pid=document.getElementById('pdProd').value; if(q) q.value=Math.ceil(Number(us.dataset.q)/embDe(pid).mult); if(emp) emp.value=us.dataset.emp; return; }
   if(e.target.closest('#pdCriar')){
