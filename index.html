@@ -183,6 +183,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
 </div></div>
 
 <main>
+<div id="avisoLanc" hidden></div>
 <section id="s-estoque">
   <div class="tiles" id="tiles"></div>
   <div class="card">
@@ -437,7 +438,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
       <p><b>Vendas</b> — as vendas importadas do ML, mês a mês, com a baixa que cada uma gerou. Busca por número, anúncio, comprador.</p>
       <p><b>Projeção</b> — quantos dias o saldo dura no ritmo atual. <b>Estoque morto</b> = a reserva que precisa existir pra aguentar até o fornecedor entregar (média por dia × prazo do fornecedor: AMP 7 dias, LM 5, Lassane capas 14, Prolam 3, Imballa 5, Mares 2). <b>Estoque vivo</b> = saldo menos essa reserva; se ficar negativo, a venda já está comendo a reserva e o pedido está atrasado.</p>
       <p><b>Entradas</b> — lança compra manualmente (produto, pacotes ou unidades, empresa, NF). Lista tudo que já entrou. A NF impede lançar a mesma nota duas vezes.</p>
-      <p><b>Pedidos</b> — pedido de compra: escolhe produto e empresa, vê a régua de reposição (quanto comprar pra cobrir 30 dias + 7 dias úteis de entrega), cria pendente. "Gerar pedidos" cria de uma vez pra tudo que está acabando. Aprovar lança a entrada; recusar não mexe em nada.</p>
+      <p><b>Pedidos</b> — pedido de compra: escolhe produto e empresa, vê a régua de reposição com base no <b>mês fechado</b> (o que cada loja comprou e vendeu no mês passado, e quanto comprar pra cobrir 30 dias + prazo do fornecedor), cria pendente. Se alguma loja está sem venda ou sem nota lançada no mês fechado, aparece um aviso vermelho no topo de todas as abas. "Gerar pedidos" cria de uma vez pra tudo que está acabando. Aprovar lança a entrada; recusar não mexe em nada.</p>
       <p><b>Aprovados</b> — histórico das decisões, com o botão que monta a mensagem pro fornecedor (um grupo por fornecedor) e link do WhatsApp.</p>
       <p><b>Importar</b> — relatório de vendas do ML (um por loja); planilha de entradas (modelo com colunas SKU, Pacotes ou Quantidade, Data, Fornecedor, NF, Obs — a loja vem do seletor); planilha de vínculos revisados; regras (limiar, cancelada, devolução); conexão com o banco e senha de edição.</p>
       <p><b>Senha de edição:</b> sem ela a plataforma abre em modo leitura. Importar → Conexão → Senha → Conectar. Fica salva no navegador.</p>
@@ -624,8 +625,27 @@ function compute(){
 }
 
 /* ================= render ================= */
+function checarLancamentos(){
+  const box=document.getElementById('avisoLanc'); if(!box) return;
+  const M=mesAnterior(); const hoje=new Date();
+  const ult={}, temMes={}, temEnt={};
+  for(const r of S.vendasRows){ if(r.tp!=='item'||!r.emp) continue; if(r.mes===M) temMes[r.emp]=true; const d=(r.d||'').slice(0,10); if(d>(ult[r.emp]||'')) ult[r.emp]=d; }
+  for(const e of S.entradas){ if((e.data||'').slice(0,7)===M) temEnt[empDe(e)]=true; }
+  const mesTxt=`${M.slice(5)}/${M.slice(0,4)}`; const probs=[];
+  for(const e of EMPRESAS){
+    if(!temMes[e]) probs.push({e, t:`vendas de ${mesTxt} não lançadas`, grave:true});
+    else { const d=ult[e]||''; const dias=d?Math.floor((hoje-new Date(d+'T00:00'))/864e5):999; if(dias>7) probs.push({e, t:`última venda lançada em ${d.slice(8,10)}/${d.slice(5,7)} — ${dias} dias sem importar`, grave:dias>20}); }
+    if(!temEnt[e]) probs.push({e, t:`nenhuma nota de entrada lançada em ${mesTxt}`, grave:false});
+  }
+  if(!probs.length){ box.hidden=true; box.innerHTML=''; return; }
+  const grave=probs.some(p=>p.grave); box.hidden=false;
+  box.innerHTML=`<div style="background:${grave?'var(--danger-soft)':'var(--warn-soft)'};border:1px solid ${grave?'var(--danger)':'var(--warn)'};border-radius:10px;padding:12px 16px;margin-bottom:18px">
+    <div style="font-weight:700;color:${grave?'var(--danger)':'var(--warn)'};margin-bottom:6px">${grave?'⛔ LANÇAMENTO FALTANDO':'⚠️ Lançamento atrasado'} — os números abaixo podem estar incompletos</div>
+    <ul style="margin:0;padding-left:18px;line-height:1.6">${probs.map(p=>`<li><b>${esc(p.e)}</b>: ${esc(p.t)}</li>`).join('')}</ul>
+    <div class="dim" style="margin-top:6px;font-size:12px">Importar → relatório de vendas do ML da loja · Entradas → lançar as notas. O aviso some sozinho quando entrar.</div></div>`;
+}
 function render(){
-  compute();
+  compute(); checarLancamentos();
   const nPend = Object.keys(S.calc.pend).length;
   $('bPend').textContent = nPend||'';
   renderEstoque(); renderMes(); renderProdutos(); renderConferir(); renderVinculos(); renderVendas(); renderProjecao(); renderEntradas(); renderHistImp(); renderPedidos(); renderAprovados();
@@ -1607,21 +1627,34 @@ function saiPorEmp(pid){
   return out;
 }
 function jaPedido(pid){ const out={}; for(const id in S.pedidos){ const p=S.pedidos[id]; if(p.status==='pendente'&&p.pid===pid) out[p.empresa||'?']=(out[p.empresa||'?']||0)+(+p.qtd||0); } return out; }
+function mesFechadoDe(pid){
+  const M=mesAnterior(); const E={}, Sd={};
+  for(const e of S.entradas){ if((e.data||'').slice(0,7)!==M||e.pid!==pid) continue; const x=empDe(e); E[x]=(E[x]||0)+(e.qtd||0); }
+  for(const r of S.vendasRows){
+    if(r.tp!=='item'||r.mes!==M) continue;
+    const baixa=isCanc(r.est)?S.cfg.canc:(isDev(r.est)?S.cfg.dev:true); if(!baixa) continue;
+    const v=S.vinculos[seg(r.an)]; if(!v||!v.itens||S.descont[seg(r.an)]) continue;
+    for(const it of v.itens){ if(it.pid!==pid) continue; const x=r.emp||'?'; Sd[x]=(Sd[x]||0)+(r.un||0)*(it.fator||0); }
+  }
+  const dias=new Date(+M.slice(0,4), +M.slice(5,7), 0).getDate();
+  return {mes:M, dias, E, Sd};
+}
 function reguaDe(pid){
-  const sai=saiPorEmp(pid), ped=jaPedido(pid);
+  const mf=mesFechadoDe(pid), ped=jaPedido(pid);
   const PED_LEAD=leadDe(pid);
   const saldo=PED_EMP().reduce((s,e2)=>s+saldoEmpDe(pid,e2),0);
   const linhas=[];
   for(const e of PED_EMP()){
-    const sd=sai[e]||0, jp=ped[e]||0;
-    const aloc = saldoEmpDe(pid,e);
+    const ent=mf.E[e]||0, saiu=mf.Sd[e]||0, jp=ped[e]||0;
+    const sd = saiu/mf.dias;
+    const aloc = ent-saiu;
     const cob = sd>0 ? (aloc+jp)/sd : Infinity;
-    const comprar = (sd>0||aloc<0) ? Math.max(0, Math.ceil(Math.max(sd,0)*(PED_LEAD+PED_ALVO)-aloc-jp)) : 0;
+    const _m=embDe(pid).mult||1; const comprar = (sd>0||aloc<0) ? Math.max(0, Math.ceil(Math.max(0, sd*(PED_LEAD+PED_ALVO)-aloc-jp)/_m)*_m) : 0;
     let cor='#8a8f98', sit='sem giro';
-    if(aloc<0){cor='#d64545';sit='JÁ FALTOU — estoque negativo';} else if(sd>0){ if(cob<PED_LEAD){cor='#d64545';sit='URGENTE — acaba antes do pedido chegar';} else if(cob<PED_LEAD+10){cor='#c78a1b';sit='atenção';} else {cor='#1a7f37';sit='ok';} }
-    linhas.push({emp:e, sd, jp, aloc, cob, comprar, cor, sit});
+    if(aloc<0){cor='#d64545';sit='vendeu mais do que comprou no mês';} else if(sd>0){ if(cob<PED_LEAD){cor='#d64545';sit='URGENTE — acaba antes do pedido chegar';} else if(cob<PED_LEAD+10){cor='#c78a1b';sit='atenção';} else {cor='#1a7f37';sit='ok';} }
+    linhas.push({emp:e, sd, jp, aloc, ent, saiu, cob, comprar, cor, sit});
   }
-  return {saldo, linhas};
+  return {saldo, linhas, mes:mf.mes};
 }
 function reguaHTML(pid){
   const p=S.produtos[pid]; if(!p) return '';
@@ -1629,14 +1662,15 @@ function reguaHTML(pid){
   const fl=p.unidade==='folhas';
   const dois=v=>fl?`<b>${fmt(v)}</b> folhas <span class="dim">·</span> <b>${fmt(v/100)}</b> pct`:`<b>${fmt(v)}</b> ${esc(p.unidade||'un')}`;
   const total=((S.empSel&&S.empSel!=='Todas')?r.linhas.filter(l=>l.emp===S.empSel):r.linhas).reduce((t,l)=>t+l.comprar,0);
-  let h=`<div style="margin-top:10px;font-size:12.5px"><b>Régua da reposição — ${esc(p.sku)}</b> · saldo do grupo ${dois(r.saldo)}<table style="margin-top:6px;width:100%"><tr><th>Empresa</th><th class="r">saldo</th><th class="r">já pedido</th><th class="r">quanto comprar (deve)</th><th>situação</th><th></th></tr>`;
+  const mesTxt=`${r.mes.slice(5)}/${r.mes.slice(0,4)}`;
+  let h=`<div style="margin-top:10px;font-size:12.5px"><b>Régua da reposição — ${esc(p.sku)}</b> · base: <b>mês fechado ${mesTxt}</b> · saldo acumulado do grupo ${dois(r.saldo)}<table style="margin-top:6px;width:100%"><tr><th>Empresa</th><th class="r">entrou ${mesTxt}</th><th class="r">saiu ${mesTxt}</th><th class="r">diferença</th><th class="r">já pedido</th><th class="r">quanto comprar (deve)</th><th>situação</th><th></th></tr>`;
   const _lin=(S.empSel&&S.empSel!=='Todas')?r.linhas.filter(l=>l.emp===S.empSel):r.linhas;
   for(const l of _lin){
-    h+=`<tr><td>${esc(l.emp)}</td><td class="r num ${l.aloc<0?'neg':''}">${dois(l.aloc)}</td><td class="r num">${l.jp?dois(l.jp):'—'}</td><td class="r num">${l.comprar?dois(l.comprar):'—'}</td><td><span style="color:${l.cor}">●</span> ${esc(l.sit)}</td><td>${l.comprar?`<button class="btn sm sec pd-usar" data-emp="${esc(l.emp)}" data-q="${l.comprar}">usar</button>`:''}</td></tr>`;
+    h+=`<tr><td>${esc(l.emp)}</td><td class="r num">${dois(l.ent)}</td><td class="r num">${dois(l.saiu)}</td><td class="r num ${l.aloc<0?'neg':''}">${dois(l.aloc)}</td><td class="r num">${l.jp?dois(l.jp):'—'}</td><td class="r num">${l.comprar?dois(l.comprar):'—'}</td><td><span style="color:${l.cor}">●</span> ${esc(l.sit)}</td><td>${l.comprar?`<button class="btn sm sec pd-usar" data-emp="${esc(l.emp)}" data-q="${l.comprar}">usar</button>`:''}</td></tr>`;
   }
   const partes=_lin.filter(l=>l.comprar>0).map(l=>`${esc(l.emp)} ${fl?fmt(l.comprar/100)+' pct':fmt(l.comprar)+' '+esc(p.unidade||'un')}`).join(' · ');
-  h+=`<tr style="background:var(--surface2)"><td><b>Pedido total</b></td><td></td><td></td><td class="r num">${total?dois(total):'—'}</td><td colspan="2" class="dim" style="font-size:12px">${total?'cada uma deve: '+partes:'nenhuma empresa precisa comprar agora'}</td></tr>`;
-  return h+'</table><div class="dim" style="margin-top:4px;font-size:11.5px">saldo por empresa = estoque inicial dela + entradas dela − vendas dela · quanto comprar = o que falta pra cobrir lead 7 dias úteis + '+PED_ALVO+' dias no ritmo atual'+(fl?' · 100 folhas = 1 pacote fechado':' · produto em '+(p.unidade||'un')+' — não tem pacote fechado')+'</div></div>';
+  h+=`<tr style="background:var(--surface2)"><td><b>Pedido total</b></td><td></td><td></td><td></td><td></td><td class="r num">${total?dois(total):'—'}</td><td colspan="2" class="dim" style="font-size:12px">${total?'cada uma deve: '+partes:'nenhuma empresa precisa comprar agora'}</td></tr>`;
+  return h+'</table><div class="dim" style="margin-top:4px;font-size:11.5px">base = mês fechado: entrou = notas da empresa no mês · saiu = vendas dela no mês × fator · diferença = entrou − saiu · quanto comprar = ritmo do mês × (prazo do fornecedor + '+PED_ALVO+' dias) − diferença − já pedido · quanto comprar = o que falta pra cobrir lead 7 dias úteis + '+PED_ALVO+' dias no ritmo atual'+(fl?' · 100 folhas = 1 pacote fechado':' · produto em '+(p.unidade||'un')+' — não tem pacote fechado')+'</div></div>';
 }
 function dupla(v,pid){ const p=S.produtos[pid]; const fl=p&&p.unidade==='folhas'; return fl? `<span style="display:inline-block;white-space:nowrap;line-height:1.2">${fmt(v)} fl<br><span class="dim" style="font-size:11px;font-weight:400">${fmt(v/100)} pct</span></span>` : fmt(v); }
 function pctHTML(pid,v){ const u=(S.produtos[pid]||{}).unidade; if(u!=='folhas'||!v) return ''; return `<div class="dim" style="font-size:11px;font-weight:400">${fmt(v/100)} pct</div>`; }
