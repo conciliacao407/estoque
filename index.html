@@ -305,7 +305,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
       </div></div>
     <div class="tbl-wrap"><table id="tblProj"></table></div>
   </div>
-  <p class="note">Ritmo geral = média dos últimos 30 dias de venda; ritmo recente = média da janela escolhida. Recente acima do geral = produto acelerando. "Enviar" = quanto falta pra cobrir a cobertura alvo no ritmo recente, já descontando o saldo. Respeita a empresa selecionada no topo.</p>
+  <p class="note"><b>Como ler, com um exemplo:</b> A4-05 vendeu 30.000 folhas nos últimos 30 dias → <b>1.000 por dia</b>. Saldo hoje 12.000 folhas → <b>dura 12 dias</b>. Cobertura alvo 30 dias → <b>vai vender 30.000</b> nos próximos 30. Fornecedor Prolam, prazo 3 dias → <b>reserva (estoque morto) 3.000</b>: é o que precisa estar na prateleira quando o pedido for feito, pra não faltar até chegar. <b>Livre (vivo)</b> = 12.000 − 3.000 = 9.000, é o que pode vender sem tocar na reserva. <b>Comprar</b> = 30.000 + 3.000 − 12.000 = <b>21.000 folhas = 210 pacotes</b>. Toda conta usa o ritmo dos últimos 30 dias; a "janela recente" só serve pra tendência (acelerando ou caindo). Respeita a loja selecionada.</p>
 </section>
 
 <section id="s-entradas" hidden>
@@ -990,7 +990,7 @@ function renderProjecao(){
   const pd=S.calc.porDia||{}, ref=S.calc.refD;
   if(!ref){ $('tblProj').innerHTML='<tr><td><div class="empty"><b>Sem vendas importadas.</b> Importe o relatório ML na aba Importar pra projeção funcionar.</div></td></tr>'; return; }
   const ms=86400000, refT=new Date(ref+'T00:00:00').getTime();
-  let h=`<tr><th>SKU</th><th>Produto</th><th class="r">Vendido 30d</th><th class="r">Média/dia 30d</th><th class="r">Média/dia ${rec}d</th><th>Tendência</th><th class="r">Saldo</th><th class="r">Cobertura</th><th>Fornecedor · prazo</th><th class="r" title="reserva que precisa durar até o pedido chegar = média/dia × prazo do fornecedor">Estoque morto</th><th class="r" title="saldo − estoque morto: o que pode vender sem tocar na reserva">Estoque vivo</th><th class="r">Enviar p/ ${alvo}d</th><th class="r" title="pacotes fechados de 100">Pct</th></tr>`;
+  let h=`<tr><th>SKU</th><th>Produto</th><th class="r">Vendeu (últimos 30 dias)</th><th class="r">Por dia (÷30)</th><th class="r">Por dia (últimos ${rec}d)</th><th>Tendência</th><th class="r">Saldo hoje</th><th class="r">Dura</th><th>Fornecedor · prazo</th><th class="r" title="ritmo dos últimos 30 dias × ${alvo} dias">Vai vender em ${alvo}d</th><th class="r" title="reserva que precisa existir pra aguentar até o fornecedor entregar = por dia × prazo">Reserva (morto)</th><th class="r" title="saldo − reserva">Livre (vivo)</th><th class="r" title="vai vender em ${alvo}d + reserva − saldo, arredondado pra pacote">Comprar</th><th class="r">= pct</th></tr>`;
   const pids=Object.keys(pd).sort((a,b)=>(S.produtos[a]?.sku||a).localeCompare(S.produtos[b]?.sku||b));
   let any=false;
   for(const pid of pids){
@@ -1006,17 +1006,22 @@ function renderProjecao(){
     const varp = m30>0 ? (mR/m30-1)*100 : 100;
     const chip = varp>15?`<span class="chip warn">↑ +${fmt(varp)}% acelerando</span>`:(varp<-15?`<span class="chip mut">↓ −${fmt(-varp)}%</span>`:`<span class="chip ok">estável</span>`);
     const s=saldoDe(pid);
-    const cob = mR>0 ? s/mR : Infinity;
-    const enviar = Math.max(0, Math.ceil(mR*alvo - s));
+    const base=m30;                                   // toda conta usa o ritmo dos últimos 30 dias
+    const cob = base>0 ? s/base : Infinity;
+    const prox = Math.ceil(base*alvo);                // o que vai vender nos próximos <alvo> dias
+    const morto = Math.ceil(base*leadDe(pid));        // reserva pro prazo do fornecedor
+    const _m=embDe(pid).mult||1;
+    const enviar = Math.max(0, Math.ceil((prox + morto - s)/_m)*_m);
     const p=S.produtos[pid]||{};
     h+=`<tr><td class="mono">${esc(p.sku||pid)}</td><td>${esc(p.nome||'')}</td>
       <td class="r num">${dupla(t30,pid)}</td><td class="r num">${dupla(m30,pid)}</td><td class="r num">${dupla(mR,pid)}</td>
       <td>${chip}</td><td class="r num">${dupla(s,pid)}</td>
       <td class="r num ${cob<alvo?'low':''}">${cob===Infinity?'—':fmt(cob)+' d'}</td>
       <td style="white-space:nowrap">${esc(fornPrincipal(pid)||'—')} <span class="dim">· ${leadDe(pid)} d</span></td>
-      <td class="r num">${dupla(Math.ceil(mR*leadDe(pid)),pid)}</td>
-      <td class="r num ${(s-Math.ceil(mR*leadDe(pid)))<0?'neg':''}">${dupla(s-Math.ceil(mR*leadDe(pid)),pid)}${(s-Math.ceil(mR*leadDe(pid)))<0?' <span class="chip warn">comeu a reserva</span>':''}</td>
-      <td class="r num ${enviar>0?'neg':''}">${enviar>0?dupla(enviar,pid):'ok'}</td>
+      <td class="r num">${dupla(prox,pid)}</td>
+      <td class="r num">${dupla(morto,pid)}</td>
+      <td class="r num ${(s-morto)<0?'neg':''}">${dupla(s-morto,pid)}${(s-morto)<0?' <span class="chip warn">comeu a reserva</span>':''}</td>
+      <td class="r num ${enviar>0?'neg':''}">${enviar>0?dupla(enviar,pid):'<span class="chip ok">tem</span>'}</td>
       <td class="r num dim">${p.unidade==='folhas'&&enviar>0?fmt(Math.ceil(enviar/100)):'—'}</td></tr>`;
   }
   $('tblProj').innerHTML=any?h:'<tr><td><div class="empty">Sem vendas com vínculo nos últimos 30 dias.</div></td></tr>';
@@ -1540,7 +1545,7 @@ const HELP={
  conferir:'Bloco 1 — anúncios que venderam mas ainda não têm vínculo — essas vendas NÃO baixam estoque até você vincular. Escolha o produto e o fator (quantas folhas/pacotes/peças saem por 1 unidade vendida) e clique Salvar. O chip amarelo ⚠ explica por que não teve sugestão automática. O botão ⚡ aplica todas as sugestões 💡 de uma vez.',
  vinculos:'Bloco 2 (a verificar) e bloco 3 (conferidos). Todo vínculo salvo cai no bloco 2; você confere e clica ✔ conferido pra ele descer pro bloco 3. Salvar sempre marca como conferido; ↩ manda de volta pro bloco 2. Liga cada anúncio do ML a produto(s) do estoque. Fator = quantas unidades do produto saem por venda (ex.: "200 unid capa+contracapa" = 100 PPC + 100 PPL). A linha 💰 mostra unidade e custo de cada item — sirva pra conferir se o fator está na unidade certa (folhas × pacotes). Depois de alterar, clique Salvar: aparece um aviso verde de confirmação.',
  vendas:'Vendas importadas dos relatórios do ML, mês a mês (selecione o mês no topo). "Baixa" mostra quanto saiu de cada produto. Cancelada não baixa; devolução baixa (regras em Importar). Importar o mesmo relatório de novo não duplica nada. O Excel exporta o mês que está na tela.',
- projecao:'Quanto enviar pro ML: compara o ritmo recente de venda com o saldo e calcula o que falta pra cobrir os dias de cobertura alvo. Ajuste a janela recente e a cobertura nos campos acima. Respeita a empresa selecionada no topo.',
+ projecao:'Cada coluna: VENDEU (últimos 30 dias) = folhas/peças vendidas nas vendas importadas × fator do vínculo. POR DIA = vendeu ÷ 30. TENDÊNCIA = compara os últimos N dias (campo Janela recente) com os 30: acima de +15% está acelerando. SALDO HOJE = inicial + entradas − saídas. DURA = saldo ÷ por dia. FORNECEDOR · PRAZO = de quem vem e quantos dias demora. VAI VENDER = por dia × cobertura alvo (campo). RESERVA (estoque morto) = por dia × prazo do fornecedor — o mínimo que tem que sobrar pra aguentar a entrega. LIVRE (estoque vivo) = saldo − reserva; negativo = já está comendo a reserva, pedido atrasado. COMPRAR = vai vender + reserva − saldo, arredondado pra pacote inteiro ("tem" = não precisa). = PCT = a mesma conta em pacotes de 100.',
  entradas:'Compras e reposições. Lance pelo formulário (pacote fechado = 100 folhas), por planilha na aba Importar, ou me mande o XML da NF-e que eu classifico a empresa e lanço com o custo líquido. Excluir pede a senha.',
  importar:'Importações e configurações. Relatório de vendas ML: escolha a EMPRESA DA CONTA antes de soltar o arquivo. Entradas por planilha: colunas SKU + Pacotes ou Quantidade. Vendas e notas repetidas são ignoradas automaticamente. Embaixo ficam a conexão do banco e as regras de baixa.'
 };
