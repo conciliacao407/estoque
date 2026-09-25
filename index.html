@@ -270,7 +270,9 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
 <section id="s-vendas" hidden>
   <div class="card">
     <div class="card-h"><h2>Vendas importadas</h2>
+      <div class="sp" id="vdLote" style="display:none;align-items:center;gap:8px"><span class="dim" id="vdLoteN"></span> <label class="f" style="margin:0">mover para<select id="vdLoteEmp"></select></label><button class="btn sm" id="vdLoteMover">Mover</button> <button class="btn sm sec" id="vdLoteDel">Excluir selecionadas</button></div>
       <div class="sp">
+        <button class="btn sm sec" id="vdSelMes" title="marca todas as vendas do mês e loja que estão na tela">marcar o mês inteiro</button>
         <select id="selMes"></select>
         <input type="text" id="qVendas" placeholder="buscar…"><button class="btn sm sec xls" data-tbl="tblVendas" data-nome="vendas" title="baixar em Excel">⬇ Excel</button><button class="btn sm sec ajuda" data-help="vendas" title="como usar esta aba">?</button>
       </div>
@@ -446,7 +448,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
       <p><b>Mês fechado</b> — só o que entrou e o que saiu dentro de um mês (padrão: o mês passado). Não olha saldo acumulado; serve pra fechar o mês e comparar compra com venda. Respeita a loja do topo e tem Excel.</p>
       <p><b>Produtos</b> — cadastro: SKU, nome, unidade, custo da última nota, fornecedor e telefone (pra mensagem de pedido). "+ Produto" cria; lápis edita.</p>
       <p><b>Vínculos</b> — liga cada anúncio do Mercado Livre a um produto e um fator (quantas folhas/peças 1 unidade vendida representa). Bloco de cima: anúncios esperando sua conferência (a plataforma sugere pelo título). Bloco de baixo: conferidos. Coluna <b>Loja</b> mostra em qual conta o anúncio vende. "Não vende mais" tira o anúncio da lista sem baixar estoque. Toda alteração fica gravada no histórico.</p>
-      <p><b>Vendas</b> — as vendas importadas do ML, mês a mês, com a baixa que cada uma gerou. Busca por número, anúncio, comprador.</p>
+      <p><b>Vendas</b> — as vendas importadas do ML, mês a mês, com a loja e a baixa que cada uma gerou. Busca por número, anúncio, comprador. Cada linha tem ✎ (trocar loja, unidades, estado, anúncio) e 🗑. Marcando linhas, ou clicando em <b>marcar o mês inteiro</b>, aparece a barra de lote: mover todas pra outra loja ou excluir — é o jeito de corrigir um relatório importado na loja errada.</p>
       <p><b>Projeção</b> — quantos dias o saldo dura no ritmo atual. <b>Estoque morto</b> = a reserva que precisa existir pra aguentar até o fornecedor entregar (média por dia × prazo do fornecedor: AMP 7 dias, LM 5, Lassane capas 14, Prolam 3, Imballa 5, Mares 2). <b>Estoque vivo</b> = saldo menos essa reserva; se ficar negativo, a venda já está comendo a reserva e o pedido está atrasado.</p>
       <p><b>Entradas</b> — lança compra manualmente (produto, pacotes ou unidades, empresa, NF). Lista tudo que já entrou. Cada linha tem ✎ pra corrigir qualquer campo (empresa, quantidade, data, NF…) e excluir. Marcando várias linhas aparece a barra de lote: <b>mover para</b> outra loja de uma vez, ou excluir todas. A NF impede lançar a mesma nota duas vezes.</p>
       <p><b>Pedidos</b> — pedido de compra: escolhe produto e empresa, vê a régua de reposição com base no <b>mês fechado</b> (o que cada loja comprou e vendeu no mês passado, e quanto comprar pra cobrir 30 dias + prazo do fornecedor), cria pendente. Se alguma loja está sem venda ou sem nota lançada no mês fechado, aparece um aviso vermelho no topo de todas as abas. "Gerar pedidos" cria de uma vez pra tudo que está acabando. Aprovar lança a entrada; recusar não mexe em nada.</p>
@@ -865,24 +867,59 @@ function renderVinculos(){
   $('tblVinc').innerHTML = l1.length ? hdr+l1.map(k=>linha(k,false)).join('') : `<tr><td><div class="empty">${aVer.length?'Nada encontrado para a busca.':'<b>Tudo conferido.</b> Nenhum vínculo esperando verificação.'}</div></td></tr>`;
   $('tblVincOk').innerHTML = l2.length ? hdr+l2.map(k=>linha(k,true)).join('') : `<tr><td><div class="empty">${ok.length?'Nada encontrado para a busca.':'Nenhum vínculo conferido ainda.'}</div></td></tr>`;
 }
+function vdSelecionadas(){ return [...document.querySelectorAll('.vd-sel:checked')].map(x=>x.dataset.id); }
+function vdLoteUpd(){ const n=vdSelecionadas().length; const b=$('vdLote'); if(!b) return; b.style.display=n?'flex':'none'; $('vdLoteN').textContent=n+' venda'+(n>1?'s':''); }
+async function vendaUpdate(id,campos){ const {error}=await SUPA.from('vendas').update(campos).eq('id',id); if(error) throw new Error(rlsMsg(error)); }
+async function vendaDelete(id){ const {error}=await SUPA.from('vendas').delete().eq('id',id); if(error) throw new Error(rlsMsg(error)); }
+document.addEventListener('change', e=>{
+  if(e.target.id==='vdSelAll'){ document.querySelectorAll('.vd-sel').forEach(c=>c.checked=e.target.checked); vdLoteUpd(); }
+  else if(e.target.classList&&e.target.classList.contains('vd-sel')) vdLoteUpd();
+});
+document.addEventListener('click', async e=>{
+  const sm=e.target.closest('#vdSelMes'), mv=e.target.closest('#vdLoteMover'), dl=e.target.closest('#vdLoteDel'), ed=e.target.closest('.vd-edit'), d1=e.target.closest('.vd-del'), ok=e.target.closest('.ve-ok');
+  if(sm){ // marca TODAS as vendas do mês/loja (não só as 400 da tela)
+    const cur=S.mesSel; const ids=S.vendasRows.filter(r=>r.mes===cur&&empOk(r)).map(r=>r.id); S.vdLoteIds=ids;
+    document.querySelectorAll('.vd-sel').forEach(c=>c.checked=true); const b=$('vdLote'); b.style.display='flex'; $('vdLoteN').textContent=ids.length+' vendas (mês inteiro'+(S.empSel&&S.empSel!=='Todas'?' · '+S.empSel:'')+')'; return; }
+  if(mv||dl){
+    const ids=(S.vdLoteIds&&S.vdLoteIds.length)?S.vdLoteIds:vdSelecionadas(); if(!ids.length||needDb()) return;
+    if(mv){ const emp=$('vdLoteEmp').value;
+      try{ for(let i=0;i<ids.length;i+=200){ const {error}=await SUPA.from('vendas').update({emp}).in('id',ids.slice(i,i+200)); if(error) throw new Error(rlsMsg(error)); } S.vdLoteIds=null; await loadVendas(); render(); toast(ids.length+' venda(s) movida(s) para '+emp); }catch(err){ toast('Erro: '+(err.message||err)); } return; }
+    if(dl.dataset.arm!=='1'){ dl.dataset.arm='1'; dl.textContent='confirmar exclusão de '+ids.length+'?'; setTimeout(()=>{dl.dataset.arm='';dl.textContent='Excluir selecionadas';},5000); return; }
+    try{ for(let i=0;i<ids.length;i+=200){ const {error}=await SUPA.from('vendas').delete().in('id',ids.slice(i,i+200)); if(error) throw new Error(rlsMsg(error)); } S.vdLoteIds=null; await loadVendas(); render(); toast(ids.length+' venda(s) excluída(s)'); }catch(err){ toast('Erro: '+(err.message||err)); } return; }
+  if(d1){ if(needDb()) return; if(d1.dataset.arm!=='1'){ d1.dataset.arm='1'; d1.textContent='confirmar?'; setTimeout(()=>{d1.dataset.arm='';d1.textContent='🗑';},4000); return; }
+    try{ await vendaDelete(d1.dataset.id); await loadVendas(); render(); toast('Venda excluída'); }catch(err){ toast('Erro: '+(err.message||err)); } return; }
+  if(ed){ const tr=ed.closest('tr'); const id=ed.dataset.id; const r=S.vendasRows.find(x=>x.id===id); if(!r) return;
+    const had=tr.parentElement.querySelector(`.ve-row[data-for="${id}"]`); tr.parentElement.querySelectorAll('.ve-row').forEach(x=>x.remove()); if(had) return;
+    const box=document.createElement('tr'); box.className='ve-row'; box.dataset.for=id;
+    box.innerHTML=`<td colspan="13" style="background:var(--surface2)"><div style="display:flex;gap:10px;flex-wrap:wrap;align-items:end;padding:6px 4px">
+      <label class="f">Loja<select class="ve-emp">${EMPRESAS.map(x=>`<option ${x===r.emp?'selected':''}>${x}</option>`).join('')}</select></label>
+      <label class="f">Unidades<input type="number" class="ve-un" step="any" value="${r.un||0}" style="width:90px"></label>
+      <label class="f">Estado<input type="text" class="ve-est" value="${esc(r.est||'')}" style="width:160px"></label>
+      <label class="f">Anúncio<input type="text" class="ve-an" value="${esc(r.an||'')}" style="width:150px"></label>
+      <button class="btn sm ve-ok">Salvar</button></div></td>`;
+    tr.after(box); return; }
+  if(ok){ const box=ok.closest('tr'); const id=box.dataset.for; if(needDb()) return;
+    const campos={emp:box.querySelector('.ve-emp').value, un:Number(box.querySelector('.ve-un').value)||0, est:box.querySelector('.ve-est').value.trim(), an:box.querySelector('.ve-an').value.trim()};
+    try{ await vendaUpdate(id,campos); await loadVendas(); render(); toast('Venda atualizada'); }catch(err){ toast('Erro: '+(err.message||err)); } return; }
+});
 function renderVendas(){
   const meses = [...new Set(S.vendasRows.map(r=>r.mes))].sort().reverse();
   const sel = $('selMes');
   const cur = S.mesSel && meses.includes(S.mesSel) ? S.mesSel : (meses[0]||'');
-  S.mesSel = cur;
+  S.mesSel = cur; S.vdLoteIds=null;
   sel.innerHTML = meses.map(m=>`<option value="${m}" ${m===cur?'selected':''}>${fmtMes(m)}</option>`).join('') || '<option>—</option>';
   const q = ($('qVendas').value||'').toLowerCase();
   const rows = [];
   for(const r of S.vendasRows){ if(r.mes===cur && empOk(r)) rows.push(r); }
   rows.sort((a,b)=>(b.d||'').localeCompare(a.d||''));
   if(!rows.length){ $('tblVendas').innerHTML = `<tr><td><div class="empty"><b>Nenhuma venda importada.</b><br>Suba o relatório do ML na aba Importar.</div></td></tr>`; return; }
-  let h = `<tr><th>Data</th><th>N.º venda</th><th>Estado</th><th>Envio</th><th># anúncio</th><th>Título</th><th class="r">Un.</th><th>Baixa</th><th class="r">Total</th><th>Comprador</th></tr>`;
+  let h = `<tr><th><input type="checkbox" id="vdSelAll" title="selecionar as linhas da tela"></th><th>Data</th><th>N.º venda</th><th>Loja</th><th>Estado</th><th>Envio</th><th># anúncio</th><th>Título</th><th class="r">Un.</th><th>Baixa</th><th class="r">Total</th><th>Comprador</th><th></th></tr>`;
   let shown=0;
   for(const r of rows){
     if(q && !`${r.id} ${r.an||''} ${r.tit||''} ${r.cmp||''} ${r.sku||''} ${r.est||''}`.toLowerCase().includes(q)) continue;
-    if(++shown>400){ h+=`<tr><td colspan="9" class="dim">… mais linhas — use a busca para filtrar.</td></tr>`; break; }
+    if(++shown>400){ h+=`<tr><td colspan="13" class="dim">… mais linhas — use a busca para filtrar.</td></tr>`; break; }
     if(r.tp==='pai'){
-      h += `<tr class="dim"><td class="num">${fmtData(r.d)}</td><td class="mono">${esc(r.id)}</td><td><span class="chip mut">${esc(r.est)}</span></td><td class="dim"></td><td colspan="4" class="dim">pacote — itens nas linhas abaixo</td><td class="r num">${fmtBRL(r.tot)}</td><td>${esc(r.cmp||'')}</td></tr>`;
+      h += `<tr class="dim" data-vid="${esc(r.id)}"><td><input type="checkbox" class="vd-sel" data-id="${esc(r.id)}"></td><td class="num">${fmtData(r.d)}</td><td class="mono">${esc(r.id)}</td><td><span class="chip emp-${esc(r.emp||'')}">${esc(r.emp||'')}</span></td><td><span class="chip mut">${esc(r.est)}</span></td><td class="dim"></td><td colspan="4" class="dim">pacote — itens nas linhas abaixo</td><td class="r num">${fmtBRL(r.tot)}</td><td>${esc(r.cmp||'')}</td><td></td></tr>`;
       continue;
     }
     const canc=isCanc(r.est), dev=isDev(r.est);
@@ -893,13 +930,17 @@ function renderVendas(){
     else if(!v||!v.itens||!v.itens.length) baixaTxt = `<span class="chip warn">sem vínculo</span>`;
     else baixaTxt = v.itens.map(it=>`<span class="mono">${esc(S.produtos[it.pid]?.sku||'?')}</span> −${dupla((r.un||0)*(it.fator||0),it.pid)}`).join('<br>');
     const chip = canc?'bad':(dev?'warn':'ok');
-    h += `<tr><td class="num">${fmtData(r.d)}</td><td class="mono">${esc(r.id)}</td>
+    h += `<tr data-vid="${esc(r.id)}"><td><input type="checkbox" class="vd-sel" data-id="${esc(r.id)}"></td><td class="num">${fmtData(r.d)}</td><td class="mono">${esc(r.id)}</td>
+      <td><span class="chip emp-${esc(r.emp||'')}">${esc(r.emp||'')}</span></td>
       <td><span class="chip ${chip}" title="${esc(r.dsc||'')}">${esc(r.est||'')}</span></td>
       <td class="dim" style="font-size:12px">${esc(r.env||'')}</td>
       <td class="mono">${esc(r.an||'')}</td><td class="tit-cell" title="${esc(r.tit||'')}">${esc(r.tit||'')}</td>
-      <td class="r num">${fmt(r.un||0)}</td><td>${baixaTxt}</td><td class="r num">${fmtBRL(r.tot)}</td><td>${esc(r.cmp||'')}</td></tr>`;
+      <td class="r num">${fmt(r.un||0)}</td><td>${baixaTxt}</td><td class="r num">${fmtBRL(r.tot)}</td><td>${esc(r.cmp||'')}</td>
+      <td style="white-space:nowrap"><button class="btn sm sec vd-edit" data-id="${esc(r.id)}" title="editar">✎</button> <button class="btn sm sec vd-del" data-id="${esc(r.id)}" title="excluir esta venda">🗑</button></td></tr>`;
   }
   $('tblVendas').innerHTML = h;
+  const le=$('vdLoteEmp'); if(le&&!le.options.length) le.innerHTML=EMPRESAS.map(x=>`<option>${x}</option>`).join('');
+  vdLoteUpd();
 }
 function renderProdutos(){
   const q=($('qProd2').value||'').toLowerCase();
