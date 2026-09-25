@@ -451,7 +451,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
         <tr><td>Bobina, tesoura, calculadora</td><td><b>unidades</b></td><td>quantidade da nota</td><td>1 vendido baixa 1</td></tr>
       </table>
       <p><b>Regras das vendas:</b> cancelada não baixa · devolução baixa (a peça saiu) e quando volta você lança entrada · alerta quando o saldo fica abaixo de 50.</p>
-      <p><b>Lojas:</b> cada loja tem uma cor — Makenry laranja, Verboom azul, Nagare amarelo, MEK rosa. A loja se escolhe no menu lateral (ou no seletor do topo — são o mesmo). Quando uma está selecionada, a página inteira fica na cor dela (menu, botões, indicadores), pra ninguém confundir de qual empresa é o número. "Todas" é verde. O estoque físico é um só. O seletor no topo filtra o que entrou e saiu <i>pela nota/venda de cada loja</i>. Em "Todas" você vê o saldo real do grupo mais uma coluna por loja.</p>
+      <p><b>Lojas:</b> cada loja tem uma cor — Makenry laranja, Verboom azul, Nagare amarelo, MEK rosa. A loja se escolhe no menu lateral (ou no seletor do topo — são o mesmo), e ela vira o padrão de todo campo Empresa da plataforma: importar relatório, lançar entrada, criar pedido. Dá pra trocar no campo, mas o padrão é sempre a loja escolhida. Quando uma está selecionada, a página inteira fica na cor dela (menu, botões, indicadores), pra ninguém confundir de qual empresa é o número. "Todas" é verde. O estoque físico é um só. O seletor no topo filtra o que entrou e saiu <i>pela nota/venda de cada loja</i>. Em "Todas" você vê o saldo real do grupo mais uma coluna por loja.</p>
       <p><b>Inicial:</b> a plataforma só conhece as notas que foram lançadas. O que havia na prateleira antes da primeira nota entra pelo campo "inicial" do produto (aba Produtos) — vem da contagem física.</p>
     </div>
   </div>
@@ -673,7 +673,7 @@ function checarLancamentos(){
     <div class="dim" style="margin-top:6px;font-size:12px">Importar → relatório de vendas do ML da loja · Entradas → lançar as notas. O aviso some sozinho quando entrar.</div></div>`;
 }
 function render(){
-  compute(); checarLancamentos();
+  compute(); checarLancamentos(); sincEmpresa();
   const nPend = Object.keys(S.calc.pend).length;
   $('bPend').textContent = nPend||'';
   renderEstoque(); renderMes(); renderProdutos(); renderConferir(); renderVinculos(); renderVendas(); renderProjecao(); renderEntradas(); renderHistImp(); renderPedidos(); renderAprovados();
@@ -1794,7 +1794,7 @@ function renderPedidos(){
       if(first) selEl.value=first.value; pdQtdUnUpd();
     }); }
   } pdQtdUnUpd();
-  const eEmp=document.getElementById('pdEmp'); if(eEmp&&!eEmp.options.length) eEmp.innerHTML=PED_EMP().map(x=>`<option>${x}</option>`).join('');
+  const eEmp=document.getElementById('pdEmp'); if(eEmp&&!eEmp.options.length){ eEmp.innerHTML=PED_EMP().map(x=>`<option>${x}</option>`).join(''); sincEmpresa(); }
   const eDt=document.getElementById('pdData'); if(eDt&&!eDt.value) eDt.value=new Date().toISOString().slice(0,10);
   const pend=Object.entries(S.pedidos).filter(([,p])=>p.status==='pendente'&&(S.empSel==='Todas'||!S.empSel||p.empresa===S.empSel)).sort((a,b)=>(b[1].criado||'').localeCompare(a[1].criado||''));
   const bp=document.getElementById('bPed'); if(bp) bp.textContent=pend.length||'';
@@ -2071,7 +2071,13 @@ $('scSalvar').addEventListener('click', ()=>{ setCfgLS({url:$('scUrl').value.tri
 $('selEmp').innerHTML=['Todas',...EMPRESAS].map(e=>`<option ${e===S.empSel?'selected':''}>${e}</option>`).join('');
 $('enEmp').innerHTML=EMPRESAS.map(e=>`<option>${e}</option>`).join('');
 $('impEmp').innerHTML=EMPRESAS.map(e=>`<option>${e}</option>`).join('');
-function aplicaTema(){ document.body.dataset.emp=S.empSel||'Todas'; document.querySelectorAll('.loja').forEach(b=>b.classList.toggle('on', b.dataset.emp===(S.empSel||'Todas'))); const se=$('selEmp'); if(se && se.value!==S.empSel && [...se.options].some(o=>o.value===S.empSel)) se.value=S.empSel; }
+sincEmpresa();
+/* a loja escolhida no menu vira o padrão de todo campo "Empresa" (importar, lançar entrada, pedido) */
+function sincEmpresa(){
+  const e=S.empSel; if(!e||e==='Todas') return;
+  for(const id of ['impEmp','enEmp','pdEmp']){ const el=document.getElementById(id); if(el && [...el.options].some(o=>o.value===e)) el.value=e; }
+}
+function aplicaTema(){ sincEmpresa(); document.body.dataset.emp=S.empSel||'Todas'; document.querySelectorAll('.loja').forEach(b=>b.classList.toggle('on', b.dataset.emp===(S.empSel||'Todas'))); const se=$('selEmp'); if(se && se.value!==S.empSel && [...se.options].some(o=>o.value===S.empSel)) se.value=S.empSel; }
 document.getElementById('lojas').addEventListener('click', e=>{ const b=e.target.closest('.loja'); if(!b) return; S.empSel=b.dataset.emp; try{localStorage.setItem('empSel',S.empSel);}catch(_){} aplicaTema(); render(); });
 aplicaTema();
 $('selEmp').addEventListener('change', e=>{ S.empSel=e.target.value; try{localStorage.setItem('empSel',S.empSel);}catch(_){} aplicaTema(); render(); });
