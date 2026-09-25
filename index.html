@@ -44,6 +44,17 @@ button,input,select,textarea{font:inherit;color:inherit}
 
 :root{ --side:232px; --side-bg:#0F2E25; --side-ink:#C9DCD3; --side-on:#FFFFFF; --side-hi:rgba(255,255,255,.08); }
 .app{display:flex;min-height:100vh}
+/* ===== cor por loja: a página inteira muda quando uma loja está selecionada ===== */
+body[data-emp="Makenry"]{--accent:#E0771B;--accent-soft:#FDEAD8;--accent-ink:#8A4508;--side-bg:#3B1F08;--side-ink:#F1D9C4}
+body[data-emp="Verboom"]{--accent:#2B6CB0;--accent-soft:#DCEBFB;--accent-ink:#1A3E6B;--side-bg:#0E2540;--side-ink:#C9DAF0}
+body[data-emp="Nagare"]{--accent:#C99700;--accent-soft:#FFF3C4;--accent-ink:#6B5200;--side-bg:#3A2E00;--side-ink:#F0E3B0}
+body[data-emp="MEK"]{--accent:#D63C8B;--accent-soft:#FBE0EE;--accent-ink:#7A1D4E;--side-bg:#3A0F26;--side-ink:#F3CFE1}
+body[data-emp]:not([data-emp="Todas"]) .topbar{border-top:4px solid var(--accent)}
+body[data-emp]:not([data-emp="Todas"]) .brand h1 .logo{background:var(--accent)}
+.chip.emp-Makenry{background:#FDEAD8;color:#8A4508;border-color:#E0771B}
+.chip.emp-Verboom{background:#DCEBFB;color:#1A3E6B;border-color:#2B6CB0}
+.chip.emp-Nagare{background:#FFF3C4;color:#6B5200;border-color:#C99700}
+.chip.emp-MEK{background:#FBE0EE;color:#7A1D4E;border-color:#D63C8B}
 .side{width:var(--side);flex:0 0 var(--side);background:var(--side-bg);color:var(--side-ink);position:sticky;top:0;height:100vh;display:flex;flex-direction:column;padding:18px 12px;gap:6px}
 .brand{padding:4px 10px 14px;border-bottom:1px solid rgba(255,255,255,.1);margin-bottom:8px}
 .brand h1{font-size:17px;font-weight:700;letter-spacing:-.01em;color:#fff;display:flex;align-items:center;gap:8px}
@@ -178,7 +189,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
 <div class="topbar"><div class="topbar-in">
   <div><h2 id="pageTitle">Estoque</h2><div class="crumb" id="pageCrumb">saldo por produto</div></div>
   <div class="sp">
-    <label class="empsel">Loja <select id="selEmp" title="empresa"></select></label>
+    <label class="empsel"><span id="empDot" style="width:10px;height:10px;border-radius:50%;background:var(--accent);display:inline-block"></span> Loja <select id="selEmp" title="empresa"></select></label>
   </div>
 </div></div>
 
@@ -423,7 +434,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
         <tr><td>Bobina, tesoura, calculadora</td><td><b>unidades</b></td><td>quantidade da nota</td><td>1 vendido baixa 1</td></tr>
       </table>
       <p><b>Regras das vendas:</b> cancelada não baixa · devolução baixa (a peça saiu) e quando volta você lança entrada · alerta quando o saldo fica abaixo de 50.</p>
-      <p><b>Lojas:</b> o estoque físico é um só. O seletor no topo filtra o que entrou e saiu <i>pela nota/venda de cada loja</i>. Em "Todas" você vê o saldo real do grupo mais uma coluna por loja.</p>
+      <p><b>Lojas:</b> cada loja tem uma cor — Makenry laranja, Verboom azul, Nagare amarelo, MEK rosa. Quando uma está selecionada no topo, a página inteira fica na cor dela (menu, botões, indicadores), pra ninguém confundir de qual empresa é o número. "Todas" é verde. O estoque físico é um só. O seletor no topo filtra o que entrou e saiu <i>pela nota/venda de cada loja</i>. Em "Todas" você vê o saldo real do grupo mais uma coluna por loja.</p>
       <p><b>Inicial:</b> a plataforma só conhece as notas que foram lançadas. O que havia na prateleira antes da primeira nota entra pelo campo "inicial" do produto (aba Produtos) — vem da contagem física.</p>
     </div>
   </div>
@@ -840,7 +851,7 @@ function renderVinculos(){
   // loja(s) de cada anúncio, a partir das vendas importadas
   const lojaPorAn={};
   for(const r of (S.vendasRows||[])){ if(r.an&&r.emp){ (lojaPorAn[r.an]=lojaPorAn[r.an]||new Set()).add(r.emp); } }
-  const lojaTd=an=>{ const l=lojaPorAn[an]; return `<td style="white-space:nowrap">${l?[...l].sort().map(e=>`<span class="chip">${esc(e)}</span>`).join(' '):'<span class="dim">—</span>'}</td>`; };
+  const lojaTd=an=>{ const l=lojaPorAn[an]; return `<td style="white-space:nowrap">${l?[...l].sort().map(e=>`<span class="chip emp-${esc(e)}">${esc(e)}</span>`).join(' '):'<span class="dim">—</span>'}</td>`; };
   const comLoja=(html,an)=>html.replace('</td>','</td>'+lojaTd(an));
   const linha=(k,conf)=>{
     const v=S.vinculos[k];
@@ -1967,7 +1978,9 @@ $('scSalvar').addEventListener('click', ()=>{ setCfgLS({url:$('scUrl').value.tri
 $('selEmp').innerHTML=['Todas',...EMPRESAS].map(e=>`<option ${e===S.empSel?'selected':''}>${e}</option>`).join('');
 $('enEmp').innerHTML=EMPRESAS.map(e=>`<option>${e}</option>`).join('');
 $('impEmp').innerHTML=EMPRESAS.map(e=>`<option>${e}</option>`).join('');
-$('selEmp').addEventListener('change', e=>{ S.empSel=e.target.value; try{localStorage.setItem('empSel',S.empSel);}catch(_){} render(); });
+function aplicaTema(){ document.body.dataset.emp=S.empSel||'Todas'; }
+aplicaTema();
+$('selEmp').addEventListener('change', e=>{ S.empSel=e.target.value; try{localStorage.setItem('empSel',S.empSel);}catch(_){} aplicaTema(); render(); });
 render();
 initDb();
 </script>
