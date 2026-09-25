@@ -65,6 +65,13 @@ body[data-emp]:not([data-emp="Todas"]) .brand h1 .logo{background:var(--accent)}
 #connState.ok{color:#7FE0BC;opacity:1}
 #connState::before{content:"● ";}
 .tabs{display:flex;flex-direction:column;gap:2px}
+.lojas{display:flex;flex-direction:column;gap:2px;padding:4px 0 10px;border-bottom:1px solid rgba(255,255,255,.1);margin-bottom:8px}
+.lojas-t{font-size:10.5px;text-transform:uppercase;letter-spacing:.09em;opacity:.7;padding:4px 12px 4px;font-weight:600}
+.loja{background:none;border:none;border-radius:8px;padding:7px 12px;cursor:pointer;color:var(--side-ink);font-weight:600;font-size:13px;text-align:left;display:flex;align-items:center;gap:8px}
+.loja .dot{width:10px;height:10px;border-radius:50%;display:inline-block;box-shadow:0 0 0 2px rgba(255,255,255,.15)}
+.loja:hover{background:var(--side-hi);color:var(--side-on)}
+.loja.on{background:rgba(255,255,255,.14);color:#fff}
+@media (max-width:900px){ .lojas{flex-direction:row;overflow-x:auto;border-bottom:none;padding:0 0 4px;margin:0} .lojas-t{display:none} .loja{padding:6px 10px;font-size:12px} }
 .tab .ico{width:22px;display:inline-block;text-align:center;margin-right:8px;opacity:.9}
 .topbar{background:var(--surface);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}
 .topbar-in{padding:12px 24px;display:flex;align-items:center;gap:14px}
@@ -166,6 +173,14 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
   <div class="brand">
     <h1><span class="logo">M</span>Estoque Makenry</h1>
     <span class="co">conciliação de vendas · ML</span>
+  </div>
+  <div class="lojas" id="lojas">
+    <div class="lojas-t">Loja</div>
+    <button class="loja on" data-emp="Todas"><span class="dot" style="background:#146C54"></span>Todas</button>
+    <button class="loja" data-emp="Makenry"><span class="dot" style="background:#E0771B"></span>Makenry</button>
+    <button class="loja" data-emp="Verboom"><span class="dot" style="background:#2B6CB0"></span>Verboom</button>
+    <button class="loja" data-emp="Nagare"><span class="dot" style="background:#C99700"></span>Nagare</button>
+    <button class="loja" data-emp="MEK"><span class="dot" style="background:#D63C8B"></span>MEK</button>
   </div>
   <nav class="tabs" id="tabs">
     <button class="tab on" data-t="estoque"><span class="ico">📦</span>Estoque</button>
@@ -436,7 +451,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
         <tr><td>Bobina, tesoura, calculadora</td><td><b>unidades</b></td><td>quantidade da nota</td><td>1 vendido baixa 1</td></tr>
       </table>
       <p><b>Regras das vendas:</b> cancelada não baixa · devolução baixa (a peça saiu) e quando volta você lança entrada · alerta quando o saldo fica abaixo de 50.</p>
-      <p><b>Lojas:</b> cada loja tem uma cor — Makenry laranja, Verboom azul, Nagare amarelo, MEK rosa. Quando uma está selecionada no topo, a página inteira fica na cor dela (menu, botões, indicadores), pra ninguém confundir de qual empresa é o número. "Todas" é verde. O estoque físico é um só. O seletor no topo filtra o que entrou e saiu <i>pela nota/venda de cada loja</i>. Em "Todas" você vê o saldo real do grupo mais uma coluna por loja.</p>
+      <p><b>Lojas:</b> cada loja tem uma cor — Makenry laranja, Verboom azul, Nagare amarelo, MEK rosa. A loja se escolhe no menu lateral (ou no seletor do topo — são o mesmo). Quando uma está selecionada, a página inteira fica na cor dela (menu, botões, indicadores), pra ninguém confundir de qual empresa é o número. "Todas" é verde. O estoque físico é um só. O seletor no topo filtra o que entrou e saiu <i>pela nota/venda de cada loja</i>. Em "Todas" você vê o saldo real do grupo mais uma coluna por loja.</p>
       <p><b>Inicial:</b> a plataforma só conhece as notas que foram lançadas. O que havia na prateleira antes da primeira nota entra pelo campo "inicial" do produto (aba Produtos) — vem da contagem física.</p>
     </div>
   </div>
@@ -2056,7 +2071,8 @@ $('scSalvar').addEventListener('click', ()=>{ setCfgLS({url:$('scUrl').value.tri
 $('selEmp').innerHTML=['Todas',...EMPRESAS].map(e=>`<option ${e===S.empSel?'selected':''}>${e}</option>`).join('');
 $('enEmp').innerHTML=EMPRESAS.map(e=>`<option>${e}</option>`).join('');
 $('impEmp').innerHTML=EMPRESAS.map(e=>`<option>${e}</option>`).join('');
-function aplicaTema(){ document.body.dataset.emp=S.empSel||'Todas'; }
+function aplicaTema(){ document.body.dataset.emp=S.empSel||'Todas'; document.querySelectorAll('.loja').forEach(b=>b.classList.toggle('on', b.dataset.emp===(S.empSel||'Todas'))); const se=$('selEmp'); if(se && se.value!==S.empSel && [...se.options].some(o=>o.value===S.empSel)) se.value=S.empSel; }
+document.getElementById('lojas').addEventListener('click', e=>{ const b=e.target.closest('.loja'); if(!b) return; S.empSel=b.dataset.emp; try{localStorage.setItem('empSel',S.empSel);}catch(_){} aplicaTema(); render(); });
 aplicaTema();
 $('selEmp').addEventListener('change', e=>{ S.empSel=e.target.value; try{localStorage.setItem('empSel',S.empSel);}catch(_){} aplicaTema(); render(); });
 render();
