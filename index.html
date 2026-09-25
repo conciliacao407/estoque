@@ -301,11 +301,12 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
     <div class="card-h"><h2>Projeção de envios</h2>
       <div class="sp">
         <label class="f">Janela recente (dias)<input type="number" id="pjRec" value="10" min="1" style="width:70px"></label>
-        <label class="f">Cobertura alvo (dias)<input type="number" id="pjAlvo" value="30" min="1" style="width:70px"></label><button class="btn sm sec xls" data-tbl="tblProj" data-nome="projecao" title="baixar em Excel">⬇ Excel</button><button class="btn sm sec ajuda" data-help="projecao" title="como usar esta aba">?</button>
+        <label class="f">Estoque vivo (dias de fluxo)<input type="number" id="pjFluxo" value="7" min="1" style="width:70px"></label>
+        <label class="f">Comprar para (dias)<input type="number" id="pjAlvo" value="30" min="1" style="width:70px"></label><button class="btn sm sec xls" data-tbl="tblProj" data-nome="projecao" title="baixar em Excel">⬇ Excel</button><button class="btn sm sec ajuda" data-help="projecao" title="como usar esta aba">?</button>
       </div></div>
     <div class="tbl-wrap"><table id="tblProj"></table></div>
   </div>
-  <p class="note"><b>Como ler, com um exemplo:</b> A4-05 vendeu 30.000 folhas nos últimos 30 dias → <b>1.000 por dia</b>. Saldo hoje 12.000 folhas → <b>dura 12 dias</b>. Cobertura alvo 30 dias → <b>vai vender 30.000</b> nos próximos 30. Fornecedor Prolam, prazo 3 dias → <b>reserva (estoque morto) 3.000</b>: é o que precisa estar na prateleira quando o pedido for feito, pra não faltar até chegar. <b>Livre (vivo)</b> = 12.000 − 3.000 = 9.000, é o que pode vender sem tocar na reserva. <b>Comprar</b> = 30.000 + 3.000 − 12.000 = <b>21.000 folhas = 210 pacotes</b>. Toda conta usa o ritmo dos últimos 30 dias; a "janela recente" só serve pra tendência (acelerando ou caindo). Respeita a loja selecionada.</p>
+  <p class="note"><b>Como ler, com um exemplo:</b> capa PPC vendeu 30.000 peças nos últimos 30 dias → <b>1.000 por dia</b>. Lassane demora 14 dias → <b>estoque morto necessário = 14.000</b>: é o que tem que existir no dia em que o vivo acaba e você faz o pedido, pra aguentar até chegar. Fluxo de 7 dias → <b>estoque vivo necessário = 7.000</b>: o que gira no dia a dia. <b>Mínimo na prateleira = 21.000</b>: bateu nisso, pede. Comprar para 30 dias → <b>vai vender 30.000</b>. Saldo hoje 10.000 → <b>comprar = 30.000 + 21.000 − 10.000 = 41.000 peças</b>, e a observação diz até que dia comprar (o dia em que o saldo bate no mínimo). Toda conta usa o ritmo dos últimos 30 dias; a janela recente só marca tendência. Respeita a loja selecionada.</p>
 </section>
 
 <section id="s-entradas" hidden>
@@ -445,7 +446,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
       <table style="width:100%;margin:10px 0">
         <tr><th style="text-align:left">Produto</th><th style="text-align:left">A plataforma conta em</th><th style="text-align:left">Na nota de entrada</th><th style="text-align:left">Na venda (vínculo)</th></tr>
         <tr><td>Plastificação (A4, A3, RG, CPF, CGC, CNPJ, Crachá, Meio Ofício)</td><td><b>folhas</b> — e mostra pacotes ao lado (1 pacote = 100 folhas)</td><td>vem em pacote: 50 CXA = 5.000 folhas</td><td>"50un A4" vendido baixa 50 folhas; "Kit 300 A4/RG/CPF" baixa 100 de cada</td></tr>
-        <tr><td>Capa preta (PPC) e Capa Line (PPL)</td><td><b>peças</b></td><td>vem em pacote P/50 ou P/100: 500 PCT P/100 = 50.000 peças</td><td>"200 un capa" baixa 200 peças</td></tr>
+        <tr><td>Capa preta (PPC) e Capa Line (PPL)</td><td><b>peças</b>, mostrando pacotes ao lado (<b>1 pacote = 50 capas + 50 contracapas</b>, ou seja 50 de cada)</td><td>vem em pacote P/50 ou P/100: 500 PCT P/100 = 50.000 peças</td><td>"200 un capa" baixa 200 peças = 4 pacotes · pedido é feito em pacotes de 50</td></tr>
         <tr><td>Saco de talher (STB)</td><td><b>sacos</b></td><td>caixa da AMP = 5.000 sacos</td><td>"1000 un" baixa 1.000 sacos · pedido é em <b>fardos</b> (1 fardo = 5.000 sacos)</td></tr>
         <tr><td>Papel colmeia em folha</td><td><b>folhas de colmeia</b> (não é pacote de 100)</td><td>quantidade da nota</td><td>"kit 10 folhas" baixa 10</td></tr>
         <tr><td>Bobina, tesoura, calculadora</td><td><b>unidades</b></td><td>quantidade da nota</td><td>1 vendido baixa 1</td></tr>
@@ -986,11 +987,11 @@ function renderProdutos(){
   $('tblProdutos').innerHTML=any?h:'<tr><td><div class="empty">Nenhum produto.</div></td></tr>';
 }
 function renderProjecao(){
-  const rec=Math.max(1,+($('pjRec').value)||10), alvo=Math.max(1,+($('pjAlvo').value)||30);
+  const rec=Math.max(1,+($('pjRec').value)||10), alvo=Math.max(1,+($('pjAlvo').value)||30), fluxo=Math.max(1,+($('pjFluxo').value)||7);
   const pd=S.calc.porDia||{}, ref=S.calc.refD;
   if(!ref){ $('tblProj').innerHTML='<tr><td><div class="empty"><b>Sem vendas importadas.</b> Importe o relatório ML na aba Importar pra projeção funcionar.</div></td></tr>'; return; }
   const ms=86400000, refT=new Date(ref+'T00:00:00').getTime();
-  let h=`<tr><th>SKU</th><th>Produto</th><th class="r">Vendeu (últimos 30 dias)</th><th class="r">Por dia (÷30)</th><th class="r">Por dia (últimos ${rec}d)</th><th>Tendência</th><th class="r">Saldo hoje</th><th class="r">Dura</th><th>Fornecedor · prazo</th><th class="r" title="ritmo dos últimos 30 dias × ${alvo} dias">Vai vender em ${alvo}d</th><th class="r" title="reserva que precisa existir pra aguentar até o fornecedor entregar = por dia × prazo">Reserva (morto)</th><th class="r" title="saldo − reserva">Livre (vivo)</th><th class="r" title="vai vender em ${alvo}d + reserva − saldo, arredondado pra pacote">Comprar</th><th class="r">= pct</th></tr>`;
+  let h=`<tr><th>SKU</th><th>Produto</th><th class="r">Vendeu (últimos 30 dias)</th><th class="r">Por dia (÷30)</th><th>Tendência (${rec}d)</th><th class="r">Saldo hoje</th><th class="r">Dura</th><th>Fornecedor · prazo</th><th class="r" title="por dia × prazo do fornecedor: o que tem que existir quando o vivo acabar, pra aguentar até a entrega">Estoque morto (necessário)</th><th class="r" title="por dia × ${fluxo} dias de fluxo: o que gira no dia a dia">Estoque vivo (necessário)</th><th class="r" title="morto + vivo: abaixo disso é hora de pedir">Mínimo na prateleira</th><th class="r" title="por dia × ${alvo} dias">Vai vender em ${alvo}d</th><th class="r" title="vai vender em ${alvo}d + morto + vivo − saldo, arredondado pra pacote">Comprar p/ ${alvo}d</th><th>Observação de compra</th></tr>`;
   const pids=Object.keys(pd).sort((a,b)=>(S.produtos[a]?.sku||a).localeCompare(S.produtos[b]?.sku||b));
   let any=false;
   for(const pid of pids){
@@ -1009,20 +1010,31 @@ function renderProjecao(){
     const base=m30;                                   // toda conta usa o ritmo dos últimos 30 dias
     const cob = base>0 ? s/base : Infinity;
     const prox = Math.ceil(base*alvo);                // o que vai vender nos próximos <alvo> dias
-    const morto = Math.ceil(base*leadDe(pid));        // reserva pro prazo do fornecedor
-    const _m=embDe(pid).mult||1;
-    const enviar = Math.max(0, Math.ceil((prox + morto - s)/_m)*_m);
+    const morto = Math.ceil(base*leadDe(pid));        // estoque morto: por dia × prazo do fornecedor
+    const vivo  = Math.ceil(base*fluxo);              // estoque vivo: por dia × dias de fluxo
+    const minimo = morto+vivo;                        // abaixo disso, pede
+    const emb=embDe(pid); const _m=emb.mult||1;
+    const enviar = Math.max(0, Math.ceil((prox + minimo - s)/_m)*_m);
+    const diasAteMin = base>0 ? Math.floor((s-minimo)/base) : Infinity;
+    const dtMin = diasAteMin===Infinity ? '' : (d=>{const x=new Date(); x.setDate(x.getDate()+Math.max(0,diasAteMin)); return `${String(x.getDate()).padStart(2,'0')}/${String(x.getMonth()+1).padStart(2,'0')}`;})();
+    let obs;
+    if(base<=0) obs='<span class="dim">sem venda nos últimos 30 dias</span>';
+    else if(s<morto) obs=`<b style="color:var(--danger)">JÁ FALTOU</b> — abaixo do estoque morto. Comprar ${fmt(enviar/_m)} ${emb.plural} agora.`;
+    else if(s<minimo) obs=`<b style="color:var(--warn)">Pedir hoje</b> — está no morto, vivo acabou. Comprar ${fmt(enviar/_m)} ${emb.plural}.`;
+    else if(enviar>0) obs=`Comprar <b>${fmt(enviar/_m)} ${emb.plural}</b> até <b>${dtMin}</b> (dia que bate no mínimo) pra ter estoque até ${alvo} dias.`;
+    else obs=`<span class="chip ok">tem estoque pra ${alvo} dias</span> — só repor quando bater no mínimo (${dtMin}).`;
     const p=S.produtos[pid]||{};
     h+=`<tr><td class="mono">${esc(p.sku||pid)}</td><td>${esc(p.nome||'')}</td>
-      <td class="r num">${dupla(t30,pid)}</td><td class="r num">${dupla(m30,pid)}</td><td class="r num">${dupla(mR,pid)}</td>
+      <td class="r num">${dupla(t30,pid)}</td><td class="r num">${dupla(m30,pid)}</td>
       <td>${chip}</td><td class="r num">${dupla(s,pid)}</td>
       <td class="r num ${cob<alvo?'low':''}">${cob===Infinity?'—':fmt(cob)+' d'}</td>
       <td style="white-space:nowrap">${esc(fornPrincipal(pid)||'—')} <span class="dim">· ${leadDe(pid)} d</span></td>
-      <td class="r num">${dupla(prox,pid)}</td>
       <td class="r num">${dupla(morto,pid)}</td>
-      <td class="r num ${(s-morto)<0?'neg':''}">${dupla(s-morto,pid)}${(s-morto)<0?' <span class="chip warn">comeu a reserva</span>':''}</td>
+      <td class="r num">${dupla(vivo,pid)}</td>
+      <td class="r num ${s<minimo?'neg':''}">${dupla(minimo,pid)}</td>
+      <td class="r num">${dupla(prox,pid)}</td>
       <td class="r num ${enviar>0?'neg':''}">${enviar>0?dupla(enviar,pid):'<span class="chip ok">tem</span>'}</td>
-      <td class="r num dim">${p.unidade==='folhas'&&enviar>0?fmt(Math.ceil(enviar/100)):'—'}</td></tr>`;
+      <td class="wrap" style="max-width:340px;font-size:12.5px">${obs}</td></tr>`;
   }
   $('tblProj').innerHTML=any?h:'<tr><td><div class="empty">Sem vendas com vínculo nos últimos 30 dias.</div></td></tr>';
 }
@@ -1389,6 +1401,7 @@ $('mesXls').addEventListener('click', ()=>{ const t=$('tblMes'); const wb=XLSX.u
 $('qProd2').addEventListener('input', renderProdutos);
 $('pjRec').addEventListener('input', renderProjecao);
 $('pjAlvo').addEventListener('input', renderProjecao);
+$('pjFluxo').addEventListener('input', renderProjecao);
 $('qVinc').addEventListener('input', renderVinculos);
 $('qVendas').addEventListener('input', renderVendas);
 $('selMes').addEventListener('change', e=>{ S.mesSel=e.target.value; renderVendas(); });
@@ -1545,7 +1558,7 @@ const HELP={
  conferir:'Bloco 1 — anúncios que venderam mas ainda não têm vínculo — essas vendas NÃO baixam estoque até você vincular. Escolha o produto e o fator (quantas folhas/pacotes/peças saem por 1 unidade vendida) e clique Salvar. O chip amarelo ⚠ explica por que não teve sugestão automática. O botão ⚡ aplica todas as sugestões 💡 de uma vez.',
  vinculos:'Bloco 2 (a verificar) e bloco 3 (conferidos). Todo vínculo salvo cai no bloco 2; você confere e clica ✔ conferido pra ele descer pro bloco 3. Salvar sempre marca como conferido; ↩ manda de volta pro bloco 2. Liga cada anúncio do ML a produto(s) do estoque. Fator = quantas unidades do produto saem por venda (ex.: "200 unid capa+contracapa" = 100 PPC + 100 PPL). A linha 💰 mostra unidade e custo de cada item — sirva pra conferir se o fator está na unidade certa (folhas × pacotes). Depois de alterar, clique Salvar: aparece um aviso verde de confirmação.',
  vendas:'Vendas importadas dos relatórios do ML, mês a mês (selecione o mês no topo). "Baixa" mostra quanto saiu de cada produto. Cancelada não baixa; devolução baixa (regras em Importar). Importar o mesmo relatório de novo não duplica nada. O Excel exporta o mês que está na tela.',
- projecao:'Cada coluna: VENDEU (últimos 30 dias) = folhas/peças vendidas nas vendas importadas × fator do vínculo. POR DIA = vendeu ÷ 30. TENDÊNCIA = compara os últimos N dias (campo Janela recente) com os 30: acima de +15% está acelerando. SALDO HOJE = inicial + entradas − saídas. DURA = saldo ÷ por dia. FORNECEDOR · PRAZO = de quem vem e quantos dias demora. VAI VENDER = por dia × cobertura alvo (campo). RESERVA (estoque morto) = por dia × prazo do fornecedor — o mínimo que tem que sobrar pra aguentar a entrega. LIVRE (estoque vivo) = saldo − reserva; negativo = já está comendo a reserva, pedido atrasado. COMPRAR = vai vender + reserva − saldo, arredondado pra pacote inteiro ("tem" = não precisa). = PCT = a mesma conta em pacotes de 100.',
+ projecao:'VENDEU (últimos 30 dias) = peças/folhas vendidas × fator do vínculo. POR DIA = ÷30. SALDO HOJE = inicial + entradas − saídas. DURA = saldo ÷ por dia. ESTOQUE MORTO (necessário) = por dia × prazo do fornecedor: o que tem que existir quando o vivo acabar, pra aguentar até a entrega. ESTOQUE VIVO (necessário) = por dia × dias de fluxo (campo, padrão 7): o que gira. MÍNIMO = morto + vivo: abaixo disso é hora de pedir (fica vermelho). VAI VENDER = por dia × dias do campo Comprar para. COMPRAR = vai vender + mínimo − saldo, arredondado pra pacote/fardo ("tem" = não precisa). OBSERVAÇÃO = a frase pronta: quanto comprar e até que dia, ou o aviso se já está no morto.',
  entradas:'Compras e reposições. Lance pelo formulário (pacote fechado = 100 folhas), por planilha na aba Importar, ou me mande o XML da NF-e que eu classifico a empresa e lanço com o custo líquido. Excluir pede a senha.',
  importar:'Importações e configurações. Relatório de vendas ML: escolha a EMPRESA DA CONTA antes de soltar o arquivo. Entradas por planilha: colunas SKU + Pacotes ou Quantidade. Vendas e notas repetidas são ignoradas automaticamente. Embaixo ficam a conexão do banco e as regras de baixa.'
 };
@@ -1713,6 +1726,7 @@ function embDe(pid){
   const pr=S.produtos[pid]||{};
   if(pr.unidade==='folhas') return {nome:'pacote', plural:'pacotes', mult:100, dica:'1 pacote = 100 folhas (igual à nota)'};
   if((pr.sku||pid)==='STB')  return {nome:'fardo',  plural:'fardos',  mult:5000, dica:'1 fardo = 5.000 sacos'};
+  if(['PPC','PPL','PPC-COR'].includes(pr.sku||pid)) return {nome:'pacote', plural:'pacotes', mult:50, dica:'1 pacote = 50 capas + 50 contracapas (50 de cada)'};
   return {nome:pr.unidade||'un', plural:pr.unidade||'un', mult:1, dica:''};
 }
 function pedQtdTxt(p){ const e=embDe(p.pid); const q=p.qtd_aprovada!=null?p.qtd_aprovada:p.qtd; const n=q/e.mult; return `${fmt(n)} ${n===1?e.nome:e.plural}`; }
@@ -1785,7 +1799,7 @@ function reguaHTML(pid){
   h+=`<tr style="background:var(--surface2)"><td><b>Pedido total</b></td><td></td><td></td><td></td><td></td><td class="r num">${total?dois(total):'—'}</td><td colspan="2" class="dim" style="font-size:12px">${total?'cada uma deve: '+partes:'nenhuma empresa precisa comprar agora'}</td></tr>`;
   return h+'</table><div class="dim" style="margin-top:4px;font-size:11.5px">'+(T?'base = período todo: entrou e saiu desde a primeira nota · saldo = inicial + entradas − saídas · ritmo = últimos 30 dias · quanto comprar = ritmo × (prazo do fornecedor + '+PED_ALVO+' dias) − saldo − já pedido':'base = mês fechado: entrou = notas da empresa no mês · saiu = vendas dela no mês × fator · diferença = entrou − saiu · quanto comprar = ritmo do mês × (prazo do fornecedor + '+PED_ALVO+' dias) − diferença − já pedido')+(fl?' · 100 folhas = 1 pacote fechado':' · produto em '+(p.unidade||'un')+' — não tem pacote fechado')+'</div></div>';
 }
-function dupla(v,pid){ const p=S.produtos[pid]; const fl=p&&p.unidade==='folhas'; return fl? `<span style="display:inline-block;white-space:nowrap;line-height:1.2">${fmt(v)} fl<br><span class="dim" style="font-size:11px;font-weight:400">${fmt(v/100)} pct</span></span>` : fmt(v); }
+function dupla(v,pid){ const p=S.produtos[pid]; const fl=p&&p.unidade==='folhas'; const emb=(typeof embDe==='function')?embDe(pid):null; if(fl) return `<span style="display:inline-block;white-space:nowrap;line-height:1.2">${fmt(v)} fl<br><span class="dim" style="font-size:11px;font-weight:400">${fmt(v/100)} pct</span></span>`; if(emb&&emb.mult===50) return `<span style="display:inline-block;white-space:nowrap;line-height:1.2">${fmt(v)} un<br><span class="dim" style="font-size:11px;font-weight:400">${fmt(v/50)} pct</span></span>`; return fmt(v); }
 function pctHTML(pid,v){ const u=(S.produtos[pid]||{}).unidade; if(u!=='folhas'||!v) return ''; return `<div class="dim" style="font-size:11px;font-weight:400">${fmt(v/100)} pct</div>`; }
 function renderPedidos(){
   const selEl=document.getElementById('pdProd'); if(!selEl) return;
