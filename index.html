@@ -319,7 +319,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
     </div>
   </div>
   <div class="card">
-    <div class="card-h"><h2>Histórico de entradas</h2><div class="sp"><button class="btn sm sec xls" data-tbl="tblEntradas" data-nome="entradas" title="baixar em Excel">⬇ Excel</button><button class="btn sm sec ajuda" data-help="entradas" title="como usar esta aba">?</button></div></div>
+    <div class="card-h"><h2>Histórico de entradas</h2><div class="sp" id="enLote" style="display:none;align-items:center;gap:8px"><span class="dim" id="enLoteN"></span> <label class="f" style="margin:0">mover para<select id="enLoteEmp"></select></label><button class="btn sm" id="enLoteMover">Mover</button> <button class="btn sm sec" id="enLoteDel">Excluir selecionadas</button></div><div class="sp"><button class="btn sm sec xls" data-tbl="tblEntradas" data-nome="entradas" title="baixar em Excel">⬇ Excel</button><button class="btn sm sec ajuda" data-help="entradas" title="como usar esta aba">?</button></div></div>
     <div class="tbl-wrap"><table id="tblEntradas"></table></div>
   </div>
 </section>
@@ -448,7 +448,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
       <p><b>Vínculos</b> — liga cada anúncio do Mercado Livre a um produto e um fator (quantas folhas/peças 1 unidade vendida representa). Bloco de cima: anúncios esperando sua conferência (a plataforma sugere pelo título). Bloco de baixo: conferidos. Coluna <b>Loja</b> mostra em qual conta o anúncio vende. "Não vende mais" tira o anúncio da lista sem baixar estoque. Toda alteração fica gravada no histórico.</p>
       <p><b>Vendas</b> — as vendas importadas do ML, mês a mês, com a baixa que cada uma gerou. Busca por número, anúncio, comprador.</p>
       <p><b>Projeção</b> — quantos dias o saldo dura no ritmo atual. <b>Estoque morto</b> = a reserva que precisa existir pra aguentar até o fornecedor entregar (média por dia × prazo do fornecedor: AMP 7 dias, LM 5, Lassane capas 14, Prolam 3, Imballa 5, Mares 2). <b>Estoque vivo</b> = saldo menos essa reserva; se ficar negativo, a venda já está comendo a reserva e o pedido está atrasado.</p>
-      <p><b>Entradas</b> — lança compra manualmente (produto, pacotes ou unidades, empresa, NF). Lista tudo que já entrou. A NF impede lançar a mesma nota duas vezes.</p>
+      <p><b>Entradas</b> — lança compra manualmente (produto, pacotes ou unidades, empresa, NF). Lista tudo que já entrou. Cada linha tem ✎ pra corrigir qualquer campo (empresa, quantidade, data, NF…) e excluir. Marcando várias linhas aparece a barra de lote: <b>mover para</b> outra loja de uma vez, ou excluir todas. A NF impede lançar a mesma nota duas vezes.</p>
       <p><b>Pedidos</b> — pedido de compra: escolhe produto e empresa, vê a régua de reposição com base no <b>mês fechado</b> (o que cada loja comprou e vendeu no mês passado, e quanto comprar pra cobrir 30 dias + prazo do fornecedor), cria pendente. Se alguma loja está sem venda ou sem nota lançada no mês fechado, aparece um aviso vermelho no topo de todas as abas. "Gerar pedidos" cria de uma vez pra tudo que está acabando. Aprovar lança a entrada; recusar não mexe em nada.</p>
       <p><b>Aprovados</b> — histórico das decisões, com o botão que monta a mensagem pro fornecedor (um grupo por fornecedor) e link do WhatsApp.</p>
       <p><b>Importar</b> — relatório de vendas do ML (um por loja); planilha de entradas (modelo com colunas SKU, Pacotes ou Quantidade, Data, Fornecedor, NF, Obs — a loja vem do seletor); planilha de vínculos revisados; regras (limiar, cancelada, devolução); conexão com o banco e senha de edição.</p>
@@ -965,17 +965,54 @@ function renderProjecao(){
   }
   $('tblProj').innerHTML=any?h:'<tr><td><div class="empty">Sem vendas com vínculo nos últimos 30 dias.</div></td></tr>';
 }
+function enSelecionadas(){ return [...document.querySelectorAll('.en-sel:checked')].map(x=>x.dataset.id); }
+function enLoteUpd(){ const n=enSelecionadas().length; const b=$('enLote'); if(!b) return; b.style.display=n?'flex':'none'; $('enLoteN').textContent=n+' selecionada'+(n>1?'s':''); }
+async function entradaUpdate(eid,campos){
+  if(typeof SUPA!=='undefined' && SUPA){ const {error}=await SUPA.from('entradas').update(campos).eq('id',eid); if(error) throw new Error(rlsMsg(error)); }
+  else { await S.db.doc('entradas/'+eid).update(campos); }
+}
+document.addEventListener('change', e=>{
+  if(e.target.id==='enSelAll'){ document.querySelectorAll('.en-sel').forEach(c=>c.checked=e.target.checked); enLoteUpd(); }
+  else if(e.target.classList&&e.target.classList.contains('en-sel')) enLoteUpd();
+});
+document.addEventListener('click', async e=>{
+  const mv=e.target.closest('#enLoteMover'), dl=e.target.closest('#enLoteDel'), ed=e.target.closest('.en-edit'), ok=e.target.closest('.ee-ok');
+  if(mv){ const ids=enSelecionadas(); if(!ids.length||needDb()) return; const emp=$('enLoteEmp').value;
+    try{ for(const id of ids) await entradaUpdate(id,{empresa:emp}); await loadTable('entradas'); render(); toast(ids.length+' entrada(s) movida(s) para '+emp); }catch(err){ toast('Erro: '+(err.message||err)); } return; }
+  if(dl){ const ids=enSelecionadas(); if(!ids.length||needDb()) return;
+    if(dl.dataset.arm!=='1'){ dl.dataset.arm='1'; dl.textContent='confirmar exclusão de '+ids.length+'?'; setTimeout(()=>{dl.dataset.arm='';dl.textContent='Excluir selecionadas';},4000); return; }
+    try{ for(const id of ids) await entradaDelete(id); render(); toast(ids.length+' entrada(s) excluída(s)'); }catch(err){ toast('Erro: '+(err.message||err)); } return; }
+  if(ed){ const tr=ed.closest('tr'); const id=ed.dataset.id; const en=S.entradas.find(x=>String(x._id)===String(id)); if(!en) return;
+    const had=tr.parentElement.querySelector(`.ee-row[data-for="${id}"]`); tr.parentElement.querySelectorAll('.ee-row').forEach(x=>x.remove()); if(had) return;
+    const emb=embDe(en.pid); const box=document.createElement('tr'); box.className='ee-row'; box.dataset.for=id;
+    box.innerHTML=`<td colspan="9" style="background:var(--surface2)"><div style="display:flex;gap:10px;flex-wrap:wrap;align-items:end;padding:6px 4px">
+      <label class="f">Produto<select class="ee-pid">${prodOptions(en.pid).replace('<option value="__novo__">➕ criar produto novo…</option>','')}</select></label>
+      <label class="f">Quantidade <span class="dim">(${emb.plural})</span><input type="number" class="ee-qtd" step="any" value="${(en.qtd||0)/emb.mult}" style="width:110px"></label>
+      <label class="f">Empresa<select class="ee-emp">${EMPRESAS.map(x=>`<option ${x===empDe(en)?'selected':''}>${x}</option>`).join('')}</select></label>
+      <label class="f">Data<input type="date" class="ee-data" value="${esc((en.data||'').slice(0,10))}"></label>
+      <label class="f">Fornecedor<input type="text" class="ee-forn pa-forn" value="${esc(en.forn||'')}" style="width:130px"></label>
+      <label class="f">NF<input type="text" class="ee-nf" value="${esc(en.nf||'')}" style="width:90px"></label>
+      <label class="f" style="flex:1;min-width:200px">Obs<input type="text" class="ee-obs" value="${esc(en.obs||'')}" style="width:100%"></label>
+      <button class="btn sm ee-ok">Salvar</button></div></td>`;
+    tr.after(box); return; }
+  if(ok){ const box=ok.closest('tr'); const id=box.dataset.for; if(needDb()) return;
+    const pid=box.querySelector('.ee-pid').value; let q=Number(box.querySelector('.ee-qtd').value); if(!(q>0)){ toast('quantidade inválida'); return; } q=q*embDe(pid).mult;
+    const campos={pid, qtd:q, empresa:box.querySelector('.ee-emp').value, data:box.querySelector('.ee-data').value, forn:box.querySelector('.ee-forn').value.trim(), nf:box.querySelector('.ee-nf').value.trim(), obs:box.querySelector('.ee-obs').value.trim()};
+    try{ await entradaUpdate(id,campos); await loadTable('entradas'); render(); toast('Entrada atualizada'); }catch(err){ toast('Erro: '+(err.message||err)); } return; }
+});
 function renderEntradas(){
   $('enProd').innerHTML = prodOptions('').replace('<option value="__novo__">➕ criar produto novo…</option>','');
   const es = S.entradas.filter(empOk).sort((a,b)=>(b.data||'').localeCompare(a.data||''));
   if(!es.length){ $('tblEntradas').innerHTML = `<tr><td><div class="empty"><b>Nenhuma entrada lançada${S.empSel&&S.empSel!=='Todas'?' na '+esc(S.empSel):''}.</b></div></td></tr>`; return; }
-  let h = `<tr><th>Data</th><th>SKU</th><th>Empresa</th><th class="r">Qtd</th><th>Fornecedor</th><th>NF</th><th>Obs</th><th></th></tr>`;
+  let h = `<tr><th><input type="checkbox" id="enSelAll" title="selecionar todas da tela"></th><th>Data</th><th>SKU</th><th>Empresa</th><th class="r">Qtd</th><th>Fornecedor</th><th>NF</th><th>Obs</th><th></th></tr>`;
   for(const e of es){
-    h += `<tr><td class="num">${fmtData(e.data)}</td><td class="mono">${esc(S.produtos[e.pid]?.sku||e.pid)}</td>
-      <td>${esc(empDe(e))}</td><td class="r num">${dupla(e.qtd||0,e.pid)}</td><td>${esc(e.forn||'')}</td><td class="mono">${esc(e.nf||'')}</td><td>${esc(e.obs||'')}</td>
-      <td><button class="btn sm sec del-ent" data-id="${esc(e._id)}">excluir</button></td></tr>`;
+    h += `<tr data-eid="${esc(e._id)}"><td><input type="checkbox" class="en-sel" data-id="${esc(e._id)}"></td><td class="num">${fmtData(e.data)}</td><td class="mono">${esc(S.produtos[e.pid]?.sku||e.pid)}</td>
+      <td><span class="chip emp-${esc(empDe(e))}">${esc(empDe(e))}</span></td><td class="r num">${dupla(e.qtd||0,e.pid)}</td><td>${esc(e.forn||'')}</td><td class="mono">${esc(e.nf||'')}</td><td class="wrap" style="max-width:320px">${esc(e.obs||'')}</td>
+      <td style="white-space:nowrap"><button class="btn sm sec en-edit" data-id="${esc(e._id)}" title="editar">✎</button> <button class="btn sm sec del-ent" data-id="${esc(e._id)}">excluir</button></td></tr>`;
   }
   $('tblEntradas').innerHTML = h;
+  const le=$('enLoteEmp'); if(le&&!le.options.length) le.innerHTML=EMPRESAS.map(x=>`<option>${x}</option>`).join('');
+  enLoteUpd();
 }
 
 /* ================= db ================= */
