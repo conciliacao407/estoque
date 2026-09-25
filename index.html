@@ -446,7 +446,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
       <table style="width:100%;margin:10px 0">
         <tr><th style="text-align:left">Produto</th><th style="text-align:left">A plataforma conta em</th><th style="text-align:left">Na nota de entrada</th><th style="text-align:left">Na venda (vínculo)</th></tr>
         <tr><td>Plastificação (A4, A3, RG, CPF, CGC, CNPJ, Crachá, Meio Ofício)</td><td><b>folhas</b> — e mostra pacotes ao lado (1 pacote = 100 folhas)</td><td>vem em pacote: 50 CXA = 5.000 folhas</td><td>"50un A4" vendido baixa 50 folhas; "Kit 300 A4/RG/CPF" baixa 100 de cada</td></tr>
-        <tr><td>Capa preta (PPC) e Capa Line (PPL)</td><td><b>peças</b>, mostrando pacotes ao lado (<b>1 pacote = 50 capas + 50 contracapas</b>, ou seja 50 de cada)</td><td>vem em pacote P/50 ou P/100: 500 PCT P/100 = 50.000 peças</td><td>"200 un capa" baixa 200 peças = 4 pacotes · pedido é feito em pacotes de 50</td></tr>
+        <tr><td>Capa preta (PPC) e Capa Line (PPL)</td><td><b>peças</b>, mostrando pacotes ao lado (<b>1 pacote = 50 capas + 50 contracapas</b>, ou seja 50 de cada)</td><td>vem em pacote P/50 ou P/100: 500 PCT P/100 = 50.000 peças</td><td>"200 un capa" baixa 200 peças = 4 pacotes · pedido é feito em pacotes de 50 · <b>regra 1:1</b>: a plataforma sugere o mesmo número de pacotes pra capa e pra contracapa (o maior dos dois), porque cada kit leva 1 pacote de cada</td></tr>
         <tr><td>Saco de talher (STB)</td><td><b>sacos</b></td><td>caixa da AMP = 5.000 sacos</td><td>"1000 un" baixa 1.000 sacos · pedido é em <b>fardos</b> (1 fardo = 5.000 sacos)</td></tr>
         <tr><td>Papel colmeia em folha</td><td><b>folhas de colmeia</b> (não é pacote de 100)</td><td>quantidade da nota</td><td>"kit 10 folhas" baixa 10</td></tr>
         <tr><td>Bobina, tesoura, calculadora</td><td><b>unidades</b></td><td>quantidade da nota</td><td>1 vendido baixa 1</td></tr>
@@ -994,6 +994,10 @@ function renderProjecao(){
   let h=`<tr><th>SKU</th><th>Produto</th><th class="r">Vendeu (últimos 30 dias)</th><th class="r">Por dia (÷30)</th><th>Tendência (${rec}d)</th><th class="r">Saldo hoje</th><th class="r">Dura</th><th>Fornecedor · prazo</th><th class="r" title="por dia × prazo do fornecedor: o que tem que existir quando o vivo acabar, pra aguentar até a entrega">Estoque morto (necessário)</th><th class="r" title="por dia × ${fluxo} dias de fluxo: o que gira no dia a dia">Estoque vivo (necessário)</th><th class="r" title="morto + vivo: abaixo disso é hora de pedir">Mínimo na prateleira</th><th class="r" title="por dia × ${alvo} dias">Vai vender em ${alvo}d</th><th class="r" title="vai vender em ${alvo}d + morto + vivo − saldo, arredondado pra pacote">Comprar p/ ${alvo}d</th><th>Observação de compra</th></tr>`;
   const pids=Object.keys(pd).sort((a,b)=>(S.produtos[a]?.sku||a).localeCompare(S.produtos[b]?.sku||b));
   let any=false;
+  const compra={};
+  const calc=(pid)=>{ let t30=0; for(const dd in (pd[pid]||{})){ const dias=(refT-new Date(dd+'T00:00:00').getTime())/ms; if(dias<30) t30+=pd[pid][dd]; } const base=t30/30; const s2=saldoDe(pid); const morto=Math.ceil(base*leadDe(pid)), vivo=Math.ceil(base*fluxo), prox=Math.ceil(base*alvo); const _m=embDe(pid).mult||1; return Math.max(0, Math.ceil((prox+morto+vivo-s2)/_m)*_m); };
+  for(const pid of pids) compra[pid]=calc(pid);
+  for(const pid of pids){ const par=capaParDe(pid); if(par){ const m=Math.max(compra[pid]||0, compra[par]!=null?compra[par]:calc(par)); compra[pid]=m; compra[par]=m; } }
   for(const pid of pids){
     let t30=0,tR=0;
     for(const dd in pd[pid]){
@@ -1014,14 +1018,15 @@ function renderProjecao(){
     const vivo  = Math.ceil(base*fluxo);              // estoque vivo: por dia × dias de fluxo
     const minimo = morto+vivo;                        // abaixo disso, pede
     const emb=embDe(pid); const _m=emb.mult||1;
-    const enviar = Math.max(0, Math.ceil((prox + minimo - s)/_m)*_m);
+    let enviar = Math.max(0, Math.ceil((prox + minimo - s)/_m)*_m);
+    const par=capaParDe(pid); const igualado = !!(par && compra[pid]!==enviar); if(par) enviar=compra[pid];
     const diasAteMin = base>0 ? Math.floor((s-minimo)/base) : Infinity;
     const dtMin = diasAteMin===Infinity ? '' : (d=>{const x=new Date(); x.setDate(x.getDate()+Math.max(0,diasAteMin)); return `${String(x.getDate()).padStart(2,'0')}/${String(x.getMonth()+1).padStart(2,'0')}`;})();
     let obs;
     if(base<=0) obs='<span class="dim">sem venda nos últimos 30 dias</span>';
     else if(s<morto) obs=`<b style="color:var(--danger)">JÁ FALTOU</b> — abaixo do estoque morto. Comprar ${fmt(enviar/_m)} ${emb.plural} agora.`;
     else if(s<minimo) obs=`<b style="color:var(--warn)">Pedir hoje</b> — está no morto, vivo acabou. Comprar ${fmt(enviar/_m)} ${emb.plural}.`;
-    else if(enviar>0) obs=`Comprar <b>${fmt(enviar/_m)} ${emb.plural}</b> até <b>${dtMin}</b> (dia que bate no mínimo) pra ter estoque até ${alvo} dias.`;
+    else if(enviar>0) obs=`Comprar <b>${fmt(enviar/_m)} ${emb.plural}</b> até <b>${dtMin}</b> (dia que bate no mínimo) pra ter estoque até ${alvo} dias.`+(igualado?' <span class="dim">(igualado ao par capa/contracapa — 1:1)</span>':'');
     else obs=`<span class="chip ok">tem estoque pra ${alvo} dias</span> — só repor quando bater no mínimo (${dtMin}).`;
     const p=S.produtos[pid]||{};
     h+=`<tr><td class="mono">${esc(p.sku||pid)}</td><td>${esc(p.nome||'')}</td>
@@ -1720,6 +1725,8 @@ async function fornWrite(pid,f){
 }
 function fornDe(pid){ return S.forn[pid]||{}; }
 function saudacao(){ const h=new Date().getHours(); return h<12?'bom dia':(h<18?'boa tarde':'boa noite'); }
+const CAPA_PAR={'PPC':'PPL','PPL':'PPC'};
+function capaParDe(pid){ const sku=(S.produtos[pid]||{}).sku||pid; const outro=CAPA_PAR[sku]; if(!outro) return null; return Object.keys(S.produtos).find(x=>(S.produtos[x].sku||x)===outro)||null; }
 function isFolhas(pid){ const pr=S.produtos[pid]; return !!(pr&&pr.unidade==='folhas'); }
 /* como cada produto é pedido: nome da embalagem e quantas unidades do estoque ela tem */
 function embDe(pid){
@@ -1782,9 +1789,10 @@ function reguaDe(pid){
   }
   return {saldo, linhas, mes:mf.mes, modo};
 }
+function reguaDePar(pid){ const r=reguaDe(pid); const par=capaParDe(pid); if(!par) return r; const r2=reguaDe(par); for(const l of r.linhas){ const l2=r2.linhas.find(x=>x.emp===l.emp); if(l2 && l2.comprar>l.comprar){ l.comprar=l2.comprar; l.igualado=true; } } return r; }
 function reguaHTML(pid){
   const p=S.produtos[pid]; if(!p) return '';
-  const r=reguaDe(pid);
+  const r=reguaDePar(pid);
   const fl=p.unidade==='folhas';
   const dois=v=>fl?`<b>${fmt(v)}</b> folhas <span class="dim">·</span> <b>${fmt(v/100)}</b> pct`:`<b>${fmt(v)}</b> ${esc(p.unidade||'un')}`;
   const total=((S.empSel&&S.empSel!=='Todas')?r.linhas.filter(l=>l.emp===S.empSel):r.linhas).reduce((t,l)=>t+l.comprar,0);
@@ -1793,7 +1801,7 @@ function reguaHTML(pid){
   let h=`<div style="margin-top:10px;font-size:12.5px"><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><b>Régua da reposição — ${esc(p.sku)}</b> <span class="dim">base:</span> ${btn('mes','Mês fechado '+mesTxt,!T)} ${btn('total','Período todo',T)} <span class="dim">· saldo acumulado do grupo ${dois(r.saldo)}</span></div><table style="margin-top:6px;width:100%"><tr><th>Empresa</th><th class="r">${T?'entrou (total)':'entrou '+mesTxt}</th><th class="r">${T?'saiu (total)':'saiu '+mesTxt}</th><th class="r">${T?'saldo':'diferença'}</th><th class="r">já pedido</th><th class="r">quanto comprar (deve)</th><th>situação</th><th></th></tr>`;
   const _lin=(S.empSel&&S.empSel!=='Todas')?r.linhas.filter(l=>l.emp===S.empSel):r.linhas;
   for(const l of _lin){
-    h+=`<tr><td>${esc(l.emp)}</td><td class="r num">${dois(l.ent)}</td><td class="r num">${dois(l.saiu)}</td><td class="r num ${l.aloc<0?'neg':''}">${dois(l.aloc)}</td><td class="r num">${l.jp?dois(l.jp):'—'}</td><td class="r num">${l.comprar?dois(l.comprar):'—'}</td><td><span style="color:${l.cor}">●</span> ${esc(l.sit)}</td><td>${l.comprar?`<button class="btn sm sec pd-usar" data-emp="${esc(l.emp)}" data-q="${l.comprar}">usar</button>`:''}</td></tr>`;
+    h+=`<tr><td>${esc(l.emp)}</td><td class="r num">${dois(l.ent)}</td><td class="r num">${dois(l.saiu)}</td><td class="r num ${l.aloc<0?'neg':''}">${dois(l.aloc)}</td><td class="r num">${l.jp?dois(l.jp):'—'}</td><td class="r num">${l.comprar?dois(l.comprar):'—'}${l.igualado?' <span class="dim" title="igualado ao par capa/contracapa (1:1)">=</span>':''}</td><td><span style="color:${l.cor}">●</span> ${esc(l.sit)}</td><td>${l.comprar?`<button class="btn sm sec pd-usar" data-emp="${esc(l.emp)}" data-q="${l.comprar}">usar</button>`:''}</td></tr>`;
   }
   const partes=_lin.filter(l=>l.comprar>0).map(l=>`${esc(l.emp)} ${fl?fmt(l.comprar/100)+' pct':fmt(l.comprar)+' '+esc(p.unidade||'un')}`).join(' · ');
   h+=`<tr style="background:var(--surface2)"><td><b>Pedido total</b></td><td></td><td></td><td></td><td></td><td class="r num">${total?dois(total):'—'}</td><td colspan="2" class="dim" style="font-size:12px">${total?'cada uma deve: '+partes:'nenhuma empresa precisa comprar agora'}</td></tr>`;
@@ -1931,7 +1939,7 @@ document.addEventListener('click', async e=>{
     try{
       let n=0;
       for(const pid of Object.keys(S.produtos)){
-        const r=reguaDe(pid);
+        const r=reguaDePar(pid);
         for(const l of r.linhas){
           if(l.comprar>0){
             const id='p'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)+(n++);
