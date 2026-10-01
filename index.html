@@ -183,6 +183,8 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
     <button class="loja" data-emp="MEK"><span class="dot" style="background:#D63C8B"></span>MEK</button>
   </div>
   <nav class="tabs" id="tabs">
+    <button class="tab" data-t="pedidos"><span class="ico">🧾</span>Pedidos <span class="badge" id="bPed"></span></button>
+    <button class="tab" data-t="aprovados"><span class="ico">✅</span>Aprovados</button>
     <button class="tab on" data-t="estoque"><span class="ico">📦</span>Estoque</button>
     <button class="tab" data-t="mes"><span class="ico">📅</span>Mês fechado</button>
     <button class="tab" data-t="produtos"><span class="ico">🏷️</span>Produtos</button>
@@ -190,8 +192,6 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
     <button class="tab" data-t="vendas"><span class="ico">🛒</span>Vendas</button>
     <button class="tab" data-t="projecao"><span class="ico">📈</span>Projeção</button>
     <button class="tab" data-t="entradas"><span class="ico">📥</span>Entradas</button>
-    <button class="tab" data-t="pedidos"><span class="ico">🧾</span>Pedidos <span class="badge" id="bPed"></span></button>
-    <button class="tab" data-t="aprovados"><span class="ico">✅</span>Aprovados</button>
     <button class="tab" data-t="importar"><span class="ico">⬆️</span>Importar</button>
     <button class="tab" data-t="orientacao"><span class="ico">📖</span>Orientação</button>
   </nav>
@@ -1818,7 +1818,7 @@ function renderPedidos(){
     if(bs){ bs.addEventListener('input', ()=>{
       const q=bs.value.trim().toLowerCase(); let first=null;
       for(const o of selEl.options){ const ok=!q || o.textContent.toLowerCase().includes(q) || (o.value||'').toLowerCase().includes(q); o.hidden=!ok; if(ok&&!first) first=o; }
-      if(first) selEl.value=first.value; pdQtdUnUpd();
+      if(first){ selEl.value=first.value; selEl.dispatchEvent(new Event('change',{bubbles:true})); } pdQtdUnUpd();
     }); }
   } pdQtdUnUpd();
   const eEmp=document.getElementById('pdEmp'); if(eEmp&&!eEmp.options.length){ eEmp.innerHTML=PED_EMP().map(x=>`<option>${x}</option>`).join(''); sincEmpresa(); }
