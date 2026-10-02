@@ -892,7 +892,6 @@ document.addEventListener('change', e=>{
   else if(e.target.classList&&e.target.classList.contains('vd-sel')) vdLoteUpd();
 });
 document.addEventListener('click', async e=>{
-  if(e.target.closest('#vdMostrarTodas')){ S.vdTodas=true; renderVendas(); return; }
   const sm=e.target.closest('#vdSelMes'), mv=e.target.closest('#vdLoteMover'), dl=e.target.closest('#vdLoteDel'), ed=e.target.closest('.vd-edit'), d1=e.target.closest('.vd-del'), ok=e.target.closest('.ve-ok');
   if(sm){ // marca TODAS as vendas do mês/loja (não só as 400 da tela)
     const cur=S.mesSel; const ids=S.vendasRows.filter(r=>r.mes===cur&&empOk(r)).map(r=>r.id); S.vdLoteIds=ids;
@@ -923,7 +922,6 @@ function renderVendas(){
   const meses = [...new Set(S.vendasRows.map(r=>r.mes))].sort().reverse();
   const sel = $('selMes');
   const cur = S.mesSel && meses.includes(S.mesSel) ? S.mesSel : (meses[0]||'');
-  if(S.mesSel!==cur) S.vdTodas=false;
   S.mesSel = cur; S.vdLoteIds=null;
   sel.innerHTML = meses.map(m=>`<option value="${m}" ${m===cur?'selected':''}>${fmtMes(m)}</option>`).join('') || '<option>—</option>';
   const q = ($('qVendas').value||'').toLowerCase();
@@ -935,7 +933,6 @@ function renderVendas(){
   let shown=0;
   for(const r of rows){
     if(q && !`${r.id} ${r.an||''} ${r.tit||''} ${r.cmp||''} ${r.sku||''} ${r.est||''}`.toLowerCase().includes(q)) continue;
-    if(!S.vdTodas && ++shown>400){ h+=`<tr><td colspan="13" style="padding:12px"><button class="btn sm" id="vdMostrarTodas">mostrar todas as ${rows.length} vendas do mês</button> <span class="dim">— a tela mostra as 400 mais recentes; as mais antigas do mês estão escondidas, não apagadas. A busca e o "marcar o mês inteiro" olham todas.</span></td></tr>`; break; }
     if(r.tp==='pai'){
       h += `<tr class="dim" data-vid="${esc(r.id)}"><td><input type="checkbox" class="vd-sel" data-id="${esc(r.id)}"></td><td class="num">${fmtData(r.d)}</td><td class="mono">${esc(r.id)}</td><td><span class="chip emp-${esc(r.emp||'')}">${esc(r.emp||'')}</span></td><td><span class="chip mut">${esc(r.est)}</span></td><td class="dim"></td><td colspan="4" class="dim">pacote — itens nas linhas abaixo</td><td class="r num">${fmtBRL(r.tot)}</td><td>${esc(r.cmp||'')}</td><td></td></tr>`;
       continue;
