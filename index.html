@@ -290,7 +290,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
       <div class="sp">
         <button class="btn sm sec" id="vdSelMes" title="marca todas as vendas do mês e loja que estão na tela">marcar o mês inteiro</button>
         <select id="selMes"></select>
-        <input type="text" id="qVendas" placeholder="buscar…"><button class="btn sm sec xls" data-tbl="tblVendas" data-nome="vendas" title="baixar em Excel">⬇ Excel</button><button class="btn sm sec ajuda" data-help="vendas" title="como usar esta aba">?</button>
+        <input type="text" id="qVendas" placeholder="buscar…"><button class="btn sm sec" id="vdXls" title="baixa o mês inteiro da loja selecionada, independente do que está na tela">⬇ Excel (mês inteiro)</button><button class="btn sm sec ajuda" data-help="vendas" title="como usar esta aba">?</button>
       </div>
     </div>
     <div class="tbl-wrap"><table id="tblVendas"></table></div>
@@ -1589,6 +1589,15 @@ const HELP={
  importar:'Importações e configurações. Relatório de vendas ML: escolha a EMPRESA DA CONTA antes de soltar o arquivo. Entradas por planilha: colunas SKU + Pacotes ou Quantidade. Vendas e notas repetidas são ignoradas automaticamente. Embaixo ficam a conexão do banco e as regras de baixa.'
 };
 document.addEventListener('click', async e=>{
+  if(e.target.closest('#vdXls')){
+    const cur=S.mesSel; const rows=S.vendasRows.filter(r=>r.mes===cur && empOk(r)).sort((a,b)=>(b.d||'').localeCompare(a.d||''));
+    const dados=rows.map(r=>{ const v=S.vinculos[seg(r.an)]; const baixa=r.tp!=='item'?'':(isCanc(r.est)&&!S.cfg.canc?'não baixa':(v&&v.itens&&v.itens.length?v.itens.map(it=>`${S.produtos[it.pid]?.sku||it.pid} −${(r.un||0)*(it.fator||0)}`).join(' | '):'SEM VÍNCULO'));
+      return {'Data':fmtData(r.d),'N.º venda':r.id,'Loja':r.emp||'','Tipo':r.tp==='pai'?'pacote':'item','Estado':r.est||'','Envio':r.env||'','Anúncio':r.an||'','Título':r.tit||'','Unidades':r.un||0,'Baixa':baixa,'Total (BRL)':r.tot==null?'':Number(r.tot),'Comprador':r.cmp||'','SKU anúncio':r.sku||''}; });
+    const ws=XLSX.utils.json_to_sheet(dados); const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'vendas');
+    // aba de faturamento
+    const fat=[...document.querySelectorAll('#tblFat tr')].map(tr=>[...tr.cells].map(c=>c.innerText)); if(fat.length){ XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(fat),'faturamento'); }
+    XLSX.writeFile(wb,`vendas_${cur}${S.empSel&&S.empSel!=='Todas'?'_'+S.empSel:''}.xlsx`); toast(dados.length+' vendas exportadas'); return;
+  }
   const x=e.target.closest('.xls');
   if(x){ baixarTabela(x.dataset.tbl, x.dataset.nome); return; }
   const aj=e.target.closest('.ajuda');
