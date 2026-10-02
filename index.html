@@ -283,6 +283,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
 </section>
 
 <section id="s-vendas" hidden>
+  <div class="card"><div class="card-h"><h2>Faturamento do mês <span id="vdResTit" class="dim" style="font-weight:400;font-size:13px"></span></h2></div><div class="tbl-wrap"><table id="tblFat"></table></div></div>
   <div class="card">
     <div class="card-h"><h2>Vendas importadas</h2>
       <div class="sp" id="vdLote" style="display:none;align-items:center;gap:8px"><span class="dim" id="vdLoteN"></span> <label class="f" style="margin:0">mover para<select id="vdLoteEmp"></select></label><button class="btn sm" id="vdLoteMover">Mover</button> <button class="btn sm sec" id="vdLoteDel">Excluir selecionadas</button></div>
@@ -918,11 +919,32 @@ document.addEventListener('click', async e=>{
     const campos={emp:box.querySelector('.ve-emp').value, un:Number(box.querySelector('.ve-un').value)||0, est:box.querySelector('.ve-est').value.trim(), an:box.querySelector('.ve-an').value.trim()};
     try{ await vendaUpdate(id,campos); await loadVendas(); render(); toast('Venda atualizada'); }catch(err){ toast('Erro: '+(err.message||err)); } return; }
 });
+function renderFaturamento(){
+  const t=$('tblFat'); if(!t) return;
+  const cur=S.mesSel; if(!cur){ t.innerHTML=''; return; }
+  const R={}; for(const e of EMPRESAS) R[e]={n:0,v:0,nc:0,vc:0};
+  for(const r of S.vendasRows){
+    if(r.mes!==cur) continue;
+    const umaVenda = r.tp==='pai' || (r.tp==='item' && !r.pac);   // item dentro de pacote não conta de novo
+    if(!umaVenda) continue;
+    const e=r.emp||'?'; if(!R[e]) R[e]={n:0,v:0,nc:0,vc:0};
+    const v=Number(r.tot)||0; const ruim=isCanc(r.est)||isDev(r.est);
+    R[e].n++; R[e].v+=v; if(ruim){ R[e].nc++; R[e].vc+=v; }
+  }
+  const T={n:0,v:0,nc:0,vc:0}; for(const e in R){ T.n+=R[e].n; T.v+=R[e].v; T.nc+=R[e].nc; T.vc+=R[e].vc; }
+  const linha=(nome,x,cls)=>`<tr class="${cls||''}"><td>${nome}</td><td class="r num">${fmt(x.n)}</td><td class="r num">${fmtBRL(x.v)}</td><td class="r num ${x.nc?'neg':''}">${fmt(x.nc)}</td><td class="r num ${x.vc?'neg':''}">${x.vc?'− '+fmtBRL(x.vc):'—'}</td><td class="r num"><b>${fmtBRL(x.v-x.vc)}</b></td></tr>`;
+  let h='<tr><th>Loja</th><th class="r">Vendas totais</th><th class="r">R$ total</th><th class="r">Canceladas / devolvidas</th><th class="r">R$ canc./dev.</th><th class="r">Valor final</th></tr>';
+  for(const e of EMPRESAS) h+=linha(`<span class="chip emp-${esc(e)}">${esc(e)}</span>`,R[e]);
+  for(const e in R) if(!EMPRESAS.includes(e)) h+=linha(esc(e),R[e]);
+  h+=linha('<b>Grupo</b>',T,'');
+  t.innerHTML=h;
+  $('vdResTit').textContent=`— ${cur.slice(5)}/${cur.slice(0,4)} · valor = coluna "Total (BRL)" do relatório do ML · canceladas e devolvidas pelo estado da venda`;
+}
 function renderVendas(){
   const meses = [...new Set(S.vendasRows.map(r=>r.mes))].sort().reverse();
   const sel = $('selMes');
   const cur = S.mesSel && meses.includes(S.mesSel) ? S.mesSel : (meses[0]||'');
-  S.mesSel = cur; S.vdLoteIds=null;
+  S.mesSel = cur; S.vdLoteIds=null; renderFaturamento();
   sel.innerHTML = meses.map(m=>`<option value="${m}" ${m===cur?'selected':''}>${fmtMes(m)}</option>`).join('') || '<option>—</option>';
   const q = ($('qVendas').value||'').toLowerCase();
   const rows = [];
