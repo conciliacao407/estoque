@@ -197,7 +197,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
   </nav>
   <div class="side-foot">
     <span id="connState">conectando ao banco…</span>
-    <div style="opacity:.6;margin-top:4px">Supabase · 4 lojas</div>
+    <div style="opacity:.6;margin-top:4px">Supabase · 4 lojas · <span id="versao">v2026-10-02d</span></div>
   </div>
 </aside>
 <div class="content">
@@ -925,7 +925,7 @@ function renderFaturamento(){
   const R={}; for(const e of EMPRESAS) R[e]={n:0,v:0,nc:0,vc:0};
   for(const r of S.vendasRows){
     if(r.mes!==cur) continue;
-    const umaVenda = r.tp==='pai' || (r.tp==='item' && !r.pac);   // item dentro de pacote não conta de novo
+    const umaVenda = r.tp==='pai' || (r.tp==='item' && (r.env||r.cmp));   // item dentro de pacote (sem envio e sem comprador) não conta de novo
     if(!umaVenda) continue;
     const e=r.emp||'?'; if(!R[e]) R[e]={n:0,v:0,nc:0,vc:0};
     const v=Number(r.tot)||0; const ruim=isCanc(r.est)||isDev(r.est);
