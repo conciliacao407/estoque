@@ -197,7 +197,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
   </nav>
   <div class="side-foot">
     <span id="connState">conectando ao banco…</span>
-    <div style="opacity:.6;margin-top:4px">Supabase · 4 lojas · <span id="versao">v2026-10-02d</span></div>
+    <div style="opacity:.6;margin-top:4px">Supabase · 4 lojas · <span id="versao">v2026-10-02e</span></div>
   </div>
 </aside>
 <div class="content">
@@ -1254,13 +1254,13 @@ async function importVendas(file){
     const hi = rows.findIndex(r=>r.some(c=>String(c).trim()==='N.º de venda'));
     if(hi<0) throw new Error('Não achei o cabeçalho "N.º de venda" — esse é o relatório de vendas do ML?');
     const H = rows[hi].map(c=>String(c).trim());
-    const col = n => H.indexOf(n);
-    const c = {id:col('N.º de venda'), d:col('Data da venda'), dep:col('Depósito'), est:col('Estado'), dsc:col('Descrição do status'),
-      pac:col('Pacote de diversos produtos'), kit:col('Pertence a um kit'), un:col('Unidades'), tot:col('Total (BRL)'),
+    const col = (...ns) => { for(const n of ns){ const i=H.indexOf(n); if(i>=0) return i; } return -1; };
+    const c = {id:col('N.º de venda'), d:col('Data da venda','Data de venda'), dep:col('Depósito'), est:col('Estado'), dsc:col('Descrição do status'),
+      pac:col('Pacote de diversos produtos'), kit:col('Pertence a um kit'), un:col('Unidades'), tot:col('Total (BRL)','Receita por produtos (BRL)'),
       mf:col('Mês de faturamento das suas tarifas'), ped:col('Pedido de compra'), pub:col('Venda por publicidade'),
       sku:col('SKU'), an:col('# de anúncio'), tit:col('Título do anúncio'), vr:col('Variação'), cmp:col('Comprador'), env:col('Forma de entrega')};
     if(c.id<0||c.an<0||c.un<0) throw new Error('Cabeçalho incompleto no arquivo.');
-    const novas={}; let nDup=0,nPai=0,nItem=0,nCanc=0;
+    const novas={}; let nDup=0,nPai=0,nItem=0,nCanc=0; const conserta=[];
     for(let i=hi+1;i<rows.length;i++){
       const r=rows[i];
       const id=String(r[c.id]??'').trim();
@@ -1271,7 +1271,7 @@ async function importVendas(file){
       if(tp==='outro') continue;
       const d = parseDataVenda(r[c.d]);
       const mk = mesKey(d);
-      if(S.vendasIds.has(id)){ nDup++; continue; }
+      if(S.vendasIds.has(id)){ const ex=S.vendasRows.find(x=>x.id===id); if(ex && (!ex.d || ex.mes==='sem-data') && d){ ex.d=d; ex.mes=mk; conserta.push({id, d, mes:mk}); } nDup++; continue; }
       if(novas[mk] && novas[mk].some(x=>x.id===id)){ nDup++; continue; }
       const row = {id, d, tp, emp:$('impEmp').value,
         dep:String(r[c.dep]??'').trim(), est, dsc:String(r[c.dsc]??'').trim(),
@@ -1283,8 +1283,9 @@ async function importVendas(file){
       (novas[mk]=novas[mk]||[]).push(row);
       if(tp==='pai') nPai++; else { nItem++; if(isCanc(est)) nCanc++; }
     }
+    if(conserta.length){ for(let i=0;i<conserta.length;i+=200){ for(const x of conserta.slice(i,i+200)){ const {error}=await SUPA.from('vendas').update({d:x.d, mes:x.mes}).eq('id',x.id); if(error) throw new Error(rlsMsg(error)); } } }
     const totalNovas = Object.values(novas).reduce((s,a)=>s+a.length,0);
-    if(!totalNovas){ box.innerHTML=`<div class="msg warn">Nada novo: ${nDup} linha(s) já estavam importadas.</div>`; return; }
+    if(!totalNovas){ if(conserta.length){ render(); box.innerHTML=`<div class="msg ok">${conserta.length} venda(s) que estavam sem data foram corrigidas. ${nDup-conserta.length} já estavam importadas.</div>`; return; } box.innerHTML=`<div class="msg warn">Nada novo: ${nDup} linha(s) já estavam importadas.</div>`; return; }
     box.innerHTML='<div class="msg ok">Gravando no banco…</div>';
     const all=[];
     for(const mk in novas) for(const row of novas[mk]) all.push(Object.assign({mes:mk}, row));
@@ -1295,7 +1296,7 @@ async function importVendas(file){
     for(const r of all){ S.vendasRows.push(r); S.vendasIds.add(r.id); }
     render();
     const nPend = Object.keys(S.calc.pend).length;
-    box.innerHTML = `<div class="msg ok"><b>${totalNovas}</b> linha(s) importadas (${nItem} itens, ${nPai} pacotes, ${nCanc} canceladas) · ${nDup} duplicadas ignoradas.${nPend?` <b>${nPend} anúncio(s) sem vínculo</b> — resolva na aba Vínculos (bloco 1).`:''}</div>`;
+    box.innerHTML = `<div class="msg ok"><b>${totalNovas}</b> linha(s) importadas (${nItem} itens, ${nPai} pacotes, ${nCanc} canceladas) · ${nDup} duplicadas ignoradas${conserta.length?` · ${conserta.length} sem data corrigidas`:''}.${nPend?` <b>${nPend} anúncio(s) sem vínculo</b> — resolva na aba Vínculos (bloco 1).`:''}</div>`;
   }catch(err){
     box.innerHTML = `<div class="msg bad">Erro na importação: ${esc(err.message||err)}</div>`;
   }
