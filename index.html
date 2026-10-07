@@ -197,7 +197,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
   </nav>
   <div class="side-foot">
     <span id="connState">conectando ao banco…</span>
-    <div style="opacity:.6;margin-top:4px">Supabase · 4 lojas · <span id="versao">v2026-10-02e</span></div>
+    <div style="opacity:.6;margin-top:4px">Supabase · 4 lojas · <span id="versao">v2026-10-07a</span></div>
   </div>
 </aside>
 <div class="content">
@@ -345,6 +345,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
 
 <section id="s-pedidos" hidden>
   <div class="card">
+    <div id="pdAvisoVinc" hidden></div>
     <div class="card-h"><h2>Fazer pedido</h2>
       <div class="sp"><button class="btn sm" id="btnGerarPed">⚡ Gerar pedidos (sugestão)</button><button class="btn sm sec xls" data-tbl="tblPedPend" data-nome="pedidos_pendentes" title="baixar em Excel">⬇ Excel</button><button class="btn sm sec ajuda" data-help="pedidos" title="como usar esta aba">?</button></div></div>
     <div class="card-b">
@@ -465,10 +466,10 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
       <p><b>Mês fechado</b> — só o que entrou e o que saiu dentro de um mês (padrão: o mês passado). Não olha saldo acumulado; serve pra fechar o mês e comparar compra com venda. Respeita a loja do topo e tem Excel.</p>
       <p><b>Produtos</b> — cadastro: SKU, nome, unidade, custo da última nota, fornecedor e telefone (pra mensagem de pedido). "+ Produto" cria; lápis edita.</p>
       <p><b>Vínculos</b> — liga cada anúncio do Mercado Livre a um produto e um fator (quantas folhas/peças 1 unidade vendida representa). Bloco de cima: anúncios esperando sua conferência (a plataforma sugere pelo título). Bloco de baixo: conferidos. Coluna <b>Loja</b> mostra em qual conta o anúncio vende. "Não vende mais" tira o anúncio da lista sem baixar estoque. Toda alteração fica gravada no histórico.</p>
-      <p><b>Vendas</b> — as vendas importadas do ML, mês a mês, com a loja e a baixa que cada uma gerou. Busca por número, anúncio, comprador. Cada linha tem ✎ (trocar loja, unidades, estado, anúncio) e 🗑. Marcando linhas, ou clicando em <b>marcar o mês inteiro</b>, aparece a barra de lote: mover todas pra outra loja ou excluir — é o jeito de corrigir um relatório importado na loja errada.</p>
+      <p><b>Vendas</b> — no topo, o <b>Faturamento do mês</b> por loja com as colunas <b>ML: vendas</b> e <b>ML: receita</b>: você digita o que o Mercado Livre mostra em Faturamento → Vendas e a plataforma diz se <b>bate</b> ou quanto <b>difere</b>. Esse é o parâmetro de conferência de lançamento: mês com "bate" nas quatro lojas está fechado. Embaixo, as vendas importadas do ML, mês a mês, com a loja e a baixa que cada uma gerou. Busca por número, anúncio, comprador. Cada linha tem ✎ (trocar loja, unidades, estado, anúncio) e 🗑. Marcando linhas, ou clicando em <b>marcar o mês inteiro</b>, aparece a barra de lote: mover todas pra outra loja ou excluir — é o jeito de corrigir um relatório importado na loja errada.</p>
       <p><b>Projeção</b> — quantos dias o saldo dura no ritmo atual. <b>Estoque morto</b> = a reserva que precisa existir pra aguentar até o fornecedor entregar (média por dia × prazo do fornecedor: AMP 7 dias, LM 5, Lassane capas 14, Prolam 3, Imballa 5, Mares 2). <b>Estoque vivo</b> = saldo menos essa reserva; se ficar negativo, a venda já está comendo a reserva e o pedido está atrasado.</p>
       <p><b>Entradas</b> — lança compra manualmente (produto, pacotes ou unidades, empresa, NF). Lista tudo que já entrou. Cada linha tem ✎ pra corrigir qualquer campo (empresa, quantidade, data, NF…) e excluir. Marcando várias linhas aparece a barra de lote: <b>mover para</b> outra loja de uma vez, ou excluir todas. A NF impede lançar a mesma nota duas vezes.</p>
-      <p><b>Pedidos</b> — pedido de compra: escolhe produto e empresa, vê a régua de reposição com base no <b>mês fechado</b> (o que cada loja comprou e vendeu no mês passado, e quanto comprar pra cobrir 30 dias + prazo do fornecedor), cria pendente. Se alguma loja está sem venda ou sem nota lançada no mês fechado, aparece um aviso vermelho no topo de todas as abas. "Gerar pedidos" cria de uma vez pra tudo que está acabando. Aprovar lança a entrada; recusar não mexe em nada.</p>
+      <p><b>Pedidos</b> — pedido de compra: escolhe produto e empresa, vê a régua de reposição com base no <b>mês fechado</b> (o que cada loja comprou e vendeu no mês passado, e quanto comprar pra cobrir 30 dias + prazo do fornecedor), cria pendente. Se alguma loja está sem venda ou sem nota lançada no mês fechado, aparece um aviso vermelho no topo de todas as abas. "Gerar pedidos" cria de uma vez pra tudo que está acabando. Aprovar lança a entrada na hora (quantidade e fornecedor do pedido; use ✎ antes se precisar ajustar); Recusar é um clique e não mexe em nada.</p>
       <p><b>Aprovados</b> — histórico das decisões, com o botão que monta a mensagem pro fornecedor (um grupo por fornecedor) e link do WhatsApp.</p>
       <p><b>Importar</b> — relatório de vendas do ML (um por loja); planilha de entradas (modelo com colunas SKU, Pacotes ou Quantidade, Data, Fornecedor, NF, Obs — a loja vem do seletor); planilha de vínculos revisados; regras (limiar, cancelada, devolução); conexão com o banco e senha de edição.</p>
       <p><b>Senha de edição:</b> sem ela a plataforma abre em modo leitura. Importar → Conexão → Senha → Conectar. Fica salva no navegador.</p>
@@ -849,9 +850,12 @@ function renderConferir(){
   b.hidden = !nSug;
   if(nSug && b.dataset.arm!=='1') b.textContent = `⚡ Aplicar as ${nSug} sugestões`;
 }
-S.conferidos = S.conferidos || {}; S.descont = S.descont || {};
+S.conferidos = S.conferidos || {}; S.descont = S.descont || {}; S.confML = S.confML || {};
 async function loadConferidos(){
-  if(typeof SUPA!=='undefined' && SUPA){ const {data,error}=await SUPA.from('config').select('*').in('k',['conferidos','descontinuados']); if(!error){ S.conferidos={}; S.descont={}; (data||[]).forEach(r=>{ if(r.k==='conferidos') S.conferidos=r.v||{}; if(r.k==='descontinuados') S.descont=r.v||{}; }); } }
+  if(typeof SUPA!=='undefined' && SUPA){ const {data,error}=await SUPA.from('config').select('*').in('k',['conferidos','descontinuados','conf_vendas']); if(!error){ S.conferidos={}; S.descont={}; S.confML={}; (data||[]).forEach(r=>{ if(r.k==='conferidos') S.conferidos=r.v||{}; if(r.k==='descontinuados') S.descont=r.v||{}; if(r.k==='conf_vendas') S.confML=r.v||{}; }); } }
+}
+async function confMLWrite(){
+  if(typeof SUPA!=='undefined' && SUPA){ const {error}=await SUPA.from('config').upsert({k:'conf_vendas', v:S.confML}); if(error) throw new Error(rlsMsg(error)); }
 }
 async function descontWrite(){
   if(typeof SUPA!=='undefined' && SUPA){ const {error}=await SUPA.from('config').upsert({k:'descontinuados', v:S.descont}); if(error) throw new Error(rlsMsg(error)); }
@@ -888,7 +892,8 @@ function vdSelecionadas(){ return [...document.querySelectorAll('.vd-sel:checked
 function vdLoteUpd(){ const n=vdSelecionadas().length; const b=$('vdLote'); if(!b) return; b.style.display=n?'flex':'none'; $('vdLoteN').textContent=n+' venda'+(n>1?'s':''); }
 async function vendaUpdate(id,campos){ const {error}=await SUPA.from('vendas').update(campos).eq('id',id); if(error) throw new Error(rlsMsg(error)); }
 async function vendaDelete(id){ const {error}=await SUPA.from('vendas').delete().eq('id',id); if(error) throw new Error(rlsMsg(error)); }
-document.addEventListener('change', e=>{
+document.addEventListener('change', async e=>{
+  if(e.target.classList&&(e.target.classList.contains('cf-n')||e.target.classList.contains('cf-r'))){ if(needDb()) return; const k=e.target.dataset.k; const c=S.confML[k]||{}; const v=e.target.value===''?null:Number(e.target.value); if(e.target.classList.contains('cf-n')) c.n=v; else c.r=v; c.em=new Date().toISOString().slice(0,10); S.confML[k]=c; try{ await confMLWrite(); renderFaturamento(); toast('conferência gravada'); }catch(err){ toast('Erro: '+(err.message||err)); } return; }
   if(e.target.id==='vdSelAll'){ document.querySelectorAll('.vd-sel').forEach(c=>c.checked=e.target.checked); vdLoteUpd(); }
   else if(e.target.classList&&e.target.classList.contains('vd-sel')) vdLoteUpd();
 });
@@ -932,13 +937,17 @@ function renderFaturamento(){
     R[e].n++; R[e].v+=v; if(ruim){ R[e].nc++; R[e].vc+=v; }
   }
   const T={n:0,v:0,nc:0,vc:0}; for(const e in R){ T.n+=R[e].n; T.v+=R[e].v; T.nc+=R[e].nc; T.vc+=R[e].vc; }
-  const linha=(nome,x,cls)=>`<tr class="${cls||''}"><td>${nome}</td><td class="r num">${fmt(x.n)}</td><td class="r num">${fmtBRL(x.v)}</td><td class="r num ${x.nc?'neg':''}">${fmt(x.nc)}</td><td class="r num ${x.vc?'neg':''}">${x.vc?'− '+fmtBRL(x.vc):'—'}</td><td class="r num"><b>${fmtBRL(x.v-x.vc)}</b></td></tr>`;
-  let h='<tr><th>Loja</th><th class="r">Vendas totais</th><th class="r">R$ total</th><th class="r">Canceladas / devolvidas</th><th class="r">R$ canc./dev.</th><th class="r">Valor final</th></tr>';
-  for(const e of EMPRESAS) h+=linha(`<span class="chip emp-${esc(e)}">${esc(e)}</span>`,R[e]);
-  for(const e in R) if(!EMPRESAS.includes(e)) h+=linha(esc(e),R[e]);
-  h+=linha('<b>Grupo</b>',T,'');
+  const rec={}; for(const e in R) rec[e]=0; for(const r of S.vendasRows){ if(r.mes!==cur) continue; const ok=r.tp==='pai'||(r.tp==='item'&&(r.env||r.cmp)); if(!ok) continue; const e=r.emp||'?'; if(rec[e]==null) rec[e]=0; rec[e]+=Number(r.rec)||0; }
+  const confTd=(e,x)=>{ if(!e) return '<td></td><td></td><td></td>'; const k=`${cur}|${e}`; const c=S.confML[k]||{}; const nML=c.n, rML=c.r; const dn=nML!=null?x.n-nML:null; const rv=rec[e]||0; const dr=rML!=null?rv-rML:null;
+    const st = (nML==null&&rML==null) ? '<span class="chip mut">não conferido</span>' : ((dn===0||dn==null)&&(dr==null||Math.abs(dr)<1) ? '<span class="chip ok">bate</span>' : `<span class="chip warn">difere${dn?` ${dn>0?'+':''}${dn} vendas`:''}${dr&&Math.abs(dr)>=1?` ${dr>0?'+':''}${fmtBRL(dr)}`:''}</span>`);
+    return `<td class="r"><input type="number" class="cf-n" data-k="${esc(k)}" value="${nML??''}" placeholder="vendas no ML" style="width:95px;text-align:right"></td><td class="r"><input type="number" step="0.01" class="cf-r" data-k="${esc(k)}" value="${rML??''}" placeholder="receita no ML" style="width:115px;text-align:right"></td><td>${st}</td>`; };
+  const linha=(nome,x,cls,e)=>`<tr class="${cls||''}"><td>${nome}</td><td class="r num">${fmt(x.n)}</td><td class="r num">${fmtBRL(x.v)}</td><td class="r num ${x.nc?'neg':''}">${fmt(x.nc)}</td><td class="r num ${x.vc?'neg':''}">${x.vc?'− '+fmtBRL(x.vc):'—'}</td><td class="r num"><b>${fmtBRL(x.v-x.vc)}</b></td><td class="r num dim">${e&&rec[e]?fmtBRL(rec[e]):'—'}</td>${confTd(e,x)}</tr>`;
+  let h='<tr><th>Loja</th><th class="r">Vendas totais</th><th class="r">R$ total (a receber)</th><th class="r">Canceladas / devolvidas</th><th class="r">R$ canc./dev.</th><th class="r">Valor final</th><th class="r" title="soma de Receita por produtos — só aparece depois de reimportar o mês com a versão nova">Receita por produtos</th><th class="r" title="digite o que o ML mostra em Faturamento → Vendas, pro mês">ML: vendas</th><th class="r">ML: receita</th><th>Conferência</th></tr>';
+  for(const e of EMPRESAS) h+=linha(`<span class="chip emp-${esc(e)}">${esc(e)}</span>`,R[e],'',e);
+  for(const e in R) if(!EMPRESAS.includes(e)) h+=linha(esc(e),R[e],'',e);
+  h+=linha('<b>Grupo</b>',T,'',null);
   t.innerHTML=h;
-  $('vdResTit').textContent=`— ${cur.slice(5)}/${cur.slice(0,4)} · valor = coluna "Total (BRL)" do relatório do ML · canceladas e devolvidas pelo estado da venda`;
+  $('vdResTit').textContent=`— ${cur.slice(5)}/${cur.slice(0,4)} · valor = coluna "Total (BRL)" do relatório do ML · canceladas e devolvidas pelo estado da venda · nas colunas ML digite o que o Mercado Livre mostra em Faturamento → Vendas: bate = mês conferido`;
 }
 function renderVendas(){
   const meses = [...new Set(S.vendasRows.map(r=>r.mes))].sort().reverse();
@@ -1258,7 +1267,9 @@ async function importVendas(file){
     const c = {id:col('N.º de venda'), d:col('Data da venda','Data de venda'), dep:col('Depósito'), est:col('Estado'), dsc:col('Descrição do status'),
       pac:col('Pacote de diversos produtos'), kit:col('Pertence a um kit'), un:col('Unidades'), tot:col('Total (BRL)','Receita por produtos (BRL)'),
       mf:col('Mês de faturamento das suas tarifas'), ped:col('Pedido de compra'), pub:col('Venda por publicidade'),
-      sku:col('SKU'), an:col('# de anúncio'), tit:col('Título do anúncio'), vr:col('Variação'), cmp:col('Comprador'), env:col('Forma de entrega')};
+      sku:col('SKU'), an:col('# de anúncio'), tit:col('Título do anúncio'), vr:col('Variação'), cmp:col('Comprador'), env:col('Forma de entrega'),
+      rec:col('Receita por produtos (BRL)'), acr:col('Receita por acréscimo no preço (pago pelo comprador)'), tax:col('Tarifa de venda e impostos (BRL)'), recenv:col('Receita por envio (BRL)'), tarenv:col('Tarifas de envio (BRL)'), canc:col('Cancelamentos e reembolsos (BRL)')};
+    const dinheiro = r => { const o={}; for(const k of ['rec','acr','tax','recenv','tarenv','canc']){ if(c[k]>=0){ const v=r[c[k]]; o[k]=(v===''||v==null)?null:Number(v); } } return o; };
     if(c.id<0||c.an<0||c.un<0) throw new Error('Cabeçalho incompleto no arquivo.');
     const novas={}; let nDup=0,nPai=0,nItem=0,nCanc=0; const conserta=[];
     for(let i=hi+1;i<rows.length;i++){
@@ -1271,7 +1282,7 @@ async function importVendas(file){
       if(tp==='outro') continue;
       const d = parseDataVenda(r[c.d]);
       const mk = mesKey(d);
-      if(S.vendasIds.has(id)){ const ex=S.vendasRows.find(x=>x.id===id); if(ex && (!ex.d || ex.mes==='sem-data') && d){ ex.d=d; ex.mes=mk; conserta.push({id, d, mes:mk}); } nDup++; continue; }
+      if(S.vendasIds.has(id)){ const ex=S.vendasRows.find(x=>x.id===id); const up={}; if(ex && (!ex.d || ex.mes==='sem-data') && d){ up.d=d; up.mes=mk; } const dn=dinheiro(r); if(ex && ex.rec==null && dn.rec!=null) Object.assign(up,dn); if(ex && Object.keys(up).length){ Object.assign(ex,up); conserta.push({id, ...up}); } nDup++; continue; }
       if(novas[mk] && novas[mk].some(x=>x.id===id)){ nDup++; continue; }
       const row = {id, d, tp, emp:$('impEmp').value,
         dep:String(r[c.dep]??'').trim(), est, dsc:String(r[c.dsc]??'').trim(),
@@ -1279,13 +1290,13 @@ async function importVendas(file){
         un:Number(r[c.un])||0, tot:(r[c.tot]===''||r[c.tot]==null)?null:Number(r[c.tot]),
         mf:String(r[c.mf]??'').trim(), ped:String(r[c.ped]??'').trim(), pub:String(r[c.pub]??'').trim(),
         sku:String(r[c.sku]??'').trim(), an, tit:String(r[c.tit]??'').trim(), vr:String(r[c.vr]??'').trim(), env:String(r[c.env]??'').trim(),
-        cmp:String(r[c.cmp]??'').trim()};
+        cmp:String(r[c.cmp]??'').trim(), ...dinheiro(r)};
       (novas[mk]=novas[mk]||[]).push(row);
       if(tp==='pai') nPai++; else { nItem++; if(isCanc(est)) nCanc++; }
     }
-    if(conserta.length){ for(let i=0;i<conserta.length;i+=200){ for(const x of conserta.slice(i,i+200)){ const {error}=await SUPA.from('vendas').update({d:x.d, mes:x.mes}).eq('id',x.id); if(error) throw new Error(rlsMsg(error)); } } }
+    if(conserta.length){ for(const x of conserta){ const {id, ...campos}=x; const {error}=await SUPA.from('vendas').update(campos).eq('id',id); if(error) throw new Error(rlsMsg(error)); } }
     const totalNovas = Object.values(novas).reduce((s,a)=>s+a.length,0);
-    if(!totalNovas){ if(conserta.length){ render(); box.innerHTML=`<div class="msg ok">${conserta.length} venda(s) que estavam sem data foram corrigidas. ${nDup-conserta.length} já estavam importadas.</div>`; return; } box.innerHTML=`<div class="msg warn">Nada novo: ${nDup} linha(s) já estavam importadas.</div>`; return; }
+    if(!totalNovas){ if(conserta.length){ render(); box.innerHTML=`<div class="msg ok">${conserta.length} venda(s) já importadas foram completadas (data e/ou valores de taxa e frete). ${nDup-conserta.length} já estavam importadas.</div>`; return; } box.innerHTML=`<div class="msg warn">Nada novo: ${nDup} linha(s) já estavam importadas.</div>`; return; }
     box.innerHTML='<div class="msg ok">Gravando no banco…</div>';
     const all=[];
     for(const mk in novas) for(const row of novas[mk]) all.push(Object.assign({mes:mk}, row));
@@ -1296,7 +1307,7 @@ async function importVendas(file){
     for(const r of all){ S.vendasRows.push(r); S.vendasIds.add(r.id); }
     render();
     const nPend = Object.keys(S.calc.pend).length;
-    box.innerHTML = `<div class="msg ok"><b>${totalNovas}</b> linha(s) importadas (${nItem} itens, ${nPai} pacotes, ${nCanc} canceladas) · ${nDup} duplicadas ignoradas${conserta.length?` · ${conserta.length} sem data corrigidas`:''}.${nPend?` <b>${nPend} anúncio(s) sem vínculo</b> — resolva na aba Vínculos (bloco 1).`:''}</div>`;
+    box.innerHTML = `<div class="msg ok"><b>${totalNovas}</b> linha(s) importadas (${nItem} itens, ${nPai} pacotes, ${nCanc} canceladas) · ${nDup} duplicadas ignoradas${conserta.length?` · ${conserta.length} já importadas completadas`:''}.${nPend?` <b>${nPend} anúncio(s) sem vínculo</b> — resolva na aba Vínculos (bloco 1).`:''}</div>`;
   }catch(err){
     box.innerHTML = `<div class="msg bad">Erro na importação: ${esc(err.message||err)}</div>`;
   }
@@ -1593,7 +1604,7 @@ document.addEventListener('click', async e=>{
   if(e.target.closest('#vdXls')){
     const cur=S.mesSel; const rows=S.vendasRows.filter(r=>r.mes===cur && empOk(r)).sort((a,b)=>(b.d||'').localeCompare(a.d||''));
     const dados=rows.map(r=>{ const v=S.vinculos[seg(r.an)]; const baixa=r.tp!=='item'?'':(isCanc(r.est)&&!S.cfg.canc?'não baixa':(v&&v.itens&&v.itens.length?v.itens.map(it=>`${S.produtos[it.pid]?.sku||it.pid} −${(r.un||0)*(it.fator||0)}`).join(' | '):'SEM VÍNCULO'));
-      return {'Data':fmtData(r.d),'N.º venda':r.id,'Loja':r.emp||'','Tipo':r.tp==='pai'?'pacote':'item','Estado':r.est||'','Envio':r.env||'','Anúncio':r.an||'','Título':r.tit||'','Unidades':r.un||0,'Baixa':baixa,'Total (BRL)':r.tot==null?'':Number(r.tot),'Comprador':r.cmp||'','SKU anúncio':r.sku||''}; });
+      return {'Data':fmtData(r.d),'N.º venda':r.id,'Loja':r.emp||'','Tipo':r.tp==='pai'?'pacote':'item','Estado':r.est||'','Envio':r.env||'','Anúncio':r.an||'','Título':r.tit||'','Unidades':r.un||0,'Baixa':baixa,'Preço de venda (receita produtos)':r.rec==null?'':Number(r.rec),'Acréscimo pago pelo comprador':r.acr==null?'':Number(r.acr),'Tarifa ML + impostos':r.tax==null?'':Number(r.tax),'Receita por envio':r.recenv==null?'':Number(r.recenv),'Tarifa de envio':r.tarenv==null?'':Number(r.tarenv),'Cancelamentos / reembolsos':r.canc==null?'':Number(r.canc),'A RECEBER (Total)':r.tot==null?'':Number(r.tot),'Comprador':r.cmp||'','SKU anúncio':r.sku||''}; });
     const ws=XLSX.utils.json_to_sheet(dados); const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'vendas');
     // aba de faturamento
     const fat=[...document.querySelectorAll('#tblFat tr')].map(tr=>[...tr.cells].map(c=>c.innerText)); if(fat.length){ XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(fat),'faturamento'); }
@@ -1840,7 +1851,18 @@ function reguaHTML(pid){
 }
 function dupla(v,pid){ const p=S.produtos[pid]; const fl=p&&p.unidade==='folhas'; const emb=(typeof embDe==='function')?embDe(pid):null; if(fl) return `<span style="display:inline-block;white-space:nowrap;line-height:1.2">${fmt(v)} fl<br><span class="dim" style="font-size:11px;font-weight:400">${fmt(v/100)} pct</span></span>`; if(emb&&emb.mult===50) return `<span style="display:inline-block;white-space:nowrap;line-height:1.2">${fmt(v)} un<br><span class="dim" style="font-size:11px;font-weight:400">${fmt(v/50)} pct</span></span>`; return fmt(v); }
 function pctHTML(pid,v){ const u=(S.produtos[pid]||{}).unidade; if(u!=='folhas'||!v) return ''; return `<div class="dim" style="font-size:11px;font-weight:400">${fmt(v/100)} pct</div>`; }
+function avisoSemVinculo(){
+  const el=document.getElementById('pdAvisoVinc'); if(!el) return;
+  let ref=''; for(const r of S.vendasRows){ const dd=(r.d||'').slice(0,10); if(dd>ref) ref=dd; } if(!ref){ el.hidden=true; return; }
+  const d0=new Date(ref+'T00:00'); d0.setDate(d0.getDate()-30); const d0s=d0.toISOString().slice(0,10);
+  const porAn={}; let un=0, n=0;
+  for(const r of S.vendasRows){ if(r.tp!=='item'||!r.an||!empOk(r)) continue; const dd=(r.d||'').slice(0,10); if(!dd||dd<d0s||dd>ref) continue; if(isCanc(r.est)) continue; const k=seg(r.an); const v=S.vinculos[k]; if(v&&v.itens&&v.itens.length) continue; if(S.descont[k]) continue; porAn[r.an]=(porAn[r.an]||0)+(r.un||0); n++; un+=(r.un||0); }
+  const qa=Object.keys(porAn).length;
+  if(!qa){ el.hidden=true; el.innerHTML=''; return; }
+  el.hidden=false; el.innerHTML=`<div style="background:var(--warn-soft);border:1px solid var(--warn);border-radius:10px;padding:10px 14px;margin-bottom:12px"><b style="color:var(--warn)">⚠️ Régua subestimada:</b> ${qa} anúncio(s) sem vínculo venderam ${fmt(n)} vez(es) (${fmt(un)} un.) nos últimos 30 dias e <b>não estão baixando estoque</b>. O "quanto comprar" está menor do que o real. <button class="btn sm sec" data-goto="vinculos">resolver em Vínculos</button></div>`;
+}
 function renderPedidos(){
+  avisoSemVinculo();
   const selEl=document.getElementById('pdProd'); if(!selEl) return;
   const nProd=String(Object.keys(S.produtos).length);
   if(selEl.dataset.n!==nProd){ const cur=selEl.value; selEl.innerHTML=prodOptions('').replace('<option value="__novo__">➕ criar produto novo…</option>',''); selEl.value=cur; selEl.dataset.n=nProd; }
@@ -1984,7 +2006,20 @@ document.addEventListener('click', async e=>{
     return;
   }
   const ab=e.target.closest('.pd-aprov');
-  if(ab){ const id=ab.closest('tr').dataset.pedid; const f=document.querySelector(`tr.pd-form[data-pedid="${id}"]`); if(f) f.hidden=!f.hidden; return; }
+  if(ab){
+    const id=ab.closest('tr').dataset.pedid; const p=S.pedidos[id]; if(!p||needDb()) return;
+    const fcad=fornDe(p.pid); const qa=p.qtd, forn=p.fornecedor||fcad.nome||'', vend=p.vendedor||fcad.vendedor||'', tel=p.telefone||fcad.telefone||'', por='Kenni';
+    ab.disabled=true; ab.textContent='aprovando…';
+    try{
+      const hoje=new Date().toISOString().slice(0,10);
+      await S.db.collection('entradas').add({pid:p.pid, qtd:qa, empresa:p.empresa, data:hoje, forn:forn||'Pedido', nf:'', obs:`Pedido de ${p.solicitante} · aprovado por ${por}${vend?' · vendedor '+vend:''}${tel?' · tel '+tel:''} (→ ${p.empresa}) [ped:${id}]`, criado:new Date().toISOString()});
+      S.ultimoAprovado={id, quando:Date.now()};
+      await pedWrite(id,Object.assign({},p,{status:'aprovado', qtd_aprovada:qa, fornecedor:forn, vendedor:vend, telefone:tel, aprovado_por:por, decidido_em:new Date().toISOString()}));
+      slackAvisa(`✅ Pedido APROVADO — ${fmt(qa)} × ${(S.produtos[p.pid]||{}).sku||p.pid} (${p.empresa}) · por ${por}`);
+      toast('✅ APROVADO — entrada lançada no estoque');
+    }catch(err){ toast('Erro: '+(err.message||err)); ab.disabled=false; ab.textContent='Aprovar'; }
+    return;
+  }
   const ok=e.target.closest('.pd-aprov-ok');
   if(ok){
     const tr=ok.closest('tr.pd-form'); const id=tr.dataset.pedid; const p=S.pedidos[id]; const msg=tr.querySelector('.pd-msg');
@@ -2006,7 +2041,6 @@ document.addEventListener('click', async e=>{
   }
   const rc=e.target.closest('.pd-recusa');
   if(rc){
-    if(rc.dataset.arm!=='1'){ rc.dataset.arm='1'; rc.textContent='confirmar recusa?'; setTimeout(()=>{rc.dataset.arm='';rc.textContent='Recusar';},4000); return; }
     const id=rc.closest('tr').dataset.pedid; const p=S.pedidos[id]; if(!p||needDb()) return;
     await pedWrite(id,Object.assign({},p,{status:'recusado', decidido_em:new Date().toISOString()}));
     toast('Pedido recusado — não mexe no estoque');
