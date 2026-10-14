@@ -197,7 +197,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
   </nav>
   <div class="side-foot">
     <span id="connState">conectando ao banco…</span>
-    <div style="opacity:.6;margin-top:4px">Supabase · 4 lojas · <span id="versao">v2026-10-07a</span></div>
+    <div style="opacity:.6;margin-top:4px">Supabase · 4 lojas · <span id="versao">v2026-10-13a</span></div>
   </div>
 </aside>
 <div class="content">
@@ -260,6 +260,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
 </section>
 
 <section id="s-vinculos" hidden>
+  <div id="vincLojas" style="margin:0 0 12px;display:flex;gap:6px;flex-wrap:wrap;align-items:center"></div>
   <div class="card">
     <div class="card-h"><h2>1 · Anúncios sem vínculo</h2><span class="dim" id="pendSub"></span>
       <div class="sp"><button class="btn sm" id="btnAplicarSug" hidden></button><button class="btn sm sec xls" data-tbl="tblPend" data-nome="sem_vinculo" title="baixar em Excel">⬇ Excel</button><button class="btn sm sec ajuda" data-help="conferir" title="como usar">?</button></div></div>
@@ -465,7 +466,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
       <p><b>Estoque</b> — saldo por produto. Folhas em cima, pacotes embaixo. Vermelho = negativo, amarelo = abaixo de 50. Clique no número de "inicial" pra editar quando uma loja está selecionada. Botão Excel exporta a tabela.</p>
       <p><b>Mês fechado</b> — só o que entrou e o que saiu dentro de um mês (padrão: o mês passado). Não olha saldo acumulado; serve pra fechar o mês e comparar compra com venda. Respeita a loja do topo e tem Excel.</p>
       <p><b>Produtos</b> — cadastro: SKU, nome, unidade, custo da última nota, fornecedor e telefone (pra mensagem de pedido). "+ Produto" cria; lápis edita.</p>
-      <p><b>Vínculos</b> — liga cada anúncio do Mercado Livre a um produto e um fator (quantas folhas/peças 1 unidade vendida representa). Bloco de cima: anúncios esperando sua conferência (a plataforma sugere pelo título). Bloco de baixo: conferidos. Coluna <b>Loja</b> mostra em qual conta o anúncio vende. "Não vende mais" tira o anúncio da lista sem baixar estoque. Toda alteração fica gravada no histórico.</p>
+      <p><b>Vínculos</b> — cada anúncio aparece com o código <b>MLB</b> (clica e abre o anúncio no ML) e a <b>loja</b> dona dele. No topo, quantos anúncios cada loja tem; escolhendo a loja no menu, a aba mostra só os MLB daquela loja. Liga cada anúncio do Mercado Livre a um produto e um fator (quantas folhas/peças 1 unidade vendida representa). Bloco de cima: anúncios esperando sua conferência (a plataforma sugere pelo título). Bloco de baixo: conferidos. Coluna <b>Loja</b> mostra em qual conta o anúncio vende. "Não vende mais" tira o anúncio da lista sem baixar estoque. Toda alteração fica gravada no histórico.</p>
       <p><b>Vendas</b> — no topo, o <b>Faturamento do mês</b> por loja com as colunas <b>ML: vendas</b> e <b>ML: receita</b>: você digita o que o Mercado Livre mostra em Faturamento → Vendas e a plataforma diz se <b>bate</b> ou quanto <b>difere</b>. Esse é o parâmetro de conferência de lançamento: mês com "bate" nas quatro lojas está fechado. Embaixo, as vendas importadas do ML, mês a mês, com a loja e a baixa que cada uma gerou. Busca por número, anúncio, comprador. Cada linha tem ✎ (trocar loja, unidades, estado, anúncio) e 🗑. Marcando linhas, ou clicando em <b>marcar o mês inteiro</b>, aparece a barra de lote: mover todas pra outra loja ou excluir — é o jeito de corrigir um relatório importado na loja errada.</p>
       <p><b>Projeção</b> — quantos dias o saldo dura no ritmo atual. <b>Estoque morto</b> = a reserva que precisa existir pra aguentar até o fornecedor entregar (média por dia × prazo do fornecedor: AMP 7 dias, LM 5, Lassane capas 14, Prolam 3, Imballa 5, Mares 2). <b>Estoque vivo</b> = saldo menos essa reserva; se ficar negativo, a venda já está comendo a reserva e o pedido está atrasado.</p>
       <p><b>Entradas</b> — lança compra manualmente (produto, pacotes ou unidades, empresa, NF). Lista tudo que já entrou. Cada linha tem ✎ pra corrigir qualquer campo (empresa, quantidade, data, NF…) e excluir. Marcando várias linhas aparece a barra de lote: <b>mover para</b> outra loja de uma vez, ou excluir todas. A NF impede lançar a mesma nota duas vezes.</p>
@@ -771,6 +772,9 @@ function prodOptions(sel){
   h += `<option value="__novo__">➕ criar produto novo…</option>`;
   return h;
 }
+function lojaMapa(){ if(S._lojaMapaN===S.vendasRows.length) return S._lojaMapa; const m={}; for(const r of S.vendasRows){ if(r.an&&r.emp){ (m[r.an]=m[r.an]||{})[r.emp]=((m[r.an]||{})[r.emp]||0)+1; } } S._lojaMapa=m; S._lojaMapaN=S.vendasRows.length; return m; }
+function lojasDe(an){ const m=lojaMapa()[an]; return m?Object.keys(m).sort((a,b)=>m[b]-m[a]):[]; }
+function lojaChipDe(an){ const l=lojasDe(an); return l.length? ' '+l.map(e=>`<span class="chip emp-${esc(e)}" style="font-family:inherit;font-size:10.5px;padding:1px 6px">${esc(e)}</span>`).join(' ') : ''; }
 function vincRowHTML(an, tit, skuPlat, v, sug){
   let itens, sugChip='';
   if(v&&v.itens&&v.itens.length) itens = v.itens.map(it=>({pid:it.pid, fator:it.fator}));
@@ -814,7 +818,7 @@ function vincRowHTML(an, tit, skuPlat, v, sug){
   itensH = sugChip + itensH + custoH;
   return `<td class="tit-cell">
       <div style="font-weight:500">${esc(tit||'')}</div>
-      <div class="mono dim" style="font-size:11.5px;margin-top:3px">${esc(an)}${skuPlat?' · '+esc(skuPlat):''}</div>
+      <div class="mono dim" style="font-size:11.5px;margin-top:3px"><a href="https://produto.mercadolivre.com.br/MLB-${esc(String(an).replace(/^MLB-?/i,''))}" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline dotted">${esc(an)}</a>${skuPlat?' · '+esc(skuPlat):''}${lojaChipDe(an)}</div>
     </td>
     <td>
       <div class="itens-list">${itensH}</div>
@@ -881,8 +885,10 @@ function renderVinculos(){
     if(S.descont[k]) return `<tr data-key="${esc(k)}"><td><div>${esc(v.titulo||'')}</div><div class="mono dim" style="font-size:11px">${esc(v.anuncio)} · ${esc(v.skuPlat||'')}</div></td>${lojaTd(v.anuncio)}<td><span class="chip mut">não vende mais — sem baixa</span></td><td class="r num">${fmt(S.calc.vendPorAn[v.anuncio]||0)}</td><td><button class="btn sm sec vi-reativar" title="volta a exigir vínculo">reativar</button></td></tr>`;
     return `<tr class="vinc-row" data-an="${esc(v.anuncio)}" data-key="${esc(k)}" data-tit="${esc(v.titulo)}" data-sku="${esc(v.skuPlat)}">${comLoja(vincRowHTML(v.anuncio,v.titulo,v.skuPlat,v),v.anuncio)}<td class="r num">${fmt(S.calc.vendPorAn[v.anuncio]||0)}</td><td style="white-space:nowrap">${conf?`<span class="chip ok" title="conferido em ${esc(fmtData(String(S.conferidos[k]).slice(0,10)))}">✔ ${esc(fmtData(String(S.conferidos[k]).slice(0,10)))}</span> <button class="btn sm sec vi-reabrir" title="voltar pra lista a verificar">↩</button>`:`<button class="btn sm vi-conferido" title="produto e fator estão certos">✔ conferido</button>`}</td></tr>`;
   };
-  const filtra=k=>{ const v=S.vinculos[k]; const lj=[...(lojaPorAn[v.anuncio]||[])].join(' '); return !q || `${v.anuncio} ${v.skuPlat||''} ${v.titulo||''} ${lj}`.toLowerCase().includes(q); };
-  const hdr='<tr><th>Anúncio</th><th>Loja</th><th>Produto + fator</th><th class="r">Unid. vendidas</th><th></th></tr>';
+  const sel=(S.empSel&&S.empSel!=='Todas')?S.empSel:null;
+  const filtra=k=>{ const v=S.vinculos[k]; const ls=lojaPorAn[v.anuncio]; if(sel && !(ls&&ls.has(sel))) return false; const lj=[...(ls||[])].join(' '); return !q || `${v.anuncio} ${v.skuPlat||''} ${v.titulo||''} ${lj}`.toLowerCase().includes(q); };
+  { const c={}; for(const k of ks){ const ls=lojaPorAn[S.vinculos[k].anuncio]; if(ls) for(const e of ls) c[e]=(c[e]||0)+1; } const el=document.getElementById('vincLojas'); if(el) el.innerHTML = EMPRESAS.map(e=>`<span class="chip emp-${esc(e)}">${esc(e)} ${fmt(c[e]||0)}</span>`).join(' ') + (sel?` <span class="dim">· mostrando só ${esc(sel)}</span>`:' <span class="dim">· escolha a loja no menu pra ver só os anúncios dela</span>'); }
+  const hdr='<tr><th>Anúncio (MLB)</th><th>Loja</th><th>Produto + fator</th><th class="r">Unid. vendidas</th><th></th></tr>';
   if(!ks.length){ $('tblVinc').innerHTML = `<tr><td><div class="empty"><b>Nenhum vínculo ainda.</b><br>Importe um relatório de vendas e vincule os anúncios no bloco 1, aqui em cima.</div></td></tr>`; $('tblVincOk').innerHTML=''; return; }
   const l1=aVer.filter(filtra), l2=ok.filter(filtra);
   $('tblVinc').innerHTML = l1.length ? hdr+l1.map(k=>linha(k,false)).join('') : `<tr><td><div class="empty">${aVer.length?'Nada encontrado para a busca.':'<b>Tudo conferido.</b> Nenhum vínculo esperando verificação.'}</div></td></tr>`;
