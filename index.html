@@ -197,7 +197,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
   </nav>
   <div class="side-foot">
     <span id="connState">conectando ao banco…</span>
-    <div style="opacity:.6;margin-top:4px">Supabase · 4 lojas · <span id="versao">v2026-10-15a</span></div>
+    <div style="opacity:.6;margin-top:4px">Supabase · 4 lojas · <span id="versao">v2026-10-15b</span></div>
   </div>
 </aside>
 <div class="content">
@@ -899,6 +899,7 @@ function vdLoteUpd(){ const n=vdSelecionadas().length; const b=$('vdLote'); if(!
 async function vendaUpdate(id,campos){ const {error}=await SUPA.from('vendas').update(campos).eq('id',id); if(error) throw new Error(rlsMsg(error)); }
 async function vendaDelete(id){ const {error}=await SUPA.from('vendas').delete().eq('id',id); if(error) throw new Error(rlsMsg(error)); }
 document.addEventListener('change', async e=>{
+  if(e.target.classList&&e.target.classList.contains('rg-mes')){ S.reguaMes=e.target.value; S.reguaBase='mes'; try{localStorage.setItem('reguaBase','mes');}catch(_){} renderPedidos(); return; }
   if(e.target.classList&&(e.target.classList.contains('cf-n')||e.target.classList.contains('cf-r'))){ if(needDb()) return; const k=e.target.dataset.k; const c=S.confML[k]||{}; const v=e.target.value===''?null:Number(e.target.value); if(e.target.classList.contains('cf-n')) c.n=v; else c.r=v; c.em=new Date().toISOString().slice(0,10); S.confML[k]=c; try{ await confMLWrite(); renderFaturamento(); toast('conferência gravada'); }catch(err){ toast('Erro: '+(err.message||err)); } return; }
   if(e.target.id==='vdSelAll'){ document.querySelectorAll('.vd-sel').forEach(c=>c.checked=e.target.checked); vdLoteUpd(); }
   else if(e.target.classList&&e.target.classList.contains('vd-sel')) vdLoteUpd();
@@ -1823,7 +1824,7 @@ function saiPorEmp(pid){
 }
 function jaPedido(pid){ const out={}; for(const id in S.pedidos){ const p=S.pedidos[id]; if(p.status==='pendente'&&p.pid===pid) out[p.empresa||'?']=(out[p.empresa||'?']||0)+(+p.qtd||0); } return out; }
 function mesFechadoDe(pid){
-  const M=mesAnterior(); const E={}, Sd={};
+  const M=S.reguaMes||mesAnterior(); const E={}, Sd={};
   for(const e of S.entradas){ if((e.data||'').slice(0,7)!==M||e.pid!==pid) continue; const x=empDe(e); E[x]=(E[x]||0)+(e.qtd||0); }
   for(const r of S.vendasRows){
     if(r.tp!=='item'||r.mes!==M) continue;
@@ -1831,7 +1832,8 @@ function mesFechadoDe(pid){
     const v=S.vinculos[seg(r.an)]; if(!v||!v.itens||S.descont[seg(r.an)]) continue;
     for(const it of v.itens){ if(it.pid!==pid) continue; const x=r.emp||'?'; Sd[x]=(Sd[x]||0)+(r.un||0)*(it.fator||0); }
   }
-  const dias=new Date(+M.slice(0,4), +M.slice(5,7), 0).getDate();
+  let dias=new Date(+M.slice(0,4), +M.slice(5,7), 0).getDate();
+  const hoje=new Date(); if(M===hoje.toISOString().slice(0,7)) dias=Math.max(1,hoje.getDate()); // mês corrente: ritmo pelos dias já passados
   return {mes:M, dias, E, Sd};
 }
 function reguaDe(pid){
@@ -1862,7 +1864,9 @@ function reguaHTML(pid){
   const total=((S.empSel&&S.empSel!=='Todas')?r.linhas.filter(l=>l.emp===S.empSel):r.linhas).reduce((t,l)=>t+l.comprar,0);
   const mesTxt=`${r.mes.slice(5)}/${r.mes.slice(0,4)}`; const T=r.modo==='total';
   const btn=(id,lab,on)=>`<button class="btn sm ${on?'':'sec'} rg-modo" data-modo="${id}" style="padding:3px 10px">${lab}</button>`;
-  let h=`<div style="margin-top:10px;font-size:12.5px"><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><b>Régua da reposição — ${esc(p.sku)}</b> <span class="dim">base:</span> ${btn('mes','Mês fechado '+mesTxt,!T)} ${btn('total','Período todo',T)} <span class="dim">· saldo acumulado do grupo ${dois(r.saldo)}</span></div><table style="margin-top:6px;width:100%"><tr><th>Empresa</th><th class="r">${T?'entrou (total)':'entrou '+mesTxt}</th><th class="r">${T?'saiu (total)':'saiu '+mesTxt}</th><th class="r">${T?'saldo':'diferença'}</th><th class="r">já pedido</th><th class="r">quanto comprar (deve)</th><th>situação</th><th></th></tr>`;
+  const mesesR=[...new Set(S.vendasRows.map(x=>x.mes).filter(m=>/^\d{4}-\d{2}$/.test(m)))].sort().reverse(); const hojeM=new Date().toISOString().slice(0,7);
+  const selM=`<select class="rg-mes" style="padding:3px 6px;font-size:12px;${T?'opacity:.55':''}">${mesesR.map(m=>`<option value="${m}" ${m===r.mes?'selected':''}>${m.slice(5)}/${m.slice(0,4)}${m===hojeM?' (em andamento)':''}</option>`).join('')}</select>`;
+  let h=`<div style="margin-top:10px;font-size:12.5px"><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><b>Régua da reposição — ${esc(p.sku)}</b> <span class="dim">base:</span> ${btn('mes','Mês',!T)} ${selM} ${btn('total','Período todo',T)} <span class="dim">· saldo acumulado do grupo ${dois(r.saldo)}</span></div><table style="margin-top:6px;width:100%"><tr><th>Empresa</th><th class="r">${T?'entrou (total)':'entrou '+mesTxt}</th><th class="r">${T?'saiu (total)':'saiu '+mesTxt}</th><th class="r">${T?'saldo':'diferença'}</th><th class="r">já pedido</th><th class="r">quanto comprar (deve)</th><th>situação</th><th></th></tr>`;
   const _lin=(S.empSel&&S.empSel!=='Todas')?r.linhas.filter(l=>l.emp===S.empSel):r.linhas;
   for(const l of _lin){
     h+=`<tr><td>${esc(l.emp)}</td><td class="r num">${dois(l.ent)}</td><td class="r num">${dois(l.saiu)}</td><td class="r num ${l.aloc<0?'neg':''}">${dois(l.aloc)}</td><td class="r num">${l.jp?dois(l.jp):'—'}</td><td class="r num">${l.comprar?dois(l.comprar):'—'}${l.igualado?' <span class="dim" title="igualado ao par capa/contracapa (1:1)">=</span>':''}</td><td><span style="color:${l.cor}">●</span> ${esc(l.sit)}</td><td>${l.comprar?`<button class="btn sm sec pd-usar" data-emp="${esc(l.emp)}" data-q="${l.comprar}">usar</button>`:''}</td></tr>`;
