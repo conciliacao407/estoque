@@ -197,7 +197,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
   </nav>
   <div class="side-foot">
     <span id="connState">conectando ao banco…</span>
-    <div style="opacity:.6;margin-top:4px">Supabase · 4 lojas · <span id="versao">v2026-10-15b</span></div>
+    <div style="opacity:.6;margin-top:4px">Supabase · 4 lojas · <span id="versao">v2026-10-15c</span></div>
   </div>
 </aside>
 <div class="content">
@@ -354,7 +354,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
         <label class="f">Solicitante<input type="text" id="pdSolic" placeholder="quem pediu" style="width:130px"></label>
         <label class="f">Buscar produto<input type="text" id="pdBusca" placeholder="digite: a4, cpf, capa, saco…" style="width:170px"></label>
         <label class="f">Produto<select id="pdProd"></select></label>
-        <label class="f">Quantidade <span id="pdQtdUn" class="dim">(pacotes)</span><input type="number" id="pdQtd" step="any" min="0" style="width:110px"></label>
+        <label class="f" style="max-width:260px"><span id="pdQtdUn" style="color:var(--accent-ink);font-weight:700">Preencha em PACOTES</span><input type="number" id="pdQtd" step="any" min="0" style="width:120px"><span id="pdQtdEx" class="dim" style="font-size:11.5px;font-weight:400;line-height:1.3;margin-top:3px"></span></label>
         <label class="f">Empresa<select id="pdEmp"></select></label>
         <label class="f">Data<input type="date" id="pdData"></label>
         <label class="f">Obs<input type="text" id="pdObs" style="width:180px"></label>
@@ -1802,7 +1802,19 @@ function embDe(pid){
   return {nome:pr.unidade||'un', plural:pr.unidade||'un', mult:1, dica:''};
 }
 function pedQtdTxt(p){ const e=embDe(p.pid); const q=p.qtd_aprovada!=null?p.qtd_aprovada:p.qtd; const n=q/e.mult; return `${fmt(n)} ${n===1?e.nome:e.plural}`; }
-function pdQtdUnUpd(){ const sel=document.getElementById('pdProd'), un=document.getElementById('pdQtdUn'); if(!sel||!un) return; const e=embDe(sel.value); un.textContent = `(${e.plural}${e.dica?' — '+e.dica:''})`; }
+function pdQtdUnUpd(){
+  const sel=document.getElementById('pdProd'), un=document.getElementById('pdQtdUn'), ex=document.getElementById('pdQtdEx'), q=document.getElementById('pdQtd'); if(!sel||!un) return;
+  const e=embDe(sel.value), pr=S.produtos[sel.value]||{}, fl=pr.unidade==='folhas';
+  const base = fl?'folhas':(e.mult===5000?'sacos':(e.mult===50?'peças':(pr.unidade||'un')));
+  un.textContent = `Preencha em ${String(e.plural).toUpperCase()}` + (e.mult>1?` (não em ${base})`:'');
+  const v=Number(q&&q.value);
+  if(ex){
+    if(e.mult>1 && v>0) ex.innerHTML = `<b>${fmt(v)} ${e.plural}</b> = ${fmt(v*e.mult)} ${base}` + (v*e.mult>=200000 ? ` <b style="color:var(--danger)">— confere: é muito</b>` : '');
+    else if(e.mult>1) ex.textContent = `Exemplo: 50 = 50 ${e.plural} = ${fmt(50*e.mult)} ${base}. ${e.dica||''}`;
+    else ex.textContent = `Exemplo: 10 = 10 ${base}.`;
+  }
+}
+document.addEventListener('input', e=>{ if(e.target&&e.target.id==='pdQtd') pdQtdUnUpd(); });
 function pedGrupoTexto(nomeForn, lista){
   const linhas=lista.map(p=>{ const pr=S.produtos[p.pid]||{}; return `- ${pedQtdTxt(p)} de ${pr.nome||pr.sku||p.pid}, para a empresa ${p.empresa||''}`; });
   const pessoa=fornPessoa(nomeForn, lista);
@@ -1998,7 +2010,10 @@ document.addEventListener('click', async e=>{
   if(e.target.closest('#pdCriar')){
     const msg=document.getElementById('pdMsg'); if(needDb(msg)) return;
     const pid=document.getElementById('pdProd').value; let qtd=Number(document.getElementById('pdQtd').value);
-    qtd=qtd*embDe(pid).mult; // campo na embalagem do produto (pacote/fardo/un), banco em folhas/sacos/un
+    const _e=embDe(pid); const _bt=document.getElementById('pdCriar');
+    if(_e.mult>1 && qtd*_e.mult>=200000 && _bt.dataset.arm!=='1'){ _bt.dataset.arm='1'; _bt.textContent='confirmar '+fmt(qtd)+' '+_e.plural+'?'; msg.innerHTML=`<div class="msg warn">Você digitou <b>${fmt(qtd)} ${_e.plural}</b> = ${fmt(qtd*_e.mult)} ${(S.produtos[pid]||{}).unidade==='folhas'?'folhas':'unidades'} no estoque. Se quis dizer folhas/unidades, digite ${fmt(Math.max(1,Math.round(qtd/_e.mult)))}. Se está certo, clique de novo pra confirmar.</div>`; setTimeout(()=>{_bt.dataset.arm='';_bt.textContent='Criar pedido (Pendente)';},6000); return; }
+    _bt.dataset.arm=''; _bt.textContent='Criar pedido (Pendente)';
+    qtd=qtd*_e.mult; // campo na embalagem do produto (pacote/fardo/un), banco em folhas/sacos/un
     if(!pid||!(qtd>0)){ msg.innerHTML='<div class="msg bad">Escolha o produto e uma quantidade maior que zero.</div>'; return; }
     const p={pid, qtd, empresa:document.getElementById('pdEmp').value, solicitante:document.getElementById('pdSolic').value.trim()||'—',
       obs:document.getElementById('pdObs').value.trim(), data:document.getElementById('pdData').value||new Date().toISOString().slice(0,10),
