@@ -197,7 +197,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
   </nav>
   <div class="side-foot">
     <span id="connState">conectando ao banco…</span>
-    <div style="opacity:.6;margin-top:4px">Supabase · 4 lojas · <span id="versao">v2026-10-13a</span></div>
+    <div style="opacity:.6;margin-top:4px">Supabase · 4 lojas · <span id="versao">v2026-10-15a</span></div>
   </div>
 </aside>
 <div class="content">
@@ -906,7 +906,7 @@ document.addEventListener('change', async e=>{
 document.addEventListener('click', async e=>{
   const sm=e.target.closest('#vdSelMes'), mv=e.target.closest('#vdLoteMover'), dl=e.target.closest('#vdLoteDel'), ed=e.target.closest('.vd-edit'), d1=e.target.closest('.vd-del'), ok=e.target.closest('.ve-ok');
   if(sm){ // marca TODAS as vendas do mês/loja (não só as 400 da tela)
-    const cur=S.mesSel; const ids=S.vendasRows.filter(r=>r.mes===cur&&empOk(r)).map(r=>r.id); S.vdLoteIds=ids;
+    const cur=S.mesVd; const ids=S.vendasRows.filter(r=>r.mes===cur&&empOk(r)).map(r=>r.id); S.vdLoteIds=ids;
     document.querySelectorAll('.vd-sel').forEach(c=>c.checked=true); const b=$('vdLote'); b.style.display='flex'; $('vdLoteN').textContent=ids.length+' vendas (mês inteiro'+(S.empSel&&S.empSel!=='Todas'?' · '+S.empSel:'')+')'; return; }
   if(mv||dl){
     const ids=(S.vdLoteIds&&S.vdLoteIds.length)?S.vdLoteIds:vdSelecionadas(); if(!ids.length||needDb()) return;
@@ -932,7 +932,7 @@ document.addEventListener('click', async e=>{
 });
 function renderFaturamento(){
   const t=$('tblFat'); if(!t) return;
-  const cur=S.mesSel; if(!cur){ t.innerHTML=''; return; }
+  const cur=S.mesVd; if(!cur){ t.innerHTML=''; return; }
   const R={}; for(const e of EMPRESAS) R[e]={n:0,v:0,nc:0,vc:0};
   for(const r of S.vendasRows){
     if(r.mes!==cur) continue;
@@ -958,8 +958,8 @@ function renderFaturamento(){
 function renderVendas(){
   const meses = [...new Set(S.vendasRows.map(r=>r.mes))].sort().reverse();
   const sel = $('selMes');
-  const cur = S.mesSel && meses.includes(S.mesSel) ? S.mesSel : (meses[0]||'');
-  S.mesSel = cur; S.vdLoteIds=null; renderFaturamento();
+  const cur = S.mesVd && meses.includes(S.mesVd) ? S.mesVd : (meses[0]||'');
+  S.mesVd = cur; S.vdLoteIds=null; renderFaturamento();
   sel.innerHTML = meses.map(m=>`<option value="${m}" ${m===cur?'selected':''}>${fmtMes(m)}</option>`).join('') || '<option>—</option>';
   const q = ($('qVendas').value||'').toLowerCase();
   const rows = [];
@@ -1078,6 +1078,19 @@ function renderProjecao(){
       <td class="wrap" style="max-width:340px;font-size:12.5px">${obs}</td></tr>`;
   }
   $('tblProj').innerHTML=any?h:'<tr><td><div class="empty">Sem vendas com vínculo nos últimos 30 dias.</div></td></tr>';
+}
+/* ===== anti-duplicidade: nota fiscal × pedido aprovado (mesma compra não entra duas vezes) ===== */
+const ehDePedido = e => /\[ped:|Pedido de|pedido recebido/i.test(e.obs||'');
+function gemeoEntrada(pid, emp, qtd, data, procuro){ // procuro: 'pedido' (entrada de pedido sem NF) ou 'nota'
+  const t0=new Date((data||new Date().toISOString().slice(0,10))+'T00:00').getTime();
+  return S.entradas.find(e=> e.pid===pid && empDe(e)===emp && Number(e.qtd)===Number(qtd)
+    && Math.abs((new Date((e.data||'')+'T00:00').getTime()-t0)/864e5)<=20
+    && (procuro==='pedido' ? (ehDePedido(e) && !e.nf) : !ehDePedido(e)) ) || null;
+}
+async function lancarOuCarimbar(d){ // d = {pid,qtd,empresa,data,forn,nf,obs}
+  const g=gemeoEntrada(d.pid,d.empresa,d.qtd,d.data,'pedido');
+  if(g){ await entradaUpdate(g._id,{nf:d.nf||g.nf||'', forn:d.forn||g.forn, obs:[g.obs,d.obs,d.nf?('NF '+d.nf+' carimbada'):'nota carimbada'].filter(Boolean).join(' · ')}); await loadTable('entradas'); return 'carimbou'; }
+  await S.db.collection('entradas').add(Object.assign({criado:new Date().toISOString()}, d)); return 'novo';
 }
 function enSelecionadas(){ return [...document.querySelectorAll('.en-sel:checked')].map(x=>x.dataset.id); }
 function enLoteUpd(){ const n=enSelecionadas().length; const b=$('enLote'); if(!b) return; b.style.display=n?'flex':'none'; $('enLoteN').textContent=n+' selecionada'+(n>1?'s':''); }
@@ -1311,6 +1324,7 @@ async function importVendas(file){
       if(error) throw new Error(rlsMsg(error));
     }
     for(const r of all){ S.vendasRows.push(r); S.vendasIds.add(r.id); }
+    { const ms=all.map(r=>r.mes).filter(m=>/^\d{4}-\d{2}$/.test(m)).sort(); if(ms.length) S.mesVd=ms[ms.length-1]; }
     render();
     const nPend = Object.keys(S.calc.pend).length;
     box.innerHTML = `<div class="msg ok"><b>${totalNovas}</b> linha(s) importadas (${nItem} itens, ${nPai} pacotes, ${nCanc} canceladas) · ${nDup} duplicadas ignoradas${conserta.length?` · ${conserta.length} já importadas completadas`:''}.${nPend?` <b>${nPend} anúncio(s) sem vínculo</b> — resolva na aba Vínculos (bloco 1).`:''}</div>`;
@@ -1400,7 +1414,7 @@ async function importEntradas(file){
     const f = re => H.findIndex(h=>re.test(h));
     const c = {sku:f(/^(sku|c[oó]digo|produto)$/), qtd:f(/^(quantidade|qtde?|qtd\.?)$/), pct:f(/^(pacotes?|pcts?)$/), data:f(/^data/), forn:f(/^fornecedor/), nf:f(/^(nf|nota)/), obs:f(/^obs/)};
     if(c.qtd<0 && c.pct<0) throw new Error('Não achei a coluna Quantidade nem Pacotes.');
-    let ok=0; const semCadastro={};
+    let ok=0, carimb=0; const semCadastro={};
     for(let i=hi+1;i<rows.length;i++){
       const r=rows[i];
       const sku=String(r[c.sku]??'').trim(); if(!sku) continue;
@@ -1417,10 +1431,10 @@ async function importEntradas(file){
       const dm=dRaw.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
       if(dm){ const y=dm[3].length===2?('20'+dm[3]):dm[3]; dIso=`${y}-${String(dm[2]).padStart(2,'0')}-${String(dm[1]).padStart(2,'0')}`; }
       else dIso = new Date().toISOString().slice(0,10);
-      await S.db.collection('entradas').add({pid, qtd, empresa:$('enEmp').value, data:dIso, forn:String(r[c.forn]??'').trim(), nf:String(r[c.nf]??'').trim(), obs:[String(r[c.obs]??'').trim(),obsPct].filter(Boolean).join(' · '), criado:new Date().toISOString()});
-      ok++;
+      const rr=await lancarOuCarimbar({pid, qtd, empresa:$('enEmp').value, data:dIso, forn:String(r[c.forn]??'').trim(), nf:String(r[c.nf]??'').trim(), obs:[String(r[c.obs]??'').trim(),obsPct].filter(Boolean).join(' · ')});
+      if(rr==='carimbou') carimb++; else ok++;
     }
-    let msg = `<div class="msg ok"><b>${ok}</b> entrada(s) lançadas.</div>`;
+    let msg = `<div class="msg ok"><b>${ok}</b> entrada(s) lançadas.${carimb?` <b>${carimb}</b> já tinham entrado por pedido aprovado — só carimbei a NF, não dupliquei.`:''}</div>`;
     const faltam = Object.keys(semCadastro);
     if(faltam.length) msg += `<div class="msg warn">SKU sem cadastro (nada lançado): ${faltam.map(s=>`<span class="mono">${esc(s)}</span> (${fmt(semCadastro[s])})`).join(' · ')}. Cadastre o produto e importe de novo — as já lançadas não duplicam se você remover as linhas ok.</div>`;
     box.innerHTML = msg;
@@ -1448,7 +1462,7 @@ $('pjAlvo').addEventListener('input', renderProjecao);
 $('pjFluxo').addEventListener('input', renderProjecao);
 $('qVinc').addEventListener('input', renderVinculos);
 $('qVendas').addEventListener('input', renderVendas);
-$('selMes').addEventListener('change', e=>{ S.mesSel=e.target.value; renderVendas(); });
+$('selMes').addEventListener('change', e=>{ S.mesVd=e.target.value; renderVendas(); });
 
 $('btnNovoProd').addEventListener('click', ()=>{ $('novoProdBox').hidden=!$('novoProdBox').hidden; });
 $('npCancelar').addEventListener('click', ()=>{ $('novoProdBox').hidden=true; });
@@ -1467,10 +1481,12 @@ $('enSalvar').addEventListener('click', async ()=>{
   const pctInfo = emPct ? `${fmt(qtd)} pct fechados` : '';
   if(emPct) qtd = qtd*100;
   const obs = [$('enObs').value.trim(), pctInfo].filter(Boolean).join(' · ');
-  await S.db.collection('entradas').add({pid, qtd, empresa:$('enEmp').value, data:$('enData').value||new Date().toISOString().slice(0,10),
-    forn:$('enForn').value.trim(), nf:$('enNf').value.trim(), obs, criado:new Date().toISOString()});
+  const rr=await lancarOuCarimbar({pid, qtd, empresa:$('enEmp').value, data:$('enData').value||new Date().toISOString().slice(0,10),
+    forn:$('enForn').value.trim(), nf:$('enNf').value.trim(), obs});
   $('enQtd').value='';$('enForn').value='';$('enNf').value='';$('enObs').value='';
-  $('enMsg').innerHTML=`<div class="msg ok">Entrada lançada${emPct?` — ${pctInfo} = ${fmt(qtd)} folhas`:''}.</div>`;
+  $('enMsg').innerHTML = rr==='carimbou'
+    ? `<div class="msg warn">Essa compra já tinha entrado pelo <b>pedido aprovado</b> (mesmo produto, loja e quantidade). Não lancei de novo — só carimbei a NF na entrada do pedido.</div>`
+    : `<div class="msg ok">Entrada lançada${emPct?` — ${pctInfo} = ${fmt(qtd)} folhas`:''}.</div>`;
 });
 
 document.addEventListener('click', async e=>{
@@ -1608,7 +1624,7 @@ const HELP={
 };
 document.addEventListener('click', async e=>{
   if(e.target.closest('#vdXls')){
-    const cur=S.mesSel; const rows=S.vendasRows.filter(r=>r.mes===cur && empOk(r)).sort((a,b)=>(b.d||'').localeCompare(a.d||''));
+    const cur=S.mesVd; const rows=S.vendasRows.filter(r=>r.mes===cur && empOk(r)).sort((a,b)=>(b.d||'').localeCompare(a.d||''));
     const dados=rows.map(r=>{ const v=S.vinculos[seg(r.an)]; const baixa=r.tp!=='item'?'':(isCanc(r.est)&&!S.cfg.canc?'não baixa':(v&&v.itens&&v.itens.length?v.itens.map(it=>`${S.produtos[it.pid]?.sku||it.pid} −${(r.un||0)*(it.fator||0)}`).join(' | '):'SEM VÍNCULO'));
       return {'Data':fmtData(r.d),'N.º venda':r.id,'Loja':r.emp||'','Tipo':r.tp==='pai'?'pacote':'item','Estado':r.est||'','Envio':r.env||'','Anúncio':r.an||'','Título':r.tit||'','Unidades':r.un||0,'Baixa':baixa,'Preço de venda (receita produtos)':r.rec==null?'':Number(r.rec),'Acréscimo pago pelo comprador':r.acr==null?'':Number(r.acr),'Tarifa ML + impostos':r.tax==null?'':Number(r.tax),'Receita por envio':r.recenv==null?'':Number(r.recenv),'Tarifa de envio':r.tarenv==null?'':Number(r.tarenv),'Cancelamentos / reembolsos':r.canc==null?'':Number(r.canc),'A RECEBER (Total)':r.tot==null?'':Number(r.tot),'Comprador':r.cmp||'','SKU anúncio':r.sku||''}; });
     const ws=XLSX.utils.json_to_sheet(dados); const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'vendas');
@@ -2018,7 +2034,7 @@ document.addEventListener('click', async e=>{
     ab.disabled=true; ab.textContent='aprovando…';
     try{
       const hoje=new Date().toISOString().slice(0,10);
-      await S.db.collection('entradas').add({pid:p.pid, qtd:qa, empresa:p.empresa, data:hoje, forn:forn||'Pedido', nf:'', obs:`Pedido de ${p.solicitante} · aprovado por ${por}${vend?' · vendedor '+vend:''}${tel?' · tel '+tel:''} (→ ${p.empresa}) [ped:${id}]`, criado:new Date().toISOString()});
+      if(gemeoEntrada(p.pid,p.empresa,qa,hoje,'nota')){ toast('Essa compra já entrou pela nota fiscal — aprovei o pedido sem lançar de novo no estoque'); } else await S.db.collection('entradas').add({pid:p.pid, qtd:qa, empresa:p.empresa, data:hoje, forn:forn||'Pedido', nf:'', obs:`Pedido de ${p.solicitante} · aprovado por ${por}${vend?' · vendedor '+vend:''}${tel?' · tel '+tel:''} (→ ${p.empresa}) [ped:${id}]`, criado:new Date().toISOString()});
       S.ultimoAprovado={id, quando:Date.now()};
       await pedWrite(id,Object.assign({},p,{status:'aprovado', qtd_aprovada:qa, fornecedor:forn, vendedor:vend, telefone:tel, aprovado_por:por, decidido_em:new Date().toISOString()}));
       slackAvisa(`✅ Pedido APROVADO — ${fmt(qa)} × ${(S.produtos[p.pid]||{}).sku||p.pid} (${p.empresa}) · por ${por}`);
@@ -2035,7 +2051,7 @@ document.addEventListener('click', async e=>{
     ok.disabled=true; ok.textContent='aprovando…';
     try{
       const hoje=new Date().toISOString().slice(0,10);
-      await S.db.collection('entradas').add({pid:p.pid, qtd:qa, empresa:p.empresa, data:hoje, forn:forn||'Pedido', nf:'', obs:`Pedido de ${p.solicitante} · aprovado por ${por}${vend?' · vendedor '+vend:''}${tel?' · tel '+tel:''} (→ ${p.empresa}) [ped:${id}]`, criado:new Date().toISOString()});
+      if(gemeoEntrada(p.pid,p.empresa,qa,hoje,'nota')){ toast('Essa compra já entrou pela nota fiscal — aprovei o pedido sem lançar de novo no estoque'); } else await S.db.collection('entradas').add({pid:p.pid, qtd:qa, empresa:p.empresa, data:hoje, forn:forn||'Pedido', nf:'', obs:`Pedido de ${p.solicitante} · aprovado por ${por}${vend?' · vendedor '+vend:''}${tel?' · tel '+tel:''} (→ ${p.empresa}) [ped:${id}]`, criado:new Date().toISOString()});
       const fixar=tr.querySelector('.pa-fixar')&&tr.querySelector('.pa-fixar').checked;
       if(fixar && (forn||vend||tel)){ const cur=fornDe(p.pid); if(cur.nome!==forn||cur.vendedor!==vend||cur.telefone!==tel) await fornWrite(p.pid,{nome:forn,vendedor:vend,telefone:tel}); }
       S.ultimoAprovado={id, quando:Date.now()};
