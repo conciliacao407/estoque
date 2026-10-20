@@ -191,13 +191,14 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
     <button class="tab" data-t="vinculos"><span class="ico">🔗</span>Vínculos <span class="badge" id="bPend"></span></button>
     <button class="tab" data-t="vendas"><span class="ico">🛒</span>Vendas</button>
     <button class="tab" data-t="projecao"><span class="ico">📈</span>Projeção</button>
+    <button class="tab" data-t="margem"><span class="ico">💰</span>Margem</button>
     <button class="tab" data-t="entradas"><span class="ico">📥</span>Entradas</button>
     <button class="tab" data-t="importar"><span class="ico">⬆️</span>Importar</button>
     <button class="tab" data-t="orientacao"><span class="ico">📖</span>Orientação</button>
   </nav>
   <div class="side-foot">
     <span id="connState">conectando ao banco…</span>
-    <div style="opacity:.6;margin-top:4px">Supabase · 4 lojas · <span id="versao">v2026-10-15c</span></div>
+    <div style="opacity:.6;margin-top:4px">Supabase · 4 lojas · <span id="versao">v2026-10-16b</span></div>
   </div>
 </aside>
 <div class="content">
@@ -298,6 +299,22 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
   </div>
 </section>
 
+<section id="s-margem" hidden>
+  <div class="tiles" id="mgTiles"></div>
+  <div class="card">
+    <div class="card-h"><h2>Margem por anúncio <span id="mgTit" class="dim" style="font-weight:400;font-size:13px"></span></h2>
+      <div class="sp">
+        <label class="f">Mês<select id="mgMes"></select></label>
+        <label class="f" title="ICMS + PIS + COFINS + IRPJ/CSLL sobre o preço de venda — pegue o número com a contabilidade">Imposto da empresa (%)<input type="number" id="mgImp" step="0.1" value="10.4" style="width:80px"></label>
+        <label class="f" title="caixa, fita, etiqueta e mão de obra por pedido enviado">Embalagem por envio (R$)<input type="number" id="mgEmb" step="0.1" value="1.5" style="width:80px"></label>
+        <input type="text" id="qMg" placeholder="buscar MLB ou título…" style="width:180px">
+        <button class="btn sm sec xls" data-tbl="tblMg" data-nome="margem" title="baixar em Excel">⬇ Excel</button>
+      </div>
+    </div>
+    <div class="tbl-wrap"><table id="tblMg"></table></div>
+  </div>
+  <p class="note">Por anúncio, no mês e na loja escolhidos: <b>preço</b>, <b>taxa do ML</b> e <b>frete</b> vêm do relatório de vendas (colunas Receita por produtos, Tarifa de venda, Tarifas e Receita por envio); <b>recebe</b> = o que o ML repassa; <b>custo do produto</b> = vínculo × custo cadastrado em Produtos; <b>imposto</b> e <b>embalagem</b> são os dois campos acima. <b>Lucro</b> = recebe − custo − imposto − embalagem. Vermelho = prejuízo. <b>Degrau</b> avisa quando o preço está até R$ 3 acima de R$ 79 / 100 / 120 / 150 / 200, onde o frete muda de faixa. Vendas de pacote (vários produtos) e canceladas ficam fora. Só aparecem meses importados depois de 15/10 (ou reimportados), que já trazem taxa e frete.</p>
+</section>
 <section id="s-projecao" hidden>
   <div class="card">
     <div class="card-h"><h2>Projeção de envios</h2>
@@ -360,6 +377,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
         <label class="f">Obs<input type="text" id="pdObs" style="width:180px"></label>
         <button class="btn" id="pdCriar">Criar pedido (Pendente)</button>
       </div>
+      <div id="pdInfoPrev"></div>
       <div id="pdRegua"></div>
       <div id="pdMsg"></div>
     </div>
@@ -387,6 +405,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
 </section>
 
 <section id="s-importar" hidden>
+  <div class="card"><div class="card-h"><h2>Backup</h2><div class="sp"><button class="btn sm" id="btnBackup">⬇ Backup completo agora</button></div></div><div class="card-b"><p class="note" style="margin:0">Baixa um Excel com todas as tabelas do banco (produtos, vínculos, entradas, vendas, pedidos, histórico). A plataforma faz isso sozinha uma vez por semana ao abrir; o arquivo vai pra pasta Downloads.</p></div></div>
   <div class="card">
     <div class="card-h"><h2>Relatório de vendas (Mercado Livre)</h2><div class="sp"><label class="f">Empresa da conta<select id="impEmp"></select></label><button class="btn sm sec ajuda" data-help="importar" title="como usar esta aba">?</button></div></div>
     <div class="card-b">
@@ -467,7 +486,9 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
       <p><b>Mês fechado</b> — só o que entrou e o que saiu dentro de um mês (padrão: o mês passado). Não olha saldo acumulado; serve pra fechar o mês e comparar compra com venda. Respeita a loja do topo e tem Excel.</p>
       <p><b>Produtos</b> — cadastro: SKU, nome, unidade, custo da última nota, fornecedor e telefone (pra mensagem de pedido). "+ Produto" cria; lápis edita.</p>
       <p><b>Vínculos</b> — cada anúncio aparece com o código <b>MLB</b> (clica e abre o anúncio no ML) e a <b>loja</b> dona dele. No topo, quantos anúncios cada loja tem; escolhendo a loja no menu, a aba mostra só os MLB daquela loja. Liga cada anúncio do Mercado Livre a um produto e um fator (quantas folhas/peças 1 unidade vendida representa). Bloco de cima: anúncios esperando sua conferência (a plataforma sugere pelo título). Bloco de baixo: conferidos. Coluna <b>Loja</b> mostra em qual conta o anúncio vende. "Não vende mais" tira o anúncio da lista sem baixar estoque. Toda alteração fica gravada no histórico.</p>
-      <p><b>Vendas</b> — no topo, o <b>Faturamento do mês</b> por loja com as colunas <b>ML: vendas</b> e <b>ML: receita</b>: você digita o que o Mercado Livre mostra em Faturamento → Vendas e a plataforma diz se <b>bate</b> ou quanto <b>difere</b>. Esse é o parâmetro de conferência de lançamento: mês com "bate" nas quatro lojas está fechado. Embaixo, as vendas importadas do ML, mês a mês, com a loja e a baixa que cada uma gerou. Busca por número, anúncio, comprador. Cada linha tem ✎ (trocar loja, unidades, estado, anúncio) e 🗑. Marcando linhas, ou clicando em <b>marcar o mês inteiro</b>, aparece a barra de lote: mover todas pra outra loja ou excluir — é o jeito de corrigir um relatório importado na loja errada.</p>
+      <p><b>Margem</b> — lucro por anúncio no mês e na loja: preço, taxa do ML, frete, o que recebe, custo do produto (vínculo × custo), imposto e embalagem (os dois campos do topo, que ficam gravados). Ordena do pior pro melhor; vermelho é prejuízo; <b>degrau</b> avisa preço logo acima de R$ 79/100/120/150/200, onde o frete muda de faixa.</p>
+      <p><b>O que está errado agora</b> — o quadro no topo de toda aba: vendas sem importar, notas faltando, anúncio sem vínculo vendendo, compra lançada em dobro (com botão pra apagar), quantidade fora do padrão, faturamento não conferido com o ML e backup atrasado. Com uma loja escolhida no menu, mostra só os dela. Tudo em dia = faixa verde.</p>
+      <p><b>Vendas</b> — no topo, o <b>Faturamento do mês</b> por loja com as colunas na ordem do dinheiro — <b>Vendido (bruto)</b>, taxa, frete, cancelamentos e <b>Você recebe</b> — e as colunas <b>ML: vendas</b> e <b>ML: vendido</b>: você digita o que o Mercado Livre mostra em Faturamento → Vendas e a plataforma diz se <b>bate</b> ou quanto <b>difere</b>. Esse é o parâmetro de conferência de lançamento: mês com "bate" nas quatro lojas está fechado. Embaixo, as vendas importadas do ML, mês a mês, com a loja e a baixa que cada uma gerou. Busca por número, anúncio, comprador. Cada linha tem ✎ (trocar loja, unidades, estado, anúncio) e 🗑. Marcando linhas, ou clicando em <b>marcar o mês inteiro</b>, aparece a barra de lote: mover todas pra outra loja ou excluir — é o jeito de corrigir um relatório importado na loja errada.</p>
       <p><b>Projeção</b> — quantos dias o saldo dura no ritmo atual. <b>Estoque morto</b> = a reserva que precisa existir pra aguentar até o fornecedor entregar (média por dia × prazo do fornecedor: AMP 7 dias, LM 5, Lassane capas 14, Prolam 3, Imballa 5, Mares 2). <b>Estoque vivo</b> = saldo menos essa reserva; se ficar negativo, a venda já está comendo a reserva e o pedido está atrasado.</p>
       <p><b>Entradas</b> — lança compra manualmente (produto, pacotes ou unidades, empresa, NF). Lista tudo que já entrou. Cada linha tem ✎ pra corrigir qualquer campo (empresa, quantidade, data, NF…) e excluir. Marcando várias linhas aparece a barra de lote: <b>mover para</b> outra loja de uma vez, ou excluir todas. A NF impede lançar a mesma nota duas vezes.</p>
       <p><b>Pedidos</b> — pedido de compra: escolhe produto e empresa, vê a régua de reposição com base no <b>mês fechado</b> (o que cada loja comprou e vendeu no mês passado, e quanto comprar pra cobrir 30 dias + prazo do fornecedor), cria pendente. Se alguma loja está sem venda ou sem nota lançada no mês fechado, aparece um aviso vermelho no topo de todas as abas. "Gerar pedidos" cria de uma vez pra tudo que está acabando. Aprovar lança a entrada na hora (quantidade e fornecedor do pedido; use ✎ antes se precisar ajustar); Recusar é um clique e não mexe em nada.</p>
@@ -659,28 +680,103 @@ function compute(){
 /* ================= render ================= */
 function checarLancamentos(){
   const box=document.getElementById('avisoLanc'); if(!box) return;
-  const M=mesAnterior(); const hoje=new Date();
-  const ult={}, temMes={}, temEnt={};
-  for(const r of S.vendasRows){ if(r.tp!=='item'||!r.emp) continue; if(r.mes===M) temMes[r.emp]=true; const d=(r.d||'').slice(0,10); if(d>(ult[r.emp]||'')) ult[r.emp]=d; }
+  const M=mesAnterior(), mesTxt=`${M.slice(5)}/${M.slice(0,4)}`, hoje=new Date();
+  const sel=(S.empSel&&S.empSel!=='Todas')?S.empSel:null;
+  const P=[]; const add=(e,t,grave,goto)=>{ if(sel && e!==sel && e!=='Grupo') return; P.push({e,t,grave,goto}); };
+  // 1. vendas importadas
+  const ult={}, temMes={}, temEnt={}; let refMax='';
+  for(const r of S.vendasRows){ if(r.tp!=='item'||!r.emp) continue; if(r.mes===M) temMes[r.emp]=true; const d=(r.d||'').slice(0,10); if(d>(ult[r.emp]||'')) ult[r.emp]=d; if(d>refMax) refMax=d; }
   for(const e of S.entradas){ if((e.data||'').slice(0,7)===M) temEnt[empDe(e)]=true; }
-  const mesTxt=`${M.slice(5)}/${M.slice(0,4)}`; const probs=[];
   for(const e of EMPRESAS){
-    if(!temMes[e]) probs.push({e, t:`vendas de ${mesTxt} não lançadas`, grave:true});
-    else { const d=ult[e]||''; const dias=d?Math.floor((hoje-new Date(d+'T00:00'))/864e5):999; if(dias>7) probs.push({e, t:`última venda lançada em ${d.slice(8,10)}/${d.slice(5,7)} — ${dias} dias sem importar`, grave:dias>20}); }
-    if(!temEnt[e]) probs.push({e, t:`nenhuma nota de entrada lançada em ${mesTxt}`, grave:false});
+    if(!temMes[e]) add(e,`vendas de ${mesTxt} não importadas`,true,'importar');
+    else { const d=ult[e]||''; const dias=d?Math.floor((hoje-new Date(d+'T00:00'))/864e5):999; if(dias>7) add(e,`última venda importada é de ${d.slice(8,10)}/${d.slice(5,7)} — ${dias} dias sem importar`,dias>20,'importar'); }
+    if(!temEnt[e]) add(e,`nenhuma nota de entrada lançada em ${mesTxt}`,false,'entradas');
   }
-  if(!probs.length){ box.hidden=true; box.innerHTML=''; return; }
-  const grave=probs.some(p=>p.grave); box.hidden=false;
+  // 2. anúncios sem vínculo vendendo (30 dias)
+  if(refMax){ const d0=new Date(refMax+'T00:00'); d0.setDate(d0.getDate()-30); const d0s=d0.toISOString().slice(0,10); const sv={};
+    for(const r of S.vendasRows){ if(r.tp!=='item'||!r.an||isCanc(r.est)) continue; const dd=(r.d||'').slice(0,10); if(dd<d0s) continue; const k=seg(r.an); const v=S.vinculos[k]; if((v&&v.itens&&v.itens.length)||S.descont[k]) continue; (sv[r.emp]=sv[r.emp]||new Set()).add(r.an); }
+    for(const e in sv) add(e,`${sv[e].size} anúncio(s) sem vínculo vendendo — essas vendas não baixam estoque`,true,'vinculos'); }
+  // 3. entrada em dobro (pedido aprovado + nota da mesma compra)
+  const dup={}; S._dups=[];
+  for(const p of S.entradas){ if(!ehDePedido(p)||p.nf) continue; const g=gemeoEntrada(p.pid,empDe(p),p.qtd,p.data,'nota'); if(g){ const e=empDe(p); (dup[e]=dup[e]||[]).push(p); S._dups.push(p._id); } }
+  for(const e in dup) add(e,`${dup[e].length} compra(s) lançadas duas vezes (pedido aprovado + nota) — estoque inflado`,true,'entradas');
+  // 4. entrada fora do padrão (muito grande pra embalagem)
+  const big={};
+  for(const x of S.entradas){ const em=embDe(x.pid); const emb=(x.qtd||0)/(em.mult||1); if((em.mult>1 && emb>=1000) || (em.mult===1 && x.qtd>=20000)) (big[empDe(x)]=big[empDe(x)]||[]).push(x); }
+  for(const e in big) for(const x of big[e]) add(e,`entrada fora do padrão: ${(S.produtos[x.pid]||{}).sku||x.pid} ${fmt((x.qtd||0)/(embDe(x.pid).mult||1))} ${embDe(x.pid).plural} em ${fmtData(x.data)} — confere a quantidade`,true,'entradas');
+  // 5. conferência com o ML do mês fechado
+  for(const e of EMPRESAS){ if(!temMes[e]) continue; const c=S.confML&&S.confML[`${M}|${e}`]; if(!c||(c.n==null&&c.r==null)) add(e,`faturamento de ${mesTxt} ainda não conferido com o ML`,false,'vendas'); }
+  // 6. backup
+  const bk=S.ultBackup; const db=bk?Math.floor((hoje-new Date(bk))/864e5):999; if(db>7) add('Grupo',bk?`último backup há ${db} dias`:'nenhum backup semanal feito ainda',false,'importar');
+  if(!P.length){ box.hidden=false; box.innerHTML=`<div style="background:var(--accent-soft);border:1px solid var(--accent);border-radius:10px;padding:10px 16px;margin-bottom:18px;font-weight:600;color:var(--accent-ink)">✅ Nada errado${sel?' na '+esc(sel):''}: vendas, notas, vínculos, entradas e backup em dia.</div>`; return; }
+  P.sort((a,b)=>(b.grave-a.grave));
+  const grave=P.some(p=>p.grave); box.hidden=false;
   box.innerHTML=`<div style="background:${grave?'var(--danger-soft)':'var(--warn-soft)'};border:1px solid ${grave?'var(--danger)':'var(--warn)'};border-radius:10px;padding:12px 16px;margin-bottom:18px">
-    <div style="font-weight:700;color:${grave?'var(--danger)':'var(--warn)'};margin-bottom:6px">${grave?'⛔ LANÇAMENTO FALTANDO':'⚠️ Lançamento atrasado'} — os números abaixo podem estar incompletos</div>
-    <ul style="margin:0;padding-left:18px;line-height:1.6">${probs.map(p=>`<li><b>${esc(p.e)}</b>: ${esc(p.t)}</li>`).join('')}</ul>
-    <div class="dim" style="margin-top:6px;font-size:12px">Importar → relatório de vendas do ML da loja · Entradas → lançar as notas. O aviso some sozinho quando entrar.</div></div>`;
+    <div style="font-weight:700;color:${grave?'var(--danger)':'var(--warn)'};margin-bottom:6px">${grave?'⛔':'⚠️'} O que está errado agora${sel?' — '+esc(sel):''} (${P.length})</div>
+    <ul style="margin:0;padding-left:18px;line-height:1.7">${P.map(p=>`<li>${p.grave?'<b style="color:var(--danger)">●</b>':'<span style="color:var(--warn)">●</span>'} <b>${esc(p.e)}</b>: ${esc(p.t)} ${p.goto?`<a href="#" data-goto="${p.goto}" style="font-size:12px">resolver →</a>`:''}</li>`).join('')}</ul>
+    ${S._dups.length?`<div style="margin-top:8px"><button class="btn sm" id="apagaDups">Apagar as ${S._dups.length} entradas de pedido duplicadas (mantém as das notas)</button></div>`:''}</div>`;
+}
+async function backupCompleto(auto){
+  if(typeof SUPA==='undefined'||!SUPA) return;
+  try{
+    const all=async(t)=>{ let out=[]; for(let f=0;;f+=1000){ const {data,error}=await SUPA.from(t).select('*').range(f,f+999); if(error) return []; out=out.concat(data||[]); if(!data||data.length<1000) break; } return out; };
+    const flat=r=>{ const o={}; for(const k in r){ const v=r[k]; o[k]=(v&&typeof v==='object')?JSON.stringify(v):v; } return o; };
+    const wb=XLSX.utils.book_new(); const cnt={}; const add=(n,rows)=>{ cnt[n]=rows.length; XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows.length?rows:[{vazio:''}]),n.slice(0,31)); };
+    for(const t of ['produtos','vinculos','entradas','vendas','vinculos_log']) add(t,(await all(t)).map(flat));
+    const cfg=await all('config'); const peq=[], ped=[];
+    for(const r of cfg){ const sj=JSON.stringify(r.v); if(String(r.k).startsWith('pedido:')) ped.push(Object.assign({id:String(r.k).slice(7)},flat(r.v||{}))); else if(sj.length<30000) peq.push({k:r.k,v:sj}); else add(('cfg_'+r.k).slice(0,31),Object.entries(r.v||{}).map(([a,b])=>({chave:a,valor:(b&&typeof b==='object')?JSON.stringify(b):b}))); }
+    add('config',peq); add('pedidos',ped);
+    const leia=[['BACKUP ESTOQUE MAKENRY — '+new Date().toLocaleString('pt-BR')],['versão '+(document.getElementById('versao')?.textContent||'')],[''],...Object.entries(cnt).map(([k,v])=>[k+': '+v+' linhas'])];
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(leia),'LEIA-ME'); wb.SheetNames.unshift(wb.SheetNames.pop());
+    XLSX.writeFile(wb,'BACKUP_estoque_makenry_'+new Date().toISOString().slice(0,10)+'.xlsx');
+    S.ultBackup=new Date().toISOString(); await SUPA.from('config').upsert({k:'ultimo_backup', v:{em:S.ultBackup, linhas:cnt}});
+    toast((auto?'Backup semanal':'Backup')+' baixado na pasta Downloads'); checarLancamentos();
+  }catch(err){ toast('Backup falhou: '+(err.message||err)); }
+}
+function backupSemanalSePreciso(){ if(S._bkTentou) return; S._bkTentou=true; const d=S.ultBackup?Math.floor((Date.now()-new Date(S.ultBackup))/864e5):999; if(d>=7 && typeof SUPA!=='undefined' && SUPA && S.podeEditar!==false) setTimeout(()=>backupCompleto(true),4000); }
+function renderMargem(){
+  const t=$('tblMg'); if(!t) return;
+  const meses=[...new Set(S.vendasRows.filter(r=>r.rec!=null).map(r=>r.mes))].filter(m=>/^\d{4}-\d{2}$/.test(m)).sort().reverse();
+  const sel=$('mgMes');
+  if(!meses.length){ t.innerHTML='<tr><td><div class="empty"><b>Nenhum mês com taxa e frete ainda.</b><br>Reimporte o relatório de vendas do mês na aba Importar — a plataforma completa preço, taxa e frete das vendas que já estão no banco.</div></td></tr>'; $('mgTiles').innerHTML=''; return; }
+  if(!S.mgMes||!meses.includes(S.mgMes)) S.mgMes=meses[0];
+  if(sel.dataset.n!==meses.join()){ sel.innerHTML=meses.map(m=>`<option value="${m}">${m.slice(5)}/${m.slice(0,4)}</option>`).join(''); sel.dataset.n=meses.join(); }
+  sel.value=S.mgMes;
+  if(S.mgParams && !S._mgPar){ $('mgImp').value=S.mgParams.imp; $('mgEmb').value=S.mgParams.emb; S._mgPar=true; }
+  const imp=(Number($('mgImp').value)||0)/100, emb=Number($('mgEmb').value)||0, q=($('qMg').value||'').toLowerCase();
+  const A={};
+  for(const r of S.vendasRows){
+    if(r.mes!==S.mgMes||r.tp!=='item'||!empOk(r)||isCanc(r.est)) continue;
+    if(!(r.env||r.cmp)) continue;                 // item de pacote: dinheiro está no pai
+    if(r.rec==null) continue;
+    const a=A[r.an]||(A[r.an]={an:r.an,tit:r.tit,emp:r.emp,n:0,un:0,rec:0,tax:0,fre:0,tot:0,cp:0,semCusto:false});
+    a.n++; a.un+=r.un||0; a.rec+=Number(r.rec)||0; a.tax+=-(Number(r.tax)||0); a.fre+=-(Number(r.tarenv)||0)-(Number(r.recenv)||0); a.tot+=Number(r.tot)||0;
+    const v=S.vinculos[seg(r.an)];
+    if(v&&v.itens) for(const it of v.itens){ const c=(S.produtos[it.pid]||{}).custo||0; if(!c) a.semCusto=true; a.cp+=(r.un||0)*(it.fator||0)*c; } else a.semCusto=true;
+    if((r.d||'')>(a.ud||'')){ a.ud=r.d; a.tit=r.tit; }
+  }
+  const cuts=[79,100,120,150,200]; let L=Object.values(A).map(a=>{ const preco=a.rec/a.n, recebe=a.tot/a.n, cp=a.cp/a.n, im=preco*imp, luc=recebe-cp-im-emb; const pu=a.rec/(a.un||1);
+    const c=cuts.find(x=>pu>=x && pu-x<=3); return Object.assign(a,{preco,recebe,cpv:cp,im,luc,mg:preco?luc/preco*100:0,lucMes:luc*a.n,degrau:c?`R$ ${fmt(pu)} → ${fmtBRL(c-0.01)}`:''}); });
+  if(q) L=L.filter(a=>`${a.an} ${a.tit}`.toLowerCase().includes(q));
+  L.sort((x,y)=>x.luc-y.luc);
+  const B=v=>fmtBRL(v);
+  let h=`<tr><th>Anúncio (MLB)</th><th>Loja</th><th>Título</th><th class="r">Vendas</th><th class="r">Preço</th><th class="r">Taxa ML</th><th class="r">Frete</th><th class="r">Recebe</th><th class="r">Custo produto</th><th class="r">Imposto</th><th class="r">Embal.</th><th class="r">Lucro/venda</th><th class="r">Margem</th><th class="r">Lucro no mês</th><th>Degrau</th></tr>`;
+  let tv=0,tr=0,tl=0;
+  for(const a of L){ tv+=a.n; tr+=a.rec; tl+=a.lucMes;
+    h+=`<tr><td class="mono"><a href="https://produto.mercadolivre.com.br/MLB-${esc(String(a.an).replace(/^MLB-?/i,''))}" target="_blank" rel="noopener">${esc(a.an)}</a></td><td><span class="chip emp-${esc(a.emp)}">${esc(a.emp)}</span></td><td class="wrap" style="max-width:300px;font-size:12.5px">${esc(a.tit||'')}</td>
+      <td class="r num">${fmt(a.n)}</td><td class="r num">${B(a.preco)}</td><td class="r num dim">${B(a.tax/a.n)}</td><td class="r num dim">${B(a.fre/a.n)}</td><td class="r num">${B(a.recebe)}</td>
+      <td class="r num">${B(a.cpv)}${a.semCusto?' <span class="chip warn" title="produto sem custo cadastrado ou anúncio sem vínculo — margem inflada">sem custo</span>':''}</td><td class="r num dim">${B(a.im)}</td><td class="r num dim">${B(emb)}</td>
+      <td class="r num ${a.luc<0?'neg':''}"><b>${B(a.luc)}</b></td><td class="r num ${a.mg<0?'neg':''}">${fmt(a.mg)}%</td><td class="r num ${a.lucMes<0?'neg':''}">${B(a.lucMes)}</td><td style="font-size:12px">${a.degrau?`<span class="chip warn">${esc(a.degrau)}</span>`:''}</td></tr>`; }
+  t.innerHTML=h+(L.length?'':'<tr><td colspan="15"><div class="empty">Nada nesse filtro.</div></td></tr>');
+  const neg=L.filter(a=>a.luc<0);
+  $('mgTit').textContent=`— ${S.mgMes.slice(5)}/${S.mgMes.slice(0,4)}${S.empSel&&S.empSel!=='Todas'?' · '+S.empSel:' · todas as lojas'}`;
+  $('mgTiles').innerHTML=`<div class="tile"><div class="v">${fmt(L.length)}</div><div class="l">anúncios com venda</div></div><div class="tile"><div class="v">${B(tr)}</div><div class="l">vendido (${fmt(tv)} vendas)</div></div><div class="tile ${tl<0?'alert':''}"><div class="v">${B(tl)}</div><div class="l">lucro no mês</div></div><div class="tile ${neg.length?'alert':''}"><div class="v">${fmt(neg.length)}</div><div class="l">anúncios no prejuízo · ${B(neg.reduce((s,a)=>s+a.lucMes,0))}</div></div>`;
 }
 function render(){
   compute(); checarLancamentos(); sincEmpresa();
   const nPend = Object.keys(S.calc.pend).length;
   $('bPend').textContent = nPend||'';
-  renderEstoque(); renderMes(); renderProdutos(); renderConferir(); renderVinculos(); renderVendas(); renderProjecao(); renderEntradas(); renderHistImp(); renderPedidos(); renderAprovados();
+  renderEstoque(); renderMes(); renderProdutos(); renderConferir(); renderVinculos(); renderVendas(); renderProjecao(); renderMargem(); renderEntradas(); renderHistImp(); renderPedidos(); renderAprovados();
   $('limiarTxt').textContent = fmt(S.cfg.limiar);
 }
 function iniVisDe(pid){
@@ -856,7 +952,7 @@ function renderConferir(){
 }
 S.conferidos = S.conferidos || {}; S.descont = S.descont || {}; S.confML = S.confML || {};
 async function loadConferidos(){
-  if(typeof SUPA!=='undefined' && SUPA){ const {data,error}=await SUPA.from('config').select('*').in('k',['conferidos','descontinuados','conf_vendas']); if(!error){ S.conferidos={}; S.descont={}; S.confML={}; (data||[]).forEach(r=>{ if(r.k==='conferidos') S.conferidos=r.v||{}; if(r.k==='descontinuados') S.descont=r.v||{}; if(r.k==='conf_vendas') S.confML=r.v||{}; }); } }
+  if(typeof SUPA!=='undefined' && SUPA){ const {data,error}=await SUPA.from('config').select('*').in('k',['conferidos','descontinuados','conf_vendas','ultimo_backup','margem_params']); if(!error){ S.conferidos={}; S.descont={}; S.confML={}; (data||[]).forEach(r=>{ if(r.k==='conferidos') S.conferidos=r.v||{}; if(r.k==='descontinuados') S.descont=r.v||{}; if(r.k==='conf_vendas') S.confML=r.v||{}; if(r.k==='ultimo_backup') S.ultBackup=(r.v||{}).em||null; if(r.k==='margem_params') S.mgParams=r.v||null; }); } }
 }
 async function confMLWrite(){
   if(typeof SUPA!=='undefined' && SUPA){ const {error}=await SUPA.from('config').upsert({k:'conf_vendas', v:S.confML}); if(error) throw new Error(rlsMsg(error)); }
@@ -898,6 +994,13 @@ function vdSelecionadas(){ return [...document.querySelectorAll('.vd-sel:checked
 function vdLoteUpd(){ const n=vdSelecionadas().length; const b=$('vdLote'); if(!b) return; b.style.display=n?'flex':'none'; $('vdLoteN').textContent=n+' venda'+(n>1?'s':''); }
 async function vendaUpdate(id,campos){ const {error}=await SUPA.from('vendas').update(campos).eq('id',id); if(error) throw new Error(rlsMsg(error)); }
 async function vendaDelete(id){ const {error}=await SUPA.from('vendas').delete().eq('id',id); if(error) throw new Error(rlsMsg(error)); }
+document.addEventListener('click', async e=>{
+  const b=e.target.closest('#apagaDups'); if(!b) return; if(needDb()) return;
+  if(b.dataset.arm!=='1'){ b.dataset.arm='1'; b.textContent='confirmar: apagar '+S._dups.length+' entradas?'; setTimeout(()=>{b.dataset.arm='';b.textContent='Apagar as entradas de pedido duplicadas';},5000); return; }
+  b.disabled=true; b.textContent='apagando…'; let n=0;
+  try{ for(const id of [...S._dups]){ await entradaDelete(id); n++; } toast(n+' entrada(s) duplicada(s) apagadas'); }catch(err){ toast('Erro: '+(err.message||err)); }
+  render();
+});
 document.addEventListener('change', async e=>{
   if(e.target.classList&&e.target.classList.contains('rg-mes')){ S.reguaMes=e.target.value; S.reguaBase='mes'; try{localStorage.setItem('reguaBase','mes');}catch(_){} renderPedidos(); return; }
   if(e.target.classList&&(e.target.classList.contains('cf-n')||e.target.classList.contains('cf-r'))){ if(needDb()) return; const k=e.target.dataset.k; const c=S.confML[k]||{}; const v=e.target.value===''?null:Number(e.target.value); if(e.target.classList.contains('cf-n')) c.n=v; else c.r=v; c.em=new Date().toISOString().slice(0,10); S.confML[k]=c; try{ await confMLWrite(); renderFaturamento(); toast('conferência gravada'); }catch(err){ toast('Erro: '+(err.message||err)); } return; }
@@ -934,27 +1037,35 @@ document.addEventListener('click', async e=>{
 function renderFaturamento(){
   const t=$('tblFat'); if(!t) return;
   const cur=S.mesVd; if(!cur){ t.innerHTML=''; return; }
-  const R={}; for(const e of EMPRESAS) R[e]={n:0,v:0,nc:0,vc:0};
+  const z=()=>({n:0,nc:0,bruto:0,tax:0,fre:0,canc:0,rec:0,semBruto:0});
+  const R={}; for(const e of EMPRESAS) R[e]=z();
   for(const r of S.vendasRows){
     if(r.mes!==cur) continue;
-    const umaVenda = r.tp==='pai' || (r.tp==='item' && (r.env||r.cmp));   // item dentro de pacote (sem envio e sem comprador) não conta de novo
+    const umaVenda = r.tp==='pai' || (r.tp==='item' && (r.env||r.cmp));
     if(!umaVenda) continue;
-    const e=r.emp||'?'; if(!R[e]) R[e]={n:0,v:0,nc:0,vc:0};
-    const v=Number(r.tot)||0; const ruim=isCanc(r.est)||isDev(r.est);
-    R[e].n++; R[e].v+=v; if(ruim){ R[e].nc++; R[e].vc+=v; }
+    const e=r.emp||'?'; if(!R[e]) R[e]=z(); const x=R[e];
+    x.n++; if(isCanc(r.est)||isDev(r.est)) x.nc++;
+    if(r.rec==null) x.semBruto++;
+    x.bruto+=Number(r.rec)||0; x.tax+=-(Number(r.tax)||0); x.fre+=-(Number(r.tarenv)||0)-(Number(r.recenv)||0); x.canc+=-(Number(r.canc)||0); x.rec+=Number(r.tot)||0;
   }
-  const T={n:0,v:0,nc:0,vc:0}; for(const e in R){ T.n+=R[e].n; T.v+=R[e].v; T.nc+=R[e].nc; T.vc+=R[e].vc; }
-  const rec={}; for(const e in R) rec[e]=0; for(const r of S.vendasRows){ if(r.mes!==cur) continue; const ok=r.tp==='pai'||(r.tp==='item'&&(r.env||r.cmp)); if(!ok) continue; const e=r.emp||'?'; if(rec[e]==null) rec[e]=0; rec[e]+=Number(r.rec)||0; }
-  const confTd=(e,x)=>{ if(!e) return '<td></td><td></td><td></td>'; const k=`${cur}|${e}`; const c=S.confML[k]||{}; const nML=c.n, rML=c.r; const dn=nML!=null?x.n-nML:null; const rv=rec[e]||0; const dr=rML!=null?rv-rML:null;
-    const st = (nML==null&&rML==null) ? '<span class="chip mut">não conferido</span>' : ((dn===0||dn==null)&&(dr==null||Math.abs(dr)<1) ? '<span class="chip ok">bate</span>' : `<span class="chip warn">difere${dn?` ${dn>0?'+':''}${dn} vendas`:''}${dr&&Math.abs(dr)>=1?` ${dr>0?'+':''}${fmtBRL(dr)}`:''}</span>`);
-    return `<td class="r"><input type="number" class="cf-n" data-k="${esc(k)}" value="${nML??''}" placeholder="vendas no ML" style="width:95px;text-align:right"></td><td class="r"><input type="number" step="0.01" class="cf-r" data-k="${esc(k)}" value="${rML??''}" placeholder="receita no ML" style="width:115px;text-align:right"></td><td>${st}</td>`; };
-  const linha=(nome,x,cls,e)=>`<tr class="${cls||''}"><td>${nome}</td><td class="r num">${fmt(x.n)}</td><td class="r num">${fmtBRL(x.v)}</td><td class="r num ${x.nc?'neg':''}">${fmt(x.nc)}</td><td class="r num ${x.vc?'neg':''}">${x.vc?'− '+fmtBRL(x.vc):'—'}</td><td class="r num"><b>${fmtBRL(x.v-x.vc)}</b></td><td class="r num dim">${e&&rec[e]?fmtBRL(rec[e]):'—'}</td>${confTd(e,x)}</tr>`;
-  let h='<tr><th>Loja</th><th class="r">Vendas totais</th><th class="r">R$ total (a receber)</th><th class="r">Canceladas / devolvidas</th><th class="r">R$ canc./dev.</th><th class="r">Valor final</th><th class="r" title="soma de Receita por produtos — só aparece depois de reimportar o mês com a versão nova">Receita por produtos</th><th class="r" title="digite o que o ML mostra em Faturamento → Vendas, pro mês">ML: vendas</th><th class="r">ML: receita</th><th>Conferência</th></tr>';
-  for(const e of EMPRESAS) h+=linha(`<span class="chip emp-${esc(e)}">${esc(e)}</span>`,R[e],'',e);
-  for(const e in R) if(!EMPRESAS.includes(e)) h+=linha(esc(e),R[e],'',e);
-  h+=linha('<b>Grupo</b>',T,'',null);
+  const T=z(); for(const e in R) for(const k in T) T[k]+=R[e][k];
+  const B=v=>fmtBRL(v);
+  const confTd=(e,x)=>{ if(!e) return '<td></td><td></td><td></td>'; const k=`${cur}|${e}`; const c=S.confML[k]||{}; const nML=c.n, rML=c.r; const dn=nML!=null?x.n-nML:null; const dr=(rML!=null&&!x.semBruto)?x.bruto-rML:null;
+    const st=(nML==null&&rML==null)?'<span class="chip mut">não conferido</span>':((dn===0||dn==null)&&(dr==null||Math.abs(dr)<1)?'<span class="chip ok">bate</span>':`<span class="chip warn">difere${dn?` ${dn>0?'+':''}${dn} vendas`:''}${dr&&Math.abs(dr)>=1?` ${dr>0?'+':''}${B(dr)}`:''}</span>`);
+    return `<td class="r"><input type="number" class="cf-n" data-k="${esc(k)}" value="${nML??''}" placeholder="vendas no ML" style="width:95px;text-align:right"></td><td class="r"><input type="number" step="0.01" class="cf-r" data-k="${esc(k)}" value="${rML??''}" placeholder="vendido no ML" style="width:115px;text-align:right"></td><td>${st}</td>`; };
+  const linha=(nome,x,e)=>{ const sb=x.semBruto&&x.semBruto===x.n; const parc=x.semBruto&&!sb;
+    const cel=v=>sb?'<span class="dim" title="mês importado antes das colunas de taxa e frete — reimporte o relatório">—</span>':B(v);
+    return `<tr><td>${nome}</td><td class="r num">${fmt(x.n)}${x.nc?` <span class="dim" style="font-size:11px">(${fmt(x.nc)} canc./dev.)</span>`:''}</td>
+      <td class="r num"><b>${cel(x.bruto)}</b>${parc?' <span class="chip warn" title="parte das vendas sem valor — reimporte o mês">parcial</span>':''}</td>
+      <td class="r num dim">${sb?cel(0):'− '+B(x.tax)}</td><td class="r num dim">${sb?cel(0):'− '+B(x.fre)}</td><td class="r num dim">${sb?cel(0):(x.canc?'− '+B(x.canc):'—')}</td>
+      <td class="r num"><b>${B(x.rec)}</b></td>${confTd(e,x)}</tr>`; };
+  let h='<tr><th>Loja</th><th class="r">Vendas</th><th class="r" title="Receita por produtos — o que o ML mostra como venda">Vendido (bruto)</th><th class="r">Taxa ML + impostos</th><th class="r" title="frete que você pagou menos o que o comprador pagou">Frete</th><th class="r">Cancelamentos / reembolsos</th><th class="r" title="Total (BRL) — o que o ML repassa">Você recebe</th><th class="r" title="digite o que o ML mostra em Faturamento → Vendas">ML: vendas</th><th class="r">ML: vendido</th><th>Conferência</th></tr>';
+  for(const e of EMPRESAS) h+=linha(`<span class="chip emp-${esc(e)}">${esc(e)}</span>`,R[e],e);
+  for(const e in R) if(!EMPRESAS.includes(e)) h+=linha(esc(e),R[e],e);
+  h+=linha('<b>Grupo</b>',T,null);
   t.innerHTML=h;
-  $('vdResTit').textContent=`— ${cur.slice(5)}/${cur.slice(0,4)} · valor = coluna "Total (BRL)" do relatório do ML · canceladas e devolvidas pelo estado da venda · nas colunas ML digite o que o Mercado Livre mostra em Faturamento → Vendas: bate = mês conferido`;
+  const falta=EMPRESAS.filter(e=>R[e].semBruto);
+  $('vdResTit').innerHTML=`— ${cur.slice(5)}/${cur.slice(0,4)} · <b>Vendido</b> = o que o ML mostra como venda · <b>Você recebe</b> = o que ele repassa depois de taxa, frete e cancelamento`+(falta.length?` · <span style="color:var(--warn)">sem valor bruto em ${falta.join(', ')}: reimporte o relatório do mês dessas lojas</span>`:'');
 }
 function renderVendas(){
   const meses = [...new Set(S.vendasRows.map(r=>r.mes))].sort().reverse();
@@ -1450,10 +1561,13 @@ $('tabs').addEventListener('click', e=>{
   S.tab=b.dataset.t;
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t===b));
   document.querySelectorAll('main > section').forEach(s=>s.hidden = s.id!=='s-'+S.tab);
-  const TIT={estoque:['Estoque','saldo por produto'],mes:['Mês fechado','o que entrou e o que saiu só no mês'],produtos:['Produtos','cadastro, custo e fornecedor'],vinculos:['Vínculos','anúncio → produto'],vendas:['Vendas','relatórios do Mercado Livre'],projecao:['Projeção','cobertura, estoque morto e vivo'],entradas:['Entradas','notas fiscais e lançamentos'],pedidos:['Pedidos','reposição e pendentes'],aprovados:['Aprovados','histórico e mensagens'],importar:['Importar','relatórios, planilhas e conexão'],orientacao:['Orientação','como a plataforma funciona']};
+  const TIT={estoque:['Estoque','saldo por produto'],mes:['Mês fechado','o que entrou e o que saiu só no mês'],produtos:['Produtos','cadastro, custo e fornecedor'],vinculos:['Vínculos','anúncio → produto'],vendas:['Vendas','relatórios do Mercado Livre'],margem:['Margem','lucro por anúncio: preço, taxa, frete, custo'],projecao:['Projeção','cobertura, estoque morto e vivo'],entradas:['Entradas','notas fiscais e lançamentos'],pedidos:['Pedidos','reposição e pendentes'],aprovados:['Aprovados','histórico e mensagens'],importar:['Importar','relatórios, planilhas e conexão'],orientacao:['Orientação','como a plataforma funciona']};
   const t=TIT[S.tab]||[b.textContent.trim(),'']; const pt=document.getElementById('pageTitle'), pc=document.getElementById('pageCrumb'); if(pt) pt.textContent=t[0]; if(pc) pc.textContent=t[1];
 });
 $('qProd').addEventListener('input', renderEstoque);
+$('mgMes').addEventListener('change', e=>{ S.mgMes=e.target.value; renderMargem(); });
+$('qMg').addEventListener('input', renderMargem);
+for(const id of ['mgImp','mgEmb']) $(id).addEventListener('change', async ()=>{ renderMargem(); S.mgParams={imp:Number($('mgImp').value)||0, emb:Number($('mgEmb').value)||0}; try{ if(typeof SUPA!=='undefined'&&SUPA) await SUPA.from('config').upsert({k:'margem_params', v:S.mgParams}); }catch(_){} });
 $('qMes').addEventListener('input', renderMes);
 $('mesSel').addEventListener('change', e=>{ S.mesSel=e.target.value; renderMes(); });
 $('mesXls').addEventListener('click', ()=>{ const t=$('tblMes'); const wb=XLSX.utils.table_to_book(t,{sheet:'mes'}); XLSX.writeFile(wb,`mes_${S.mesSel}${S.empSel&&S.empSel!=='Todas'?'_'+S.empSel:''}.xlsx`); });
@@ -1739,7 +1853,7 @@ async function pedWrite(id,p){
 }
 async function loadPedidos(){
   if(typeof SUPA!=='undefined' && SUPA){ const {data,error}=await SUPA.from('config').select('*').like('k','pedido:%'); if(!error){ S.pedidos={}; (data||[]).forEach(r=>S.pedidos[r.k.slice(7)]=r.v); } }
-  await loadForn(); await loadConferidos();
+  await loadForn(); await loadConferidos(); backupSemanalSePreciso();
 }
 /* fornecedor cadastrado por produto (nome, vendedor, telefone) — guardado em config k='forn:<pid>' */
 /* fornecedores da casa: nome → contato/telefone. Config k='fornecedores' pode acrescentar/corrigir. */
@@ -1815,6 +1929,17 @@ function pdQtdUnUpd(){
   }
 }
 document.addEventListener('input', e=>{ if(e.target&&e.target.id==='pdQtd') pdQtdUnUpd(); });
+function pdInfoPrev(){
+  const el=document.getElementById('pdInfoPrev'); if(!el) return;
+  const pid=(document.getElementById('pdProd')||{}).value, emp=(document.getElementById('pdEmp')||{}).value; if(!pid||!emp){ el.innerHTML=''; return; }
+  const lim=Date.now()-7*864e5;
+  const L=Object.values(S.pedidos||{}).filter(p=>p.pid===pid && p.empresa===emp && p.status!=='recusado' && new Date(p.criado||p.data||0).getTime()>=lim)
+    .sort((a,b)=>(b.criado||'').localeCompare(a.criado||''));
+  if(!L.length){ el.innerHTML=''; return; }
+  el.innerHTML = L.slice(0,3).map(p=>{ const dias=Math.floor((Date.now()-new Date(p.criado||p.data).getTime())/864e5); const quando=dias<=0?'hoje':(dias===1?'ontem':`há ${dias} dias`);
+    return `<div class="msg" style="background:var(--accent-soft);border-left:4px solid var(--accent);padding:6px 10px;margin:4px 0;font-size:12.5px">ℹ️ Já tem pedido de <b>${pedQtdTxt(p)}</b> de ${esc((S.produtos[pid]||{}).sku||pid)} pra <b>${esc(emp)}</b> feito <b>${quando}</b>${p.solicitante&&p.solicitante!=='—'?' por '+esc(p.solicitante):''} (${esc(p.status||'pendente')}). Confere se não é o mesmo.</div>`; }).join('');
+}
+document.addEventListener('change', e=>{ if(e.target&&(e.target.id==='pdProd'||e.target.id==='pdEmp')) pdInfoPrev(); });
 function pedGrupoTexto(nomeForn, lista){
   const linhas=lista.map(p=>{ const pr=S.produtos[p.pid]||{}; return `- ${pedQtdTxt(p)} de ${pr.nome||pr.sku||p.pid}, para a empresa ${p.empresa||''}`; });
   const pessoa=fornPessoa(nomeForn, lista);
@@ -1900,7 +2025,7 @@ function avisoSemVinculo(){
   el.hidden=false; el.innerHTML=`<div style="background:var(--warn-soft);border:1px solid var(--warn);border-radius:10px;padding:10px 14px;margin-bottom:12px"><b style="color:var(--warn)">⚠️ Régua subestimada:</b> ${qa} anúncio(s) sem vínculo venderam ${fmt(n)} vez(es) (${fmt(un)} un.) nos últimos 30 dias e <b>não estão baixando estoque</b>. O "quanto comprar" está menor do que o real. <button class="btn sm sec" data-goto="vinculos">resolver em Vínculos</button></div>`;
 }
 function renderPedidos(){
-  avisoSemVinculo();
+  avisoSemVinculo(); setTimeout(pdInfoPrev,0);
   const selEl=document.getElementById('pdProd'); if(!selEl) return;
   const nProd=String(Object.keys(S.produtos).length);
   if(selEl.dataset.n!==nProd){ const cur=selEl.value; selEl.innerHTML=prodOptions('').replace('<option value="__novo__">➕ criar produto novo…</option>',''); selEl.value=cur; selEl.dataset.n=nProd; }
@@ -2167,8 +2292,9 @@ document.addEventListener('click', async e=>{
   if(rv){ if(needDb()) return; const k=rv.closest('tr').dataset.key; delete S.descont[k]; await descontWrite(); await S.db.doc('vinculos/'+k).delete(); toast('reativado — volta pra lista sem vínculo se tiver venda'); return; }
   const vr=e.target.closest('.vi-reabrir');
   if(vr){ if(needDb()) return; const k=vr.closest('tr').dataset.key; delete S.conferidos[k]; try{ await conferidosWrite(); toast('↩ voltou pra lista a verificar'); }catch(err){ toast('✖ erro: '+(err.message||err)); } renderVinculos(); return; }
+  if(e.target.closest('#btnBackup')){ backupCompleto(false); return; }
   const gt=e.target.closest('[data-goto]');
-  if(gt){ const b=document.querySelector(`.tab[data-t="${gt.dataset.goto}"]`); if(b) b.click(); return; }
+  if(gt){ e.preventDefault(); const b=document.querySelector(`.tab[data-t="${gt.dataset.goto}"]`); if(b) b.click(); window.scrollTo(0,0); return; }
   const cp=e.target.closest('.ap-copy');
   if(cp){ const txt=cp.closest('div').querySelector('span').textContent; try{ await navigator.clipboard.writeText(txt); toast('mensagem copiada'); }catch(err){ cp.textContent='selecione o texto e copie'; } return; }
 });
