@@ -185,6 +185,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
   <nav class="tabs" id="tabs">
     <button class="tab" data-t="pedidos"><span class="ico">🧾</span>Pedidos <span class="badge" id="bPed"></span></button>
     <button class="tab" data-t="aprovados"><span class="ico">✅</span>Aprovados</button>
+    <button class="tab" data-t="recebidos"><span class="ico">🚚</span>Recebidos</button>
     <button class="tab on" data-t="estoque"><span class="ico">📦</span>Estoque</button>
     <button class="tab" data-t="mes"><span class="ico">📅</span>Mês fechado</button>
     <button class="tab" data-t="produtos"><span class="ico">🏷️</span>Produtos</button>
@@ -198,7 +199,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
   </nav>
   <div class="side-foot">
     <span id="connState">conectando ao banco…</span>
-    <div style="opacity:.6;margin-top:4px">Supabase · 4 lojas · <span id="versao">v2026-10-16b</span></div>
+    <div style="opacity:.6;margin-top:4px">Supabase · 4 lojas · <span id="versao">v2026-10-16c</span></div>
   </div>
 </aside>
 <div class="content">
@@ -391,13 +392,20 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
   <p class="note">Pendente segura a régua (conta como "já pedido") mas <b>não</b> soma no estoque. Só o APROVADO lança a entrada. Recusado sai da régua e não mexe em nada. Regra de ouro: nada vira estoque sem decisão humana.</p>
 </section>
 
+<section id="s-recebidos" hidden>
+  <div class="card">
+    <div class="card-h"><h2>Recebidos — chegou e entrou no estoque</h2><div class="sp"><button class="btn sm sec xls" data-tbl="tblReceb" data-nome="pedidos_recebidos" title="baixar em Excel">⬇ Excel</button></div></div>
+    <div class="tbl-wrap"><table id="tblReceb"></table></div>
+  </div>
+  <p class="note">Pedido aprovado fica <b>a caminho</b> (aba Aprovados e coluna "a caminho" da régua) até alguém clicar <b>📦 Recebi</b>. Aí ele entra no estoque e vem pra cá. Se a nota fiscal for lançada antes, o pedido é marcado como recebido sozinho, sem somar duas vezes.</p>
+</section>
 <section id="s-aprovados" hidden>
   <div class="card">
     <div class="card-h"><h2>Pedidos a mandar — por fornecedor</h2><span class="dim" id="apGrpSub"></span></div>
     <div id="apGrupos"></div>
   </div>
   <div class="card">
-    <div class="card-h"><h2>Aprovados — histórico de decisões</h2>
+    <div class="card-h"><h2>Aprovados — a caminho</h2>
       <div class="sp"><label class="tog" style="font-size:12px"><input type="checkbox" id="apRec"> mostrar recusados</label><button class="btn sm sec xls" data-tbl="tblAprov" data-nome="pedidos_aprovados" title="baixar em Excel">⬇ Excel</button><button class="btn sm sec ajuda" data-help="aprovados" title="como usar esta aba">?</button></div></div>
     <div class="tbl-wrap"><table id="tblAprov"></table></div>
   </div>
@@ -486,6 +494,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
       <p><b>Mês fechado</b> — só o que entrou e o que saiu dentro de um mês (padrão: o mês passado). Não olha saldo acumulado; serve pra fechar o mês e comparar compra com venda. Respeita a loja do topo e tem Excel.</p>
       <p><b>Produtos</b> — cadastro: SKU, nome, unidade, custo da última nota, fornecedor e telefone (pra mensagem de pedido). "+ Produto" cria; lápis edita.</p>
       <p><b>Vínculos</b> — cada anúncio aparece com o código <b>MLB</b> (clica e abre o anúncio no ML) e a <b>loja</b> dona dele. No topo, quantos anúncios cada loja tem; escolhendo a loja no menu, a aba mostra só os MLB daquela loja. Liga cada anúncio do Mercado Livre a um produto e um fator (quantas folhas/peças 1 unidade vendida representa). Bloco de cima: anúncios esperando sua conferência (a plataforma sugere pelo título). Bloco de baixo: conferidos. Coluna <b>Loja</b> mostra em qual conta o anúncio vende. "Não vende mais" tira o anúncio da lista sem baixar estoque. Toda alteração fica gravada no histórico.</p>
+      <p><b>Pedido em 3 etapas</b> — <b>Pedidos</b> (criado) → <b>Aprovados</b> (encomendado ao fornecedor: fica <i>a caminho</i>, não entra no estoque) → <b>📦 Recebi</b> → <b>Recebidos</b> (entra no estoque). Na régua: <b>já pedido</b> = criado e não aprovado; <b>a caminho</b> = aprovado e não recebido (vermelho se passou do prazo do fornecedor); <b>quanto comprar</b> = projeção de 5 dias de venda menos já pedido e a caminho — desce a cada pedido e sobe conforme vende. Lançar a nota de um pedido a caminho marca ele como recebido sozinho.</p>
       <p><b>Margem</b> — lucro por anúncio no mês e na loja: preço, taxa do ML, frete, o que recebe, custo do produto (vínculo × custo), imposto e embalagem (os dois campos do topo, que ficam gravados). Ordena do pior pro melhor; vermelho é prejuízo; <b>degrau</b> avisa preço logo acima de R$ 79/100/120/150/200, onde o frete muda de faixa.</p>
       <p><b>O que está errado agora</b> — o quadro no topo de toda aba: vendas sem importar, notas faltando, anúncio sem vínculo vendendo, compra lançada em dobro (com botão pra apagar), quantidade fora do padrão, faturamento não conferido com o ML e backup atrasado. Com uma loja escolhida no menu, mostra só os dela. Tudo em dia = faixa verde.</p>
       <p><b>Vendas</b> — no topo, o <b>Faturamento do mês</b> por loja com as colunas na ordem do dinheiro — <b>Vendido (bruto)</b>, taxa, frete, cancelamentos e <b>Você recebe</b> — e as colunas <b>ML: vendas</b> e <b>ML: vendido</b>: você digita o que o Mercado Livre mostra em Faturamento → Vendas e a plataforma diz se <b>bate</b> ou quanto <b>difere</b>. Esse é o parâmetro de conferência de lançamento: mês com "bate" nas quatro lojas está fechado. Embaixo, as vendas importadas do ML, mês a mês, com a loja e a baixa que cada uma gerou. Busca por número, anúncio, comprador. Cada linha tem ✎ (trocar loja, unidades, estado, anúncio) e 🗑. Marcando linhas, ou clicando em <b>marcar o mês inteiro</b>, aparece a barra de lote: mover todas pra outra loja ou excluir — é o jeito de corrigir um relatório importado na loja errada.</p>
@@ -1202,7 +1211,9 @@ function gemeoEntrada(pid, emp, qtd, data, procuro){ // procuro: 'pedido' (entra
 async function lancarOuCarimbar(d){ // d = {pid,qtd,empresa,data,forn,nf,obs}
   const g=gemeoEntrada(d.pid,d.empresa,d.qtd,d.data,'pedido');
   if(g){ await entradaUpdate(g._id,{nf:d.nf||g.nf||'', forn:d.forn||g.forn, obs:[g.obs,d.obs,d.nf?('NF '+d.nf+' carimbada'):'nota carimbada'].filter(Boolean).join(' · ')}); await loadTable('entradas'); return 'carimbou'; }
-  await S.db.collection('entradas').add(Object.assign({criado:new Date().toISOString()}, d)); return 'novo';
+  await S.db.collection('entradas').add(Object.assign({criado:new Date().toISOString()}, d));
+  for(const id in S.pedidos){ const p=S.pedidos[id]; if(pedACaminho(id,p) && p.pid===d.pid && p.empresa===d.empresa && Number(p.qtd_aprovada!=null?p.qtd_aprovada:p.qtd)===Number(d.qtd)){ try{ await pedWrite(id,Object.assign({},p,{status:'recebido', recebido_em:new Date().toISOString(), qtd_recebida:d.qtd, nf:d.nf||''})); }catch(_){} break; } }
+  return 'novo';
 }
 function enSelecionadas(){ return [...document.querySelectorAll('.en-sel:checked')].map(x=>x.dataset.id); }
 function enLoteUpd(){ const n=enSelecionadas().length; const b=$('enLote'); if(!b) return; b.style.display=n?'flex':'none'; $('enLoteN').textContent=n+' selecionada'+(n>1?'s':''); }
@@ -1561,7 +1572,7 @@ $('tabs').addEventListener('click', e=>{
   S.tab=b.dataset.t;
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t===b));
   document.querySelectorAll('main > section').forEach(s=>s.hidden = s.id!=='s-'+S.tab);
-  const TIT={estoque:['Estoque','saldo por produto'],mes:['Mês fechado','o que entrou e o que saiu só no mês'],produtos:['Produtos','cadastro, custo e fornecedor'],vinculos:['Vínculos','anúncio → produto'],vendas:['Vendas','relatórios do Mercado Livre'],margem:['Margem','lucro por anúncio: preço, taxa, frete, custo'],projecao:['Projeção','cobertura, estoque morto e vivo'],entradas:['Entradas','notas fiscais e lançamentos'],pedidos:['Pedidos','reposição e pendentes'],aprovados:['Aprovados','histórico e mensagens'],importar:['Importar','relatórios, planilhas e conexão'],orientacao:['Orientação','como a plataforma funciona']};
+  const TIT={estoque:['Estoque','saldo por produto'],mes:['Mês fechado','o que entrou e o que saiu só no mês'],produtos:['Produtos','cadastro, custo e fornecedor'],vinculos:['Vínculos','anúncio → produto'],vendas:['Vendas','relatórios do Mercado Livre'],margem:['Margem','lucro por anúncio: preço, taxa, frete, custo'],projecao:['Projeção','cobertura, estoque morto e vivo'],entradas:['Entradas','notas fiscais e lançamentos'],pedidos:['Pedidos','reposição e pendentes'],aprovados:['Aprovados','a caminho — esperando chegar'],recebidos:['Recebidos','chegou e entrou no estoque'],importar:['Importar','relatórios, planilhas e conexão'],orientacao:['Orientação','como a plataforma funciona']};
   const t=TIT[S.tab]||[b.textContent.trim(),'']; const pt=document.getElementById('pageTitle'), pc=document.getElementById('pageCrumb'); if(pt) pt.textContent=t[0]; if(pc) pc.textContent=t[1];
 });
 $('qProd').addEventListener('input', renderEstoque);
@@ -1973,9 +1984,14 @@ function mesFechadoDe(pid){
   const hoje=new Date(); if(M===hoje.toISOString().slice(0,7)) dias=Math.max(1,hoje.getDate()); // mês corrente: ritmo pelos dias já passados
   return {mes:M, dias, E, Sd};
 }
+const DIAS_PROJ=5;
+function pedRecebido(id,p){ if(p.status==='recebido') return true; if(p.status!=='aprovado') return false; return S.entradas.some(e=>(e.obs||'').includes('[ped:'+id+']')); }
+function pedACaminho(id,p){ return p.status==='aprovado' && !pedRecebido(id,p); }
+function aCaminhoDe(pid){ const out={}, lista={}; for(const id in S.pedidos){ const p=S.pedidos[id]; if(p.pid!==pid||!pedACaminho(id,p)) continue; const q=+(p.qtd_aprovada!=null?p.qtd_aprovada:p.qtd)||0; const e=p.empresa||'?'; out[e]=(out[e]||0)+q; (lista[e]=lista[e]||[]).push({id,q,em:p.decidido_em||p.criado,forn:p.fornecedor||''}); } return {out,lista}; }
+function diasDesde(iso){ return iso?Math.floor((Date.now()-new Date(iso).getTime())/864e5):0; }
 function reguaDe(pid){
   const modo=S.reguaBase||'mes';                       // 'mes' = mês fechado · 'total' = período todo
-  const mf=mesFechadoDe(pid), ped=jaPedido(pid), sai30=saiPorEmp(pid);
+  const mf=mesFechadoDe(pid), ped=jaPedido(pid), sai30=saiPorEmp(pid), cam=aCaminhoDe(pid);
   const PED_LEAD=leadDe(pid);
   const saldo=PED_EMP().reduce((s,e2)=>s+saldoEmpDe(pid,e2),0);
   const linhas=[];
@@ -1984,11 +2000,17 @@ function reguaDe(pid){
     let ent, saiu, sd, aloc;
     if(modo==='total'){ ent=(S.calc.entrE[pid]||{})[e]||0; saiu=(S.calc.saiE[pid]||{})[e]||0; sd=sai30[e]||0; aloc=saldoEmpDe(pid,e); }
     else { ent=mf.E[e]||0; saiu=mf.Sd[e]||0; sd=saiu/mf.dias; aloc=ent-saiu; }
-    const cob = sd>0 ? (aloc+jp)/sd : Infinity;
-    const _m=embDe(pid).mult||1; const comprar = (sd>0||aloc<0) ? Math.max(0, Math.ceil(Math.max(0, sd*(PED_LEAD+PED_ALVO)-aloc-jp)/_m)*_m) : 0;
+    const ritmo = sai30[e]||0;                         // venda por dia, últimos 30 dias
+    const ac = cam.out[e]||0, acL=cam.lista[e]||[];
+    const atras = acL.filter(x=>diasDesde(x.em)>leadDe(pid)+1);
+    const proj = ritmo*DIAS_PROJ;
+    const _m=embDe(pid).mult||1; const comprar = Math.max(0, Math.ceil(Math.max(0, proj-jp-ac)/_m)*_m);
+    const cob = ritmo>0 ? (jp+ac)/ritmo : Infinity;
     let cor='#8a8f98', sit='sem giro';
-    if(aloc<0){cor='#d64545';sit=modo==='total'?'JÁ FALTOU — saldo negativo':'vendeu mais do que comprou no mês';} else if(sd>0){ if(cob<PED_LEAD){cor='#d64545';sit='URGENTE — acaba antes do pedido chegar';} else if(cob<PED_LEAD+10){cor='#c78a1b';sit='atenção';} else {cor='#1a7f37';sit='ok';} }
-    linhas.push({emp:e, sd, jp, aloc, ent, saiu, cob, comprar, cor, sit});
+    if(atras.length){ cor='#d64545'; sit=`${atras.length} pedido(s) a caminho atrasado(s)`; }
+    else if(ritmo>0){ if(comprar>0){ cor='#c78a1b'; sit='pedir hoje'; } else { cor='#1a7f37'; sit='coberto pros próximos '+DIAS_PROJ+' dias'; } }
+    sd=ritmo;
+    linhas.push({emp:e, sd, jp, ac, acL, atras:atras.length, proj, aloc, ent, saiu, cob, comprar, cor, sit});
   }
   return {saldo, linhas, mes:mf.mes, modo};
 }
@@ -2003,14 +2025,15 @@ function reguaHTML(pid){
   const btn=(id,lab,on)=>`<button class="btn sm ${on?'':'sec'} rg-modo" data-modo="${id}" style="padding:3px 10px">${lab}</button>`;
   const mesesR=[...new Set(S.vendasRows.map(x=>x.mes).filter(m=>/^\d{4}-\d{2}$/.test(m)))].sort().reverse(); const hojeM=new Date().toISOString().slice(0,7);
   const selM=`<select class="rg-mes" style="padding:3px 6px;font-size:12px;${T?'opacity:.55':''}">${mesesR.map(m=>`<option value="${m}" ${m===r.mes?'selected':''}>${m.slice(5)}/${m.slice(0,4)}${m===hojeM?' (em andamento)':''}</option>`).join('')}</select>`;
-  let h=`<div style="margin-top:10px;font-size:12.5px"><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><b>Régua da reposição — ${esc(p.sku)}</b> <span class="dim">base:</span> ${btn('mes','Mês',!T)} ${selM} ${btn('total','Período todo',T)} <span class="dim">· saldo acumulado do grupo ${dois(r.saldo)}</span></div><table style="margin-top:6px;width:100%"><tr><th>Empresa</th><th class="r">${T?'entrou (total)':'entrou '+mesTxt}</th><th class="r">${T?'saiu (total)':'saiu '+mesTxt}</th><th class="r">${T?'saldo':'diferença'}</th><th class="r">já pedido</th><th class="r">quanto comprar (deve)</th><th>situação</th><th></th></tr>`;
+  let h=`<div style="margin-top:10px;font-size:12.5px"><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><b>Régua da reposição — ${esc(p.sku)}</b> <span class="dim">base:</span> ${btn('mes','Mês',!T)} ${selM} ${btn('total','Período todo',T)} <span class="dim">· saldo acumulado do grupo ${dois(r.saldo)}</span></div><table style="margin-top:6px;width:100%"><tr><th>Empresa</th><th class="r">${T?'entrou (total)':'entrou '+mesTxt}</th><th class="r">${T?'saiu (total)':'saiu '+mesTxt}</th><th class="r">${T?'saldo':'diferença'}</th><th class="r" title="pedido criado, ainda não aprovado">já pedido</th><th class="r" title="aprovado e ainda não recebido">a caminho</th><th class="r">quanto comprar</th><th>situação</th><th></th></tr>`;
   const _lin=(S.empSel&&S.empSel!=='Todas')?r.linhas.filter(l=>l.emp===S.empSel):r.linhas;
   for(const l of _lin){
-    h+=`<tr><td>${esc(l.emp)}</td><td class="r num">${dois(l.ent)}</td><td class="r num">${dois(l.saiu)}</td><td class="r num ${l.aloc<0?'neg':''}">${dois(l.aloc)}</td><td class="r num">${l.jp?dois(l.jp):'—'}</td><td class="r num">${l.comprar?dois(l.comprar):'—'}${l.igualado?' <span class="dim" title="igualado ao par capa/contracapa (1:1)">=</span>':''}</td><td><span style="color:${l.cor}">●</span> ${esc(l.sit)}</td><td>${l.comprar?`<button class="btn sm sec pd-usar" data-emp="${esc(l.emp)}" data-q="${l.comprar}">usar</button>`:''}</td></tr>`;
+    const acTip=(l.acL||[]).map(x=>`${fmtData((x.em||'').slice(0,10))} · ${fl?fmt(x.q/100)+' pct':fmt(x.q)} · há ${diasDesde(x.em)} dia(s)${x.forn?' · '+x.forn:''}`).join('\n');
+    h+=`<tr><td>${esc(l.emp)}</td><td class="r num">${dois(l.ent)}</td><td class="r num">${dois(l.saiu)}</td><td class="r num ${l.aloc<0?'neg':''}">${dois(l.aloc)}</td><td class="r num">${l.jp?dois(l.jp):'—'}</td><td class="r num" title="${esc(acTip)}">${l.ac?dois(l.ac)+(l.atras?' <span class="chip bad">atrasado</span>':''):'—'}</td><td class="r num">${l.comprar?dois(l.comprar):'—'}${l.igualado?' <span class="dim" title="igualado ao par capa/contracapa (1:1)">=</span>':''}</td><td><span style="color:${l.cor}">●</span> ${esc(l.sit)}</td><td>${l.comprar?`<button class="btn sm sec pd-usar" data-emp="${esc(l.emp)}" data-q="${l.comprar}">usar</button>`:''}</td></tr>`;
   }
   const partes=_lin.filter(l=>l.comprar>0).map(l=>`${esc(l.emp)} ${fl?fmt(l.comprar/100)+' pct':fmt(l.comprar)+' '+esc(p.unidade||'un')}`).join(' · ');
-  h+=`<tr style="background:var(--surface2)"><td><b>Pedido total</b></td><td></td><td></td><td></td><td></td><td class="r num">${total?dois(total):'—'}</td><td colspan="2" class="dim" style="font-size:12px">${total?'cada uma deve: '+partes:'nenhuma empresa precisa comprar agora'}</td></tr>`;
-  return h+'</table><div class="dim" style="margin-top:4px;font-size:11.5px">'+(T?'base = período todo: entrou e saiu desde a primeira nota · saldo = inicial + entradas − saídas · ritmo = últimos 30 dias · quanto comprar = ritmo × (prazo do fornecedor + '+PED_ALVO+' dias) − saldo − já pedido':'base = mês fechado: entrou = notas da empresa no mês · saiu = vendas dela no mês × fator · diferença = entrou − saiu · quanto comprar = ritmo do mês × (prazo do fornecedor + '+PED_ALVO+' dias) − diferença − já pedido')+(fl?' · 100 folhas = 1 pacote fechado':' · produto em '+(p.unidade||'un')+' — não tem pacote fechado')+'</div></div>';
+  h+=`<tr style="background:var(--surface2)"><td><b>Pedido total</b></td><td></td><td></td><td></td><td></td><td></td><td class="r num">${total?dois(total):'—'}</td><td colspan="2" class="dim" style="font-size:12px">${total?'cada uma deve: '+partes:'nenhuma empresa precisa comprar agora'}</td></tr>`;
+  return h+'</table><div class="dim" style="margin-top:4px;font-size:11.5px"><b>quanto comprar</b> = projeção de '+DIAS_PROJ+' dias de venda (ritmo dos últimos 30 dias), já descontando o <b>já pedido</b> e o que está <b>a caminho</b> · desce a cada pedido e sobe conforme vende · entrou/saiu/diferença: '+(T?'período todo':'mês '+mesTxt)+(fl?' · 100 folhas = 1 pacote fechado':' · produto em '+(p.unidade||'un')+' — não tem pacote fechado')+'</div></div>';
 }
 function dupla(v,pid){ const p=S.produtos[pid]; const fl=p&&p.unidade==='folhas'; const emb=(typeof embDe==='function')?embDe(pid):null; if(fl) return `<span style="display:inline-block;white-space:nowrap;line-height:1.2">${fmt(v)} fl<br><span class="dim" style="font-size:11px;font-weight:400">${fmt(v/100)} pct</span></span>`; if(emb&&emb.mult===50) return `<span style="display:inline-block;white-space:nowrap;line-height:1.2">${fmt(v)} un<br><span class="dim" style="font-size:11px;font-weight:400">${fmt(v/50)} pct</span></span>`; return fmt(v); }
 function pctHTML(pid,v){ const u=(S.produtos[pid]||{}).unidade; if(u!=='folhas'||!v) return ''; return `<div class="dim" style="font-size:11px;font-weight:400">${fmt(v/100)} pct</div>`; }
@@ -2041,7 +2064,7 @@ function renderPedidos(){
   const eDt=document.getElementById('pdData'); if(eDt&&!eDt.value) eDt.value=new Date().toISOString().slice(0,10);
   const pend=Object.entries(S.pedidos).filter(([,p])=>p.status==='pendente'&&(S.empSel==='Todas'||!S.empSel||p.empresa===S.empSel)).sort((a,b)=>(b[1].criado||'').localeCompare(a[1].criado||''));
   const bp=document.getElementById('bPed'); if(bp) bp.textContent=pend.length||'';
-  const sub=document.getElementById('pedSub'); if(sub) sub.textContent=pend.length?`${pend.length} pedido(s) esperando decisão — só aprovado vira estoque`:'';
+  const sub=document.getElementById('pedSub'); if(sub) sub.textContent=pend.length?`${pend.length} pedido(s) esperando decisão — aprovado fica a caminho até o 📦 Recebi`:'';
   const t=document.getElementById('tblPedPend'); if(!t) return;
   const ban=document.getElementById('pedBanner');
   if(ban){
@@ -2104,19 +2127,32 @@ async function marcarEnviados(ids){
   for(const id of ids){ const p=S.pedidos[id]; if(!p||p.enviado_em) continue; if(typeof SUPA!=='undefined'&&SUPA){ await SUPA.from('config').upsert({k:'pedido:'+id, v:Object.assign({},p,{enviado_em:now})}); } else { await S.db.doc('pedidos/'+id).set(Object.assign({},p,{enviado_em:now})); } S.pedidos[id]=Object.assign({},p,{enviado_em:now}); }
   render();
 }
+function renderRecebidos(){
+  const t=document.getElementById('tblReceb'); if(!t) return;
+  const rows=Object.entries(S.pedidos).filter(([id,p])=>pedRecebido(id,p)&&(S.empSel==='Todas'||!S.empSel||p.empresa===S.empSel))
+    .map(([id,p])=>[id,p,p.recebido_em||p.decidido_em||''] ).sort((a,b)=>b[2].localeCompare(a[2]));
+  if(!rows.length){ t.innerHTML='<tr><td><div class="empty"><b>Nada recebido ainda.</b></div></td></tr>'; return; }
+  let h='<tr><th>Recebido em</th><th>SKU</th><th class="r">Quantidade</th><th>Empresa</th><th>Fornecedor</th><th>Aprovado em</th><th class="r">Dias até chegar</th><th>NF</th></tr>';
+  for(const [id,p,rec] of rows.slice(0,500)){
+    const q=p.qtd_recebida!=null?p.qtd_recebida:(p.qtd_aprovada!=null?p.qtd_aprovada:p.qtd); const dd=(p.recebido_em&&p.decidido_em)?Math.max(0,Math.round((new Date(p.recebido_em)-new Date(p.decidido_em))/864e5)):null;
+    h+=`<tr><td class="num">${fmtData(rec.slice(0,10))}</td><td class="mono">${esc((S.produtos[p.pid]||{}).sku||p.pid)}</td><td class="r num">${pedQtdTxt(Object.assign({},p,{qtd:q}))}</td><td><span class="chip emp-${esc(p.empresa||'')}">${esc(p.empresa||'')}</span></td><td>${esc(p.fornecedor||'')}</td><td class="num">${fmtData((p.decidido_em||'').slice(0,10))}</td><td class="r num">${dd==null?'—':dd}</td><td class="mono">${esc(p.nf||'')}</td></tr>`;
+  }
+  t.innerHTML=h;
+}
 function renderAprovados(){
+  renderRecebidos();
   renderApGrupos();
   const t=document.getElementById('tblAprov'); if(!t) return;
   const incRec=document.getElementById('apRec')&&document.getElementById('apRec').checked;
-  const rows=Object.entries(S.pedidos).filter(([,p])=>(p.status==='aprovado'||(incRec&&p.status==='recusado'))&&(S.empSel==='Todas'||!S.empSel||p.empresa===S.empSel)).sort((a,b)=>(b[1].decidido_em||'').localeCompare(a[1].decidido_em||''));
-  if(!rows.length){ t.innerHTML='<tr><td><div class="empty"><b>Nenhum pedido aprovado ainda.</b><br>Aprove na aba Pedidos — o aprovado lança a entrada no estoque e aparece aqui.</div></td></tr>'; return; }
+  const rows=Object.entries(S.pedidos).filter(([id,p])=>(pedACaminho(id,p)||(incRec&&p.status==='recusado'))&&(S.empSel==='Todas'||!S.empSel||p.empresa===S.empSel)).sort((a,b)=>(b[1].decidido_em||'').localeCompare(a[1].decidido_em||''));
+  if(!rows.length){ t.innerHTML='<tr><td><div class="empty"><b>Nada a caminho.</b><br>Pedido aprovado aparece aqui até alguém marcar 📦 Recebi — aí ele vai pra aba Recebidos e entra no estoque.</div></td></tr>'; return; }
   let h='<tr><th>Decidido</th><th>Status</th><th>SKU</th><th class="r">Pedida → aprovada</th><th>Empresa</th><th>Solicitante</th><th>Fornecedor</th><th>Vendedor</th><th>Telefone</th><th>Mandado</th><th></th></tr>';
   for(const [id,p] of rows){
     const sku=S.produtos[p.pid]?.sku||p.pid;
-    const chip=p.status==='aprovado'?'<span class="chip ok">aprovado</span>':'<span class="chip bad">recusado</span>';
+    const _d=diasDesde(p.decidido_em), _atr=p.status==='aprovado'&&_d>leadDe(p.pid)+1; const chip=p.status==='aprovado'?`<span class="chip ${_atr?'bad':'warn'}">a caminho · ${_d} d${_atr?' · atrasado':''}</span>`:'<span class="chip bad">recusado</span>';
     h+=`<tr data-pedid="${esc(id)}"><td class="num">${fmtData((p.decidido_em||'').slice(0,10))}</td><td>${chip}</td><td class="mono">${esc(sku)}</td><td class="r num"><div>${fmt(p.qtd)} → <b>${fmt(p.qtd_aprovada!=null?p.qtd_aprovada:p.qtd)}</b></div>${pctHTML(p.pid,p.qtd_aprovada!=null?p.qtd_aprovada:p.qtd)}</td><td>${esc(p.empresa||'')}</td><td>${esc(p.solicitante||'')}</td><td>${esc(p.fornecedor||'')}</td><td>${esc(p.vendedor||'')}</td><td class="mono">${esc(p.telefone||'')}</td>
       <td>${p.status==='aprovado'?(p.enviado_em?`<span class="chip ok" title="${esc(p.enviado_em)}">✉ ${esc(fmtData(p.enviado_em.slice(0,10)))}</span> <button class="btn sm sec ap-reabrir" title="volta pra lista de pedidos a mandar">↩</button>`:'<span class="chip warn">a mandar</span>'):''}</td>
-      <td style="white-space:nowrap">${p.status==='aprovado'?'<button class="btn sm sec ap-msg">✉ só este</button> ':''}<button class="btn sm sec ap-edit" title="editar quantidade / fornecedor">✎</button> <button class="btn sm sec ap-del" title="excluir este pedido (e a entrada que ele gerou)">🗑</button></td></tr>`;
+      <td style="white-space:nowrap">${p.status==='aprovado'?'<button class="btn sm ap-receb" title="chegou: entra no estoque e sai do a caminho">📦 Recebi</button> <button class="btn sm sec ap-msg">✉ só este</button> ':''}<button class="btn sm sec ap-edit" title="editar quantidade / fornecedor">✎</button> <button class="btn sm sec ap-del" title="excluir este pedido (e a entrada que ele gerou)">🗑</button></td></tr>`;
   }
   t.innerHTML=h;
 }
@@ -2128,6 +2164,19 @@ function pedMsgTexto(p){
   return `Olá, ${saudacao()}${pessoa?', '+pessoa:''}, tudo bem? Gostaria de fazer um pedido: ${pedQtdTxt(p)} de ${nome}, para a empresa ${p.empresa||''}. Obrigado!`;
 }
 document.addEventListener('click', async e=>{
+  const rcb=e.target.closest('.ap-receb');
+  if(rcb){ const id=rcb.closest('tr').dataset.pedid; const p=S.pedidos[id]; if(!p||needDb()) return;
+    const qa=+(p.qtd_aprovada!=null?p.qtd_aprovada:p.qtd)||0, hoje=new Date().toISOString().slice(0,10);
+    rcb.disabled=true; rcb.textContent='recebendo…';
+    try{
+      const jaNota=gemeoEntrada(p.pid,p.empresa,qa,hoje,'nota');
+      if(!jaNota) await S.db.collection('entradas').add({pid:p.pid, qtd:qa, empresa:p.empresa, data:hoje, forn:p.fornecedor||'Pedido', nf:'', obs:`Recebido · pedido de ${p.solicitante||'—'}${p.vendedor?' · vendedor '+p.vendedor:''} (→ ${p.empresa}) [ped:${id}]`, criado:new Date().toISOString()});
+      await pedWrite(id,Object.assign({},p,{status:'recebido', recebido_em:new Date().toISOString(), qtd_recebida:qa}));
+      if(typeof loadTable==='function') await loadTable('entradas');
+      toast(jaNota?'📦 Recebido — a nota dessa compra já estava lançada, não somei de novo':'📦 Recebido — entrou no estoque');
+      render();
+    }catch(err){ toast('Erro: '+(err.message||err)); rcb.disabled=false; rcb.textContent='📦 Recebi'; }
+    return; }
   const rg=e.target.closest('.rg-modo');
   if(rg){ S.reguaBase=rg.dataset.modo; try{ localStorage.setItem('reguaBase',S.reguaBase); }catch(_){ } renderPedidos(); return; }
   const us=e.target.closest('.pd-usar');
@@ -2178,11 +2227,11 @@ document.addEventListener('click', async e=>{
     ab.disabled=true; ab.textContent='aprovando…';
     try{
       const hoje=new Date().toISOString().slice(0,10);
-      if(gemeoEntrada(p.pid,p.empresa,qa,hoje,'nota')){ toast('Essa compra já entrou pela nota fiscal — aprovei o pedido sem lançar de novo no estoque'); } else await S.db.collection('entradas').add({pid:p.pid, qtd:qa, empresa:p.empresa, data:hoje, forn:forn||'Pedido', nf:'', obs:`Pedido de ${p.solicitante} · aprovado por ${por}${vend?' · vendedor '+vend:''}${tel?' · tel '+tel:''} (→ ${p.empresa}) [ped:${id}]`, criado:new Date().toISOString()});
+      if(true){ /* fluxo novo: aprovar = a caminho; entra no estoque no Recebi */ } else if(gemeoEntrada(p.pid,p.empresa,qa,hoje,'nota')){ toast('Essa compra já entrou pela nota fiscal — aprovei o pedido sem lançar de novo no estoque'); } else await S.db.collection('entradas').add({pid:p.pid, qtd:qa, empresa:p.empresa, data:hoje, forn:forn||'Pedido', nf:'', obs:`Pedido de ${p.solicitante} · aprovado por ${por}${vend?' · vendedor '+vend:''}${tel?' · tel '+tel:''} (→ ${p.empresa}) [ped:${id}]`, criado:new Date().toISOString()});
       S.ultimoAprovado={id, quando:Date.now()};
       await pedWrite(id,Object.assign({},p,{status:'aprovado', qtd_aprovada:qa, fornecedor:forn, vendedor:vend, telefone:tel, aprovado_por:por, decidido_em:new Date().toISOString()}));
       slackAvisa(`✅ Pedido APROVADO — ${fmt(qa)} × ${(S.produtos[p.pid]||{}).sku||p.pid} (${p.empresa}) · por ${por}`);
-      toast('✅ APROVADO — entrada lançada no estoque');
+      toast('✅ APROVADO — fica “a caminho” até marcar 📦 Recebi');
     }catch(err){ toast('Erro: '+(err.message||err)); ab.disabled=false; ab.textContent='Aprovar'; }
     return;
   }
@@ -2195,13 +2244,13 @@ document.addEventListener('click', async e=>{
     ok.disabled=true; ok.textContent='aprovando…';
     try{
       const hoje=new Date().toISOString().slice(0,10);
-      if(gemeoEntrada(p.pid,p.empresa,qa,hoje,'nota')){ toast('Essa compra já entrou pela nota fiscal — aprovei o pedido sem lançar de novo no estoque'); } else await S.db.collection('entradas').add({pid:p.pid, qtd:qa, empresa:p.empresa, data:hoje, forn:forn||'Pedido', nf:'', obs:`Pedido de ${p.solicitante} · aprovado por ${por}${vend?' · vendedor '+vend:''}${tel?' · tel '+tel:''} (→ ${p.empresa}) [ped:${id}]`, criado:new Date().toISOString()});
+      if(true){ /* fluxo novo: aprovar = a caminho; entra no estoque no Recebi */ } else if(gemeoEntrada(p.pid,p.empresa,qa,hoje,'nota')){ toast('Essa compra já entrou pela nota fiscal — aprovei o pedido sem lançar de novo no estoque'); } else await S.db.collection('entradas').add({pid:p.pid, qtd:qa, empresa:p.empresa, data:hoje, forn:forn||'Pedido', nf:'', obs:`Pedido de ${p.solicitante} · aprovado por ${por}${vend?' · vendedor '+vend:''}${tel?' · tel '+tel:''} (→ ${p.empresa}) [ped:${id}]`, criado:new Date().toISOString()});
       const fixar=tr.querySelector('.pa-fixar')&&tr.querySelector('.pa-fixar').checked;
       if(fixar && (forn||vend||tel)){ const cur=fornDe(p.pid); if(cur.nome!==forn||cur.vendedor!==vend||cur.telefone!==tel) await fornWrite(p.pid,{nome:forn,vendedor:vend,telefone:tel}); }
       S.ultimoAprovado={id, quando:Date.now()};
       await pedWrite(id,Object.assign({},p,{status:'aprovado', qtd_aprovada:qa, fornecedor:forn, vendedor:vend, telefone:tel, aprovado_por:por, decidido_em:new Date().toISOString()}));
       slackAvisa(`✅ Pedido APROVADO — ${fmt(qa)} × ${(S.produtos[p.pid]||{}).sku||p.pid} (${p.empresa}) · por ${por}`);
-      toast('✅ APROVADO — entrada lançada no estoque');
+      toast('✅ APROVADO — fica “a caminho” até marcar 📦 Recebi');
     }catch(err){ if(msg) msg.innerHTML='<div class="msg bad">Erro: '+esc(err.message||err)+'</div>'; ok.disabled=false; ok.textContent='✔ Confirmar aprovação'; }
     return;
   }
