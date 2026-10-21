@@ -199,7 +199,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
   </nav>
   <div class="side-foot">
     <span id="connState">conectando ao banco…</span>
-    <div style="opacity:.6;margin-top:4px">Supabase · 4 lojas · <span id="versao">v2026-10-21b</span></div>
+    <div style="opacity:.6;margin-top:4px">Supabase · 4 lojas · <span id="versao">v2026-10-21c</span></div>
   </div>
 </aside>
 <div class="content">
@@ -492,7 +492,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
     <div style="padding:14px 18px;max-width:900px;line-height:1.55">
       <p><b>Estoque</b> — saldo por produto. Folhas em cima, pacotes embaixo. Vermelho = negativo, amarelo = abaixo de 50. Clique no número de "inicial" pra editar quando uma loja está selecionada. Botão Excel exporta a tabela.</p>
       <p><b>Mês fechado</b> — só o que entrou e o que saiu dentro de um mês (padrão: o mês passado). Não olha saldo acumulado; serve pra fechar o mês e comparar compra com venda. Respeita a loja do topo e tem Excel.</p>
-      <p><b>Produtos</b> — cadastro: SKU, nome, unidade, custo da última nota, fornecedor e telefone (pra mensagem de pedido). "+ Produto" cria; lápis edita.</p>
+      <p><b>Produtos → editar</b> — é onde você troca o <b>custo com IPI</b> (por folha, peça ou saco) e o <b>ICMS da nota</b> de cada produto; a aba Margem passa a usar na hora, com o crédito calculado a partir desse ICMS. <b>Produtos</b> — cadastro: SKU, nome, unidade, custo da última nota, fornecedor e telefone (pra mensagem de pedido). "+ Produto" cria; lápis edita.</p>
       <p><b>Vínculos</b> — cada anúncio aparece com o código <b>MLB</b> (clica e abre o anúncio no ML) e a <b>loja</b> dona dele. No topo, quantos anúncios cada loja tem; escolhendo a loja no menu, a aba mostra só os MLB daquela loja. Liga cada anúncio do Mercado Livre a um produto e um fator (quantas folhas/peças 1 unidade vendida representa). Bloco de cima: anúncios esperando sua conferência (a plataforma sugere pelo título). Bloco de baixo: conferidos. Coluna <b>Loja</b> mostra em qual conta o anúncio vende. "Não vende mais" tira o anúncio da lista sem baixar estoque. Toda alteração fica gravada no histórico.</p>
       <p><b>Pedido em 3 etapas</b> — <b>Pedidos</b> (criado) → <b>Aprovados</b> (encomendado ao fornecedor: fica <i>a caminho</i>, não entra no estoque) → <b>📦 Recebi</b> → <b>Recebidos</b> (entra no estoque). Na régua: <b>já pedido</b> = criado e não aprovado; <b>a caminho</b> = aprovado e não recebido (vermelho se passou do prazo do fornecedor); <b>quanto comprar</b> = projeção de 5 dias de venda menos já pedido e a caminho — desce a cada pedido e sobe conforme vende. Lançar a nota de um pedido a caminho marca ele como recebido sozinho.</p>
       <p><b>Margem</b> — lucro por anúncio no mês e na loja, com a conta da planilha Precificação de Produtos – Lucro Real (sem IRPJ): preço, taxa do ML e frete reais do relatório; custo com IPI e ICMS da nota do fornecedor mais barato; ICMS e PIS/COFINS a pagar; embalagem R$ 0,35. Ordena da menor margem pra maior; vermelho abaixo de 15%, amarelo até 20%, verde a partir de 20%; <b>degrau</b> avisa preço logo acima de R$ 79/100/120/150/200, onde o frete muda de faixa.</p>
@@ -1136,22 +1136,22 @@ function renderProdutos(){
     compQ[e.pid]=(compQ[e.pid]||0)+(e.qtd||0);
     compV[e.pid]=(compV[e.pid]||0)+(e.qtd||0)*c;
   }
-  let h=`<tr><th>SKU</th><th>Produto</th><th class="r" title="preço de 1 unidade na última NF de compra">Custo unitário (NF)</th><th class="r">Comprado (un)</th><th class="r">Vendido (un)</th><th title="fornecedor fixo deste produto — vem preenchido no pedido">Fornecedor</th><th>Telefone</th><th></th></tr>`;
+  let h=`<tr><th>SKU</th><th>Produto</th><th class="r" title="custo com IPI de 1 folha/peça/saco — é o custo que a aba Margem usa">Custo c/ IPI (un)</th><th class="r" title="ICMS destacado na nota do fornecedor — vira crédito na margem">ICMS da nota</th><th class="r">Comprado (un)</th><th class="r">Vendido (un)</th><th title="fornecedor fixo deste produto — vem preenchido no pedido">Fornecedor</th><th>Telefone</th><th></th></tr>`;
   let any=false, semCusto=0;
   for(const pid of pids){
     const p=S.produtos[pid];
     if(q && !(p.sku.toLowerCase().includes(q)||(p.nome||'').toLowerCase().includes(q))) continue;
     any=true;
     const sai=S.calc.saidas[pid]||0;
-    if(!p.custo) semCusto++;
+    if(!(cfDe(pid)&&cfDe(pid).c)) semCusto++;
     h+=`<tr><td class="mono">${esc(p.sku)}</td><td>${esc(p.nome||'')}</td>
-      <td class="r num">${p.custo?fmtBRL(p.custo)+'/un':'—'}</td>
+      <td class="r num">${(()=>{const cf=cfDe(pid); return cf&&cf.c?`${fmtBRL(cf.c)}<div class="dim" style="font-size:11px">${esc(cf.forn||'')}${cf.data?' · '+esc(cf.data):''}</div>`:'—';})()}</td><td class="r num">${(()=>{const cf=cfDe(pid); return cf&&cf.c?fmt((cf.icms||0)*100)+'%':'—';})()}</td>
       <td class="r num">${fmt(compQ[pid]||0)}</td>
       <td class="r num">${fmt(sai)}</td>
       <td>${esc(fornDe(pid).nome||'')}${fornDe(pid).vendedor?` <span class="dim">· ${esc(fornDe(pid).vendedor)}</span>`:''}${!fornDe(pid).nome?'<span class="dim">—</span>':''}</td><td class="mono">${esc(fornDe(pid).telefone||'')}</td>
-      <td>${p.custo?'':'<span class="chip warn">sem custo na NF — me avise</span>'} <button class="btn sm sec pe-edit" data-pid="${esc(pid)}">editar</button></td></tr>`;
+      <td>${(cfDe(pid)&&cfDe(pid).c)?'':'<span class="chip warn">sem custo — clique em editar</span>'} <button class="btn sm sec pe-edit" data-pid="${esc(pid)}">editar</button></td></tr>`;
   }
-  if(semCusto) h+=`<tr><td colspan="8" class="dim">${semCusto} produto(s) sem custo de nota — informe o custo unitário ou envie a NF de compra.</td></tr>`;
+  if(semCusto) h+=`<tr><td colspan="9" class="dim">${semCusto} produto(s) sem custo — clique em editar e preencha o custo com IPI e o ICMS da nota.</td></tr>`;
   $('tblProdutos').innerHTML=any?h:'<tr><td><div class="empty">Nenhum produto.</div></td></tr>';
 }
 function renderProjecao(){
@@ -1788,12 +1788,13 @@ document.addEventListener('click', async e=>{
     const pid=pe.dataset.pid, p=S.produtos[pid]||{};
     const tr=pe.closest('tr');
     const fo=fornDe(pid);
-    tr.innerHTML=`<td class="mono">${esc(p.sku||pid)}</td><td colspan="7">
+    const cf=cfDe(pid)||{}; tr.innerHTML=`<td class="mono">${esc(p.sku||pid)}</td><td colspan="8">
       <div class="frow" style="align-items:flex-end">
         <label class="f">Nome<input type="text" class="pe-nome" value="${esc(p.nome||'')}" style="width:240px"></label>
         <label class="f">Unidade<select class="pe-un"><option value="folhas"${p.unidade==='folhas'?' selected':''}>folhas</option><option value="pacotes"${p.unidade==='pacotes'?' selected':''}>pacotes</option><option value="un"${(!p.unidade||p.unidade==='un')?' selected':''}>unidades</option></select></label>
         <label class="f">Estoque inicial<input type="number" class="pe-ini" step="any" value="${p.inicial||0}" style="width:100px"></label>
-        <label class="f">Custo unit. (R$)<input type="number" class="pe-custo" step="any" value="${p.custo||0}" style="width:110px"></label>
+        <label class="f" title="custo de 1 folha / peça / saco já com IPI, da nota do fornecedor que você quer usar na margem">Custo c/ IPI por ${p.unidade==='folhas'?'folha':'unidade'} (R$)<input type="number" class="pe-custo" step="any" value="${cf.c||p.custo||0}" style="width:110px"></label>
+        <label class="f" title="ICMS destacado na nota desse fornecedor (ex.: 18 pra SP, 12 pra MG/ES, 4 pro LM)">ICMS da nota (%)<input type="number" class="pe-icms" step="0.1" value="${cf.c!=null?((cf.icms||0)*100):0}" style="width:80px"></label>
         <label class="f" title="fornecedor fixo: vem preenchido sempre que fizer pedido deste produto">Fornecedor<input type="text" class="pe-forn" value="${esc(fo.nome||'')}" style="width:150px"></label>
         <label class="f">Vendedor<input type="text" class="pe-vend" value="${esc(fo.vendedor||'')}" style="width:120px"></label>
         <label class="f">Telefone<input type="text" class="pe-tel" value="${esc(fo.telefone||'')}" placeholder="11999998888" style="width:120px"></label>
@@ -1808,9 +1809,10 @@ document.addEventListener('click', async e=>{
     if(needDb()) return;
     const tr=ps.closest('tr'), pid=ps.dataset.pid;
     const dados={ nome:tr.querySelector('.pe-nome').value.trim(), unidade:tr.querySelector('.pe-un').value, inicial:Number(tr.querySelector('.pe-ini').value)||0, custo:Number(tr.querySelector('.pe-custo').value)||0 };
+    const cfNovo={c:dados.custo, icms:(Number(tr.querySelector('.pe-icms').value)||0)/100, forn:tr.querySelector('.pe-forn').value.trim()||'manual', data:new Date().toLocaleDateString('pt-BR')+' (digitado)'};
     ps.disabled=true; ps.textContent='salvando…';
     const fdat={nome:tr.querySelector('.pe-forn').value, vendedor:tr.querySelector('.pe-vend').value, telefone:tr.querySelector('.pe-tel').value};
-    try{ await fornWrite(pid,fdat); await S.db.doc('produtos/'+pid).update(dados); toast('✔ Produto '+((S.produtos[pid]||{}).sku||pid)+' salvo'); }
+    try{ await fornWrite(pid,fdat); await S.db.doc('produtos/'+pid).update(dados); S.custoFiscal=Object.assign({},S.custoFiscal||{}); S.custoFiscal[pid]=cfNovo; await SUPA.from('config').upsert({k:'custo_fiscal', v:S.custoFiscal}); toast('✔ Produto '+((S.produtos[pid]||{}).sku||pid)+' salvo — a Margem já usa o custo novo'); renderMargem(); }
     catch(err){ toast('✖ erro ao salvar: '+(err.message||err)); renderProdutos(); }
     return;
   }
