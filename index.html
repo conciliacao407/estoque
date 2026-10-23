@@ -199,7 +199,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
   </nav>
   <div class="side-foot">
     <span id="connState">conectando ao banco…</span>
-    <div style="opacity:.6;margin-top:4px">Supabase · 4 lojas · <span id="versao">v2026-10-21c</span></div>
+    <div style="opacity:.6;margin-top:4px">Supabase · 4 lojas · <span id="versao">v2026-10-23a</span></div>
   </div>
 </aside>
 <div class="content">
@@ -308,6 +308,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
         <label class="f">Mês<select id="mgMes"></select></label>
         <label class="f" title="alíquota do ICMS na sua nota de venda">ICMS da venda (%)<input type="number" id="mgImp" step="0.1" value="12" style="width:70px"></label>
         <label class="f" title="caixa, fita, etiqueta e mão de obra por pedido enviado">Embalagem por envio (R$)<input type="number" id="mgEmb" step="0.01" value="0.35" style="width:80px"></label>
+        <label class="f" title="estado do comprador (vem do relatório do ML)">Estado do comprador<select id="mgUf"><option value="">todos</option></select></label>
         <input type="text" id="qMg" placeholder="buscar MLB ou título…" style="width:180px">
         <button class="btn sm sec xls" data-tbl="tblMg" data-nome="margem" title="baixar em Excel">⬇ Excel</button>
       </div>
@@ -495,7 +496,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
       <p><b>Produtos → editar</b> — é onde você troca o <b>custo com IPI</b> (por folha, peça ou saco) e o <b>ICMS da nota</b> de cada produto; a aba Margem passa a usar na hora, com o crédito calculado a partir desse ICMS. <b>Produtos</b> — cadastro: SKU, nome, unidade, custo da última nota, fornecedor e telefone (pra mensagem de pedido). "+ Produto" cria; lápis edita.</p>
       <p><b>Vínculos</b> — cada anúncio aparece com o código <b>MLB</b> (clica e abre o anúncio no ML) e a <b>loja</b> dona dele. No topo, quantos anúncios cada loja tem; escolhendo a loja no menu, a aba mostra só os MLB daquela loja. Liga cada anúncio do Mercado Livre a um produto e um fator (quantas folhas/peças 1 unidade vendida representa). Bloco de cima: anúncios esperando sua conferência (a plataforma sugere pelo título). Bloco de baixo: conferidos. Coluna <b>Loja</b> mostra em qual conta o anúncio vende. "Não vende mais" tira o anúncio da lista sem baixar estoque. Toda alteração fica gravada no histórico.</p>
       <p><b>Pedido em 3 etapas</b> — <b>Pedidos</b> (criado) → <b>Aprovados</b> (encomendado ao fornecedor: fica <i>a caminho</i>, não entra no estoque) → <b>📦 Recebi</b> → <b>Recebidos</b> (entra no estoque). Na régua: <b>já pedido</b> = criado e não aprovado; <b>a caminho</b> = aprovado e não recebido (vermelho se passou do prazo do fornecedor); <b>quanto comprar</b> = projeção de 5 dias de venda menos já pedido e a caminho — desce a cada pedido e sobe conforme vende. Lançar a nota de um pedido a caminho marca ele como recebido sozinho.</p>
-      <p><b>Margem</b> — lucro por anúncio no mês e na loja, com a conta da planilha Precificação de Produtos – Lucro Real (sem IRPJ): preço, taxa do ML e frete reais do relatório; custo com IPI e ICMS da nota do fornecedor mais barato; ICMS e PIS/COFINS a pagar; embalagem R$ 0,35. Ordena da menor margem pra maior; vermelho abaixo de 15%, amarelo até 20%, verde a partir de 20%; <b>degrau</b> avisa preço logo acima de R$ 79/100/120/150/200, onde o frete muda de faixa.</p>
+      <p><b>Margem</b> — lucro por anúncio no mês e na loja, com a conta da planilha Precificação de Produtos – Lucro Real (sem IRPJ): preço, taxa do ML e frete reais do relatório; custo com IPI e ICMS da nota do fornecedor mais barato; ICMS e PIS/COFINS a pagar; embalagem R$ 0,35. Ordena da menor margem pra maior; vermelho abaixo de 15%, amarelo até 20%, verde a partir de 20%; <b>degrau</b> avisa preço logo acima de R$ 79/100/120/150/200, onde o frete muda de faixa. Filtro <b>Estado do comprador</b> e coluna <b>Estados</b> (pra onde cada anúncio vende) — preenchidos nos meses importados a partir de 23/10.</p>
       <p><b>O que está errado agora</b> — o quadro no topo de toda aba: vendas sem importar, notas faltando, anúncio sem vínculo vendendo, compra lançada em dobro (com botão pra apagar), quantidade fora do padrão, faturamento não conferido com o ML e backup atrasado. Com uma loja escolhida no menu, mostra só os dela. Tudo em dia = faixa verde.</p>
       <p><b>Vendas</b> — no topo, o <b>Faturamento do mês</b> por loja com as colunas na ordem do dinheiro — <b>Vendido (bruto)</b>, taxa, frete, cancelamentos e <b>Você recebe</b> — e as colunas <b>ML: vendas</b> e <b>ML: vendido</b>: você digita o que o Mercado Livre mostra em Faturamento → Vendas e a plataforma diz se <b>bate</b> ou quanto <b>difere</b>. Esse é o parâmetro de conferência de lançamento: mês com "bate" nas quatro lojas está fechado. Embaixo, as vendas importadas do ML, mês a mês, com a loja e a baixa que cada uma gerou. Busca por número, anúncio, comprador. Cada linha tem ✎ (trocar loja, unidades, estado, anúncio) e 🗑. Marcando linhas, ou clicando em <b>marcar o mês inteiro</b>, aparece a barra de lote: mover todas pra outra loja ou excluir — é o jeito de corrigir um relatório importado na loja errada.</p>
       <p><b>Projeção</b> — quantos dias o saldo dura no ritmo atual. <b>Estoque morto</b> = a reserva que precisa existir pra aguentar até o fornecedor entregar (média por dia × prazo do fornecedor: AMP 7 dias, LM 5, Lassane capas 14, Prolam 3, Imballa 5, Mares 2). <b>Estoque vivo</b> = saldo menos essa reserva; se ficar negativo, a venda já está comendo a reserva e o pedido está atrasado.</p>
@@ -757,12 +758,16 @@ function renderMargem(){
   sel.value=S.mgMes;
   if(S.mgParams && !S._mgPar){ $('mgImp').value=S.mgParams.icmsV; $('mgEmb').value=S.mgParams.emb; S._mgPar=true; }
   const icmsV=(Number($('mgImp').value)||0)/100, emb=Number($('mgEmb').value)||0, q=($('qMg').value||'').toLowerCase();
+  const ufSel=$('mgUf'); { const ufs=[...new Set(S.vendasRows.filter(r=>r.mes===S.mgMes&&r.uf).map(r=>r.uf))].sort(); const key=ufs.join(); if(ufSel.dataset.n!==key){ const cur=ufSel.value; ufSel.innerHTML='<option value="">todos</option>'+ufs.map(u=>`<option value="${esc(u)}">${esc(u)}</option>`).join(''); ufSel.dataset.n=key; ufSel.value=ufs.includes(cur)?cur:''; } }
+  const ufF=ufSel.value;
   const A={};
   for(const r of S.vendasRows){
     if(r.mes!==S.mgMes||r.tp!=='item'||!empOk(r)||isCanc(r.est)) continue;
     if(!(r.env||r.cmp)) continue;                 // item de pacote: dinheiro está no pai
     if(r.rec==null) continue;
-    const a=A[r.an]||(A[r.an]={an:r.an,tit:r.tit,emp:r.emp,n:0,un:0,rec:0,tax:0,fre:0,tot:0,cp:0,icmsC:0,semCusto:false});
+    if(ufF && r.uf!==ufF) continue;
+    const a=A[r.an]||(A[r.an]={an:r.an,tit:r.tit,emp:r.emp,n:0,un:0,rec:0,tax:0,fre:0,tot:0,cp:0,icmsC:0,semCusto:false,ufs:{}});
+    if(r.uf) a.ufs[r.uf]=(a.ufs[r.uf]||0)+1;
     a.n++; a.un+=r.un||0; a.rec+=Number(r.rec)||0; a.tax+=-(Number(r.tax)||0); a.fre+=-(Number(r.tarenv)||0)-(Number(r.recenv)||0); a.tot+=Number(r.tot)||0;
     const v=S.vinculos[seg(r.an)];
     if(v&&v.itens&&v.itens.length) for(const it of v.itens){ const cf=cfDe(it.pid); const q2=(r.un||0)*(it.fator||0); if(!cf||!cf.c){ a.semCusto=true; continue; } if(cf.semNota) a.semCusto=true; const c=q2*cf.c; a.cp+=c; a.icmsC+=c*(cf.icms||0); }
@@ -780,14 +785,14 @@ function renderMargem(){
   if(q) L=L.filter(a=>`${a.an} ${a.tit}`.toLowerCase().includes(q));
   L.sort((x,y)=>x.mg-y.mg);
   const B=v=>fmtBRL(v); const cor=m=>m<15?'background:var(--danger-soft);color:var(--danger)':(m<20?'background:var(--warn-soft);color:var(--warn)':'background:var(--accent-soft);color:var(--accent-ink)');
-  let h=`<tr><th>Anúncio (MLB)</th><th>Loja</th><th>Título</th><th class="r">Vendas</th><th class="r">Preço</th><th class="r">Taxa ML</th><th class="r">Frete</th><th class="r" title="ICMS e PIS/COFINS a pagar: débitos da venda menos créditos da compra">Impostos</th><th class="r" title="custo com IPI da nota do fornecedor mais barato × quantidade do kit">Custo do produto</th><th class="r">Embal.</th><th class="r">Lucro/venda</th><th class="r">Margem</th><th class="r">Lucro no mês</th><th>Degrau</th></tr>`;
+  let h=`<tr><th>Anúncio (MLB)</th><th>Loja</th><th>Título</th><th class="r">Vendas</th><th class="r">Preço</th><th class="r">Taxa ML</th><th class="r">Frete</th><th class="r" title="ICMS e PIS/COFINS a pagar: débitos da venda menos créditos da compra">Impostos</th><th class="r" title="custo com IPI da nota do fornecedor mais barato × quantidade do kit">Custo do produto</th><th class="r">Embal.</th><th class="r">Lucro/venda</th><th class="r">Margem</th><th class="r">Lucro no mês</th><th>Degrau</th><th title="estados dos compradores (% das vendas)">Estados</th></tr>`;
   let tv=0,tr=0,tl=0;
   for(const a of L){ tv+=a.n; tr+=a.rec; tl+=a.lucMes;
     h+=`<tr><td class="mono"><a href="https://produto.mercadolivre.com.br/MLB-${esc(String(a.an).replace(/^MLB-?/i,''))}" target="_blank" rel="noopener">${esc(a.an)}</a></td><td><span class="chip emp-${esc(a.emp)}">${esc(a.emp)}</span></td><td class="wrap" style="max-width:300px;font-size:12.5px">${esc(a.tit||'')}</td>
       <td class="r num">${fmt(a.n)}</td><td class="r num">${B(a.P)}</td><td class="r num dim">${B(a.taxa)}</td><td class="r num dim">${B(a.frete)}</td><td class="r num dim">${B(a.imp)}</td>
       <td class="r num">${B(a.custo)}${a.semCusto?' <span class="chip warn" title="produto sem nota na planilha de custos ou anúncio sem vínculo — margem não confiável">sem custo</span>':''}</td><td class="r num dim">${B(emb)}</td>
-      <td class="r num ${a.luc<0?'neg':''}"><b>${B(a.luc)}</b></td><td class="r num"><span style="padding:2px 8px;border-radius:6px;font-weight:700;${cor(a.mg)}">${fmt(a.mg)}%</span></td><td class="r num ${a.lucMes<0?'neg':''}">${B(a.lucMes)}</td><td style="font-size:12px">${a.degrau?`<span class="chip warn">${esc(a.degrau)}</span>`:''}</td></tr>`; }
-  t.innerHTML=h+(L.length?'':'<tr><td colspan="14"><div class="empty">Nada nesse filtro.</div></td></tr>');
+      <td class="r num ${a.luc<0?'neg':''}"><b>${B(a.luc)}</b></td><td class="r num"><span style="padding:2px 8px;border-radius:6px;font-weight:700;${cor(a.mg)}">${fmt(a.mg)}%</span></td><td class="r num ${a.lucMes<0?'neg':''}">${B(a.lucMes)}</td><td style="font-size:12px">${a.degrau?`<span class="chip warn">${esc(a.degrau)}</span>`:''}</td><td style="font-size:11.5px;white-space:nowrap">${Object.entries(a.ufs||{}).sort((x,y)=>y[1]-x[1]).slice(0,3).map(([u,n])=>`${esc(u)} ${Math.round(n/a.n*100)}%`).join(' · ')||'<span class="dim">—</span>'}</td></tr>`; }
+  t.innerHTML=h+(L.length?'':'<tr><td colspan="15"><div class="empty">Nada nesse filtro.</div></td></tr>');
   const abx=L.filter(a=>a.mg<15), mgm=tr?tl/tr*100:0;
   $('mgTit').textContent=`— ${S.mgMes.slice(5)}/${S.mgMes.slice(0,4)}${S.empSel&&S.empSel!=='Todas'?' · '+S.empSel:' · todas as lojas'}`;
   $('mgTiles').innerHTML=`<div class="tile"><div class="v">${B(tr)}</div><div class="l">vendido (${fmt(tv)} vendas)</div></div><div class="tile ${tl<0?'alert':''}"><div class="v">${B(tl)}</div><div class="l">lucro no mês</div></div><div class="tile ${mgm<15?'alert':''}"><div class="v">${fmt(mgm)}%</div><div class="l">margem média</div></div><div class="tile ${abx.length?'alert':''}"><div class="v">${fmt(abx.length)}</div><div class="l">anúncios abaixo de 15%</div></div>`;
@@ -1422,6 +1427,7 @@ async function importVendas(file){
       mf:col('Mês de faturamento das suas tarifas'), ped:col('Pedido de compra'), pub:col('Venda por publicidade'),
       sku:col('SKU'), an:col('# de anúncio'), tit:col('Título do anúncio'), vr:col('Variação'), cmp:col('Comprador'), env:col('Forma de entrega'),
       rec:col('Receita por produtos (BRL)'), acr:col('Receita por acréscimo no preço (pago pelo comprador)'), tax:col('Tarifa de venda e impostos (BRL)'), recenv:col('Receita por envio (BRL)'), tarenv:col('Tarifas de envio (BRL)'), canc:col('Cancelamentos e reembolsos (BRL)')};
+    c.uf = (()=>{ const i=H.indexOf('Cidade'); return (i>=0 && H[i+1]==='Estado') ? i+1 : -1; })();
     const dinheiro = r => { const o={}; for(const k of ['rec','acr','tax','recenv','tarenv','canc']){ if(c[k]>=0){ const v=r[c[k]]; o[k]=(v===''||v==null)?null:Number(v); } } return o; };
     if(c.id<0||c.an<0||c.un<0) throw new Error('Cabeçalho incompleto no arquivo.');
     const novas={}; let nDup=0,nPai=0,nItem=0,nCanc=0; const conserta=[];
@@ -1435,7 +1441,7 @@ async function importVendas(file){
       if(tp==='outro') continue;
       const d = parseDataVenda(r[c.d]);
       const mk = mesKey(d);
-      if(S.vendasIds.has(id)){ const ex=S.vendasRows.find(x=>x.id===id); const up={}; if(ex && (!ex.d || ex.mes==='sem-data') && d){ up.d=d; up.mes=mk; } const dn=dinheiro(r); if(ex && ex.rec==null && dn.rec!=null) Object.assign(up,dn); if(ex && Object.keys(up).length){ Object.assign(ex,up); conserta.push({id, ...up}); } nDup++; continue; }
+      if(S.vendasIds.has(id)){ const ex=S.vendasRows.find(x=>x.id===id); const up={}; if(ex && (!ex.d || ex.mes==='sem-data') && d){ up.d=d; up.mes=mk; } const dn=dinheiro(r); if(ex && ex.rec==null && dn.rec!=null) Object.assign(up,dn); if(ex && !ex.uf && c.uf>=0 && String(r[c.uf]??'').trim()) up.uf=String(r[c.uf]).trim(); if(ex && Object.keys(up).length){ Object.assign(ex,up); conserta.push({id, ...up}); } nDup++; continue; }
       if(novas[mk] && novas[mk].some(x=>x.id===id)){ nDup++; continue; }
       const row = {id, d, tp, emp:$('impEmp').value,
         dep:String(r[c.dep]??'').trim(), est, dsc:String(r[c.dsc]??'').trim(),
@@ -1443,25 +1449,28 @@ async function importVendas(file){
         un:Number(r[c.un])||0, tot:(r[c.tot]===''||r[c.tot]==null)?null:Number(r[c.tot]),
         mf:String(r[c.mf]??'').trim(), ped:String(r[c.ped]??'').trim(), pub:String(r[c.pub]??'').trim(),
         sku:String(r[c.sku]??'').trim(), an, tit:String(r[c.tit]??'').trim(), vr:String(r[c.vr]??'').trim(), env:String(r[c.env]??'').trim(),
-        cmp:String(r[c.cmp]??'').trim(), ...dinheiro(r)};
+        cmp:String(r[c.cmp]??'').trim(), uf:(c.uf>=0?String(r[c.uf]??'').trim():null)||null, ...dinheiro(r)};
       (novas[mk]=novas[mk]||[]).push(row);
       if(tp==='pai') nPai++; else { nItem++; if(isCanc(est)) nCanc++; }
     }
-    if(conserta.length){ for(const x of conserta){ const {id, ...campos}=x; const {error}=await SUPA.from('vendas').update(campos).eq('id',id); if(error) throw new Error(rlsMsg(error)); } }
+    const semUf = e => e && /uf/i.test(e.message||'') && /column|coluna/i.test(e.message||'');
+    if(conserta.length){ for(const x of conserta){ let {id, ...campos}=x; if(S.semColUf) delete campos.uf; if(!Object.keys(campos).length) continue; let {error}=await SUPA.from('vendas').update(campos).eq('id',id); if(error && semUf(error)){ S.semColUf=true; delete campos.uf; if(Object.keys(campos).length){ ({error}=await SUPA.from('vendas').update(campos).eq('id',id)); } else error=null; } if(error) throw new Error(rlsMsg(error)); } }
     const totalNovas = Object.values(novas).reduce((s,a)=>s+a.length,0);
     if(!totalNovas){ if(conserta.length){ render(); box.innerHTML=`<div class="msg ok">${conserta.length} venda(s) já importadas foram completadas (data e/ou valores de taxa e frete). ${nDup-conserta.length} já estavam importadas.</div>`; return; } box.innerHTML=`<div class="msg warn">Nada novo: ${nDup} linha(s) já estavam importadas.</div>`; return; }
     box.innerHTML='<div class="msg ok">Gravando no banco…</div>';
     const all=[];
     for(const mk in novas) for(const row of novas[mk]) all.push(Object.assign({mes:mk}, row));
     for(let i=0;i<all.length;i+=500){
-      const {error} = await SUPA.from('vendas').upsert(all.slice(i,i+500), {onConflict:'id', ignoreDuplicates:true});
+      let lote=all.slice(i,i+500); if(S.semColUf) lote=lote.map(r=>{ const o={...r}; delete o.uf; return o; });
+      let {error} = await SUPA.from('vendas').upsert(lote, {onConflict:'id', ignoreDuplicates:true});
+      if(error && semUf(error)){ S.semColUf=true; lote=lote.map(r=>{ const o={...r}; delete o.uf; return o; }); ({error}=await SUPA.from('vendas').upsert(lote, {onConflict:'id', ignoreDuplicates:true})); }
       if(error) throw new Error(rlsMsg(error));
     }
     for(const r of all){ S.vendasRows.push(r); S.vendasIds.add(r.id); }
     { const ms=all.map(r=>r.mes).filter(m=>/^\d{4}-\d{2}$/.test(m)).sort(); if(ms.length) S.mesVd=ms[ms.length-1]; }
     render();
     const nPend = Object.keys(S.calc.pend).length;
-    box.innerHTML = `<div class="msg ok"><b>${totalNovas}</b> linha(s) importadas (${nItem} itens, ${nPai} pacotes, ${nCanc} canceladas) · ${nDup} duplicadas ignoradas${conserta.length?` · ${conserta.length} já importadas completadas`:''}.${nPend?` <b>${nPend} anúncio(s) sem vínculo</b> — resolva na aba Vínculos (bloco 1).`:''}</div>`;
+    box.innerHTML = `<div class="msg ok"><b>${totalNovas}</b> linha(s) importadas (${nItem} itens, ${nPai} pacotes, ${nCanc} canceladas) · ${nDup} duplicadas ignoradas${conserta.length?` · ${conserta.length} já importadas completadas`:''}.${S.semColUf?' <b>Estado do comprador não foi gravado</b> — falta rodar o SQL <code>vendas_uf.sql</code> no Supabase e importar de novo.':''}${nPend?` <b>${nPend} anúncio(s) sem vínculo</b> — resolva na aba Vínculos (bloco 1).`:''}</div>`;
   }catch(err){
     box.innerHTML = `<div class="msg bad">Erro na importação: ${esc(err.message||err)}</div>`;
   }
@@ -1589,6 +1598,7 @@ $('tabs').addEventListener('click', e=>{
 $('qProd').addEventListener('input', renderEstoque);
 $('mgMes').addEventListener('change', e=>{ S.mgMes=e.target.value; renderMargem(); });
 $('qMg').addEventListener('input', renderMargem);
+$('mgUf').addEventListener('change', renderMargem);
 for(const id of ['mgImp','mgEmb']) $(id).addEventListener('change', async ()=>{ renderMargem(); S.mgParams={icmsV:Number($('mgImp').value)||0, emb:Number($('mgEmb').value)||0}; try{ if(typeof SUPA!=='undefined'&&SUPA) await SUPA.from('config').upsert({k:'margem_lr', v:S.mgParams}); }catch(_){} });
 $('qMes').addEventListener('input', renderMes);
 $('mesSel').addEventListener('change', e=>{ S.mesSel=e.target.value; renderMes(); });
@@ -1763,7 +1773,7 @@ document.addEventListener('click', async e=>{
   if(e.target.closest('#vdXls')){
     const cur=S.mesVd; const rows=S.vendasRows.filter(r=>r.mes===cur && empOk(r)).sort((a,b)=>(b.d||'').localeCompare(a.d||''));
     const dados=rows.map(r=>{ const v=S.vinculos[seg(r.an)]; const baixa=r.tp!=='item'?'':(isCanc(r.est)&&!S.cfg.canc?'não baixa':(v&&v.itens&&v.itens.length?v.itens.map(it=>`${S.produtos[it.pid]?.sku||it.pid} −${(r.un||0)*(it.fator||0)}`).join(' | '):'SEM VÍNCULO'));
-      return {'Data':fmtData(r.d),'N.º venda':r.id,'Loja':r.emp||'','Tipo':r.tp==='pai'?'pacote':'item','Estado':r.est||'','Envio':r.env||'','Anúncio':r.an||'','Título':r.tit||'','Unidades':r.un||0,'Baixa':baixa,'Preço de venda (receita produtos)':r.rec==null?'':Number(r.rec),'Acréscimo pago pelo comprador':r.acr==null?'':Number(r.acr),'Tarifa ML + impostos':r.tax==null?'':Number(r.tax),'Receita por envio':r.recenv==null?'':Number(r.recenv),'Tarifa de envio':r.tarenv==null?'':Number(r.tarenv),'Cancelamentos / reembolsos':r.canc==null?'':Number(r.canc),'A RECEBER (Total)':r.tot==null?'':Number(r.tot),'Comprador':r.cmp||'','SKU anúncio':r.sku||''}; });
+      return {'Data':fmtData(r.d),'N.º venda':r.id,'Loja':r.emp||'','Tipo':r.tp==='pai'?'pacote':'item','Estado':r.est||'','Envio':r.env||'','Anúncio':r.an||'','Título':r.tit||'','Unidades':r.un||0,'Baixa':baixa,'Preço de venda (receita produtos)':r.rec==null?'':Number(r.rec),'Acréscimo pago pelo comprador':r.acr==null?'':Number(r.acr),'Tarifa ML + impostos':r.tax==null?'':Number(r.tax),'Receita por envio':r.recenv==null?'':Number(r.recenv),'Tarifa de envio':r.tarenv==null?'':Number(r.tarenv),'Cancelamentos / reembolsos':r.canc==null?'':Number(r.canc),'A RECEBER (Total)':r.tot==null?'':Number(r.tot),'Comprador':r.cmp||'','Estado do comprador':r.uf||'','SKU anúncio':r.sku||''}; });
     const ws=XLSX.utils.json_to_sheet(dados); const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'vendas');
     // aba de faturamento
     const fat=[...document.querySelectorAll('#tblFat tr')].map(tr=>[...tr.cells].map(c=>c.innerText)); if(fat.length){ XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(fat),'faturamento'); }
