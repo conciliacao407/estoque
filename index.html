@@ -199,7 +199,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
   </nav>
   <div class="side-foot">
     <span id="connState">conectando ao banco…</span>
-    <div style="opacity:.6;margin-top:4px">Supabase · 4 lojas · <span id="versao">v2026-10-23a</span></div>
+    <div style="opacity:.6;margin-top:4px">Supabase · 4 lojas · <span id="versao">v2026-10-27b</span></div>
   </div>
 </aside>
 <div class="content">
@@ -495,6 +495,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
       <p><b>Mês fechado</b> — só o que entrou e o que saiu dentro de um mês (padrão: o mês passado). Não olha saldo acumulado; serve pra fechar o mês e comparar compra com venda. Respeita a loja do topo e tem Excel.</p>
       <p><b>Produtos → editar</b> — é onde você troca o <b>custo com IPI</b> (por folha, peça ou saco) e o <b>ICMS da nota</b> de cada produto; a aba Margem passa a usar na hora, com o crédito calculado a partir desse ICMS. <b>Produtos</b> — cadastro: SKU, nome, unidade, custo da última nota, fornecedor e telefone (pra mensagem de pedido). "+ Produto" cria; lápis edita.</p>
       <p><b>Vínculos</b> — cada anúncio aparece com o código <b>MLB</b> (clica e abre o anúncio no ML) e a <b>loja</b> dona dele. No topo, quantos anúncios cada loja tem; escolhendo a loja no menu, a aba mostra só os MLB daquela loja. Liga cada anúncio do Mercado Livre a um produto e um fator (quantas folhas/peças 1 unidade vendida representa). Bloco de cima: anúncios esperando sua conferência (a plataforma sugere pelo título). Bloco de baixo: conferidos. Coluna <b>Loja</b> mostra em qual conta o anúncio vende. "Não vende mais" tira o anúncio da lista sem baixar estoque. Toda alteração fica gravada no histórico.</p>
+      <p><b>💬 Perguntar</b> — botão no canto da tela (ou Ctrl/Cmd+K). Faz pergunta em português e responde em cartão com o que já está no sistema: estoque, quanto comprar, a caminho, vendas, margem, projeção (com tendência), crescimento e queda, vínculos com divergência, custo, vínculo, entradas, compra do dia, preço certo, top 10, mês contra mês, gastos em compras, o que está errado. Também executa com confirmação: "aprova todos", "recusa o 2", "recebi o a4", "pede 50 pacotes de a4 pra makenry", "mensagem pra mônica", "ML vendas makenry setembro 895". Lembra loja, produto e mês da conversa ("e na nagare?"); "＋ Novo chat" zera.</p>
       <p><b>Pedido em 3 etapas</b> — <b>Pedidos</b> (criado) → <b>Aprovados</b> (encomendado ao fornecedor: fica <i>a caminho</i>, não entra no estoque) → <b>📦 Recebi</b> → <b>Recebidos</b> (entra no estoque). Na régua: <b>já pedido</b> = criado e não aprovado; <b>a caminho</b> = aprovado e não recebido (vermelho se passou do prazo do fornecedor); <b>quanto comprar</b> = projeção de 5 dias de venda menos já pedido e a caminho — desce a cada pedido e sobe conforme vende. Lançar a nota de um pedido a caminho marca ele como recebido sozinho.</p>
       <p><b>Margem</b> — lucro por anúncio no mês e na loja, com a conta da planilha Precificação de Produtos – Lucro Real (sem IRPJ): preço, taxa do ML e frete reais do relatório; custo com IPI e ICMS da nota do fornecedor mais barato; ICMS e PIS/COFINS a pagar; embalagem R$ 0,35. Ordena da menor margem pra maior; vermelho abaixo de 15%, amarelo até 20%, verde a partir de 20%; <b>degrau</b> avisa preço logo acima de R$ 79/100/120/150/200, onde o frete muda de faixa. Filtro <b>Estado do comprador</b> e coluna <b>Estados</b> (pra onde cada anúncio vende) — preenchidos nos meses importados a partir de 23/10.</p>
       <p><b>O que está errado agora</b> — o quadro no topo de toda aba: vendas sem importar, notas faltando, anúncio sem vínculo vendendo, compra lançada em dobro (com botão pra apagar), quantidade fora do padrão, faturamento não conferido com o ML e backup atrasado. Com uma loja escolhida no menu, mostra só os dela. Tudo em dia = faixa verde.</p>
@@ -689,7 +690,7 @@ function compute(){
 
 /* ================= render ================= */
 function checarLancamentos(){
-  const box=document.getElementById('avisoLanc'); if(!box) return;
+  const box=document.getElementById('avisoLanc'); if(!box) return; setTimeout(()=>{ if(typeof cbBadge==='function') cbBadge(); },0);
   const M=mesAnterior(), mesTxt=`${M.slice(5)}/${M.slice(0,4)}`, hoje=new Date();
   const sel=(S.empSel&&S.empSel!=='Todas')?S.empSel:null;
   const P=[]; const add=(e,t,grave,goto)=>{ if(sel && e!==sel && e!=='Grupo') return; P.push({e,t,grave,goto}); };
@@ -2048,7 +2049,8 @@ function reguaHTML(pid){
   const btn=(id,lab,on)=>`<button class="btn sm ${on?'':'sec'} rg-modo" data-modo="${id}" style="padding:3px 10px">${lab}</button>`;
   const mesesR=[...new Set(S.vendasRows.map(x=>x.mes).filter(m=>/^\d{4}-\d{2}$/.test(m)))].sort().reverse(); const hojeM=new Date().toISOString().slice(0,7);
   const selM=`<select class="rg-mes" style="padding:3px 6px;font-size:12px;${T?'opacity:.55':''}">${mesesR.map(m=>`<option value="${m}" ${m===r.mes?'selected':''}>${m.slice(5)}/${m.slice(0,4)}${m===hojeM?' (em andamento)':''}</option>`).join('')}</select>`;
-  let h=`<div style="margin-top:10px;font-size:12.5px"><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><b>Régua da reposição — ${esc(p.sku)}</b> <span class="dim">base:</span> ${btn('mes','Mês',!T)} ${selM} ${btn('total','Período todo',T)} <span class="dim">· saldo acumulado do grupo ${dois(r.saldo)}</span></div><table style="margin-top:6px;width:100%"><tr><th>Empresa</th><th class="r">${T?'entrou (total)':'entrou '+mesTxt}</th><th class="r">${T?'saiu (total)':'saiu '+mesTxt}</th><th class="r">${T?'saldo':'diferença'}</th><th class="r" title="pedido criado, ainda não aprovado">já pedido</th><th class="r" title="aprovado e ainda não recebido">a caminho</th><th class="r">quanto comprar</th><th>situação</th><th></th></tr>`;
+  const mesGrande=T?'PERÍODO TODO':`${MESES_PT[+r.mes.slice(5,7)-1].toUpperCase()}/${r.mes.slice(0,4)}${r.mes===new Date().toISOString().slice(0,7)?' <span style="font-size:13px;font-weight:600;color:var(--warn)">em andamento</span>':''}`;
+  let h=`<div style="margin-top:10px;font-size:12.5px"><div style="font-size:22px;font-weight:800;letter-spacing:.02em;margin:4px 0 6px">${mesGrande}</div><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><b>Régua da reposição — ${esc(p.sku)}</b> <span class="dim">base:</span> ${btn('mes','Mês',!T)} ${selM} ${btn('total','Período todo',T)} <span class="dim">· saldo acumulado do grupo ${dois(r.saldo)}</span></div><table style="margin-top:6px;width:100%"><tr><th>Empresa</th><th class="r">${T?'entrou (total)':'entrou '+mesTxt}</th><th class="r">${T?'saiu (total)':'saiu '+mesTxt}</th><th class="r">${T?'saldo':'diferença'}</th><th class="r" title="pedido criado, ainda não aprovado">já pedido</th><th class="r" title="aprovado e ainda não recebido">a caminho</th><th class="r">quanto comprar</th><th>situação</th><th></th></tr>`;
   const _lin=(S.empSel&&S.empSel!=='Todas')?r.linhas.filter(l=>l.emp===S.empSel):r.linhas;
   for(const l of _lin){
     const acTip=(l.acL||[]).map(x=>`${fmtData((x.em||'').slice(0,10))} · ${fl?fmt(x.q/100)+' pct':fmt(x.q)} · há ${diasDesde(x.em)} dia(s)${x.forn?' · '+x.forn:''}`).join('\n');
@@ -2414,6 +2416,297 @@ aplicaTema();
 $('selEmp').addEventListener('change', e=>{ S.empSel=e.target.value; try{localStorage.setItem('empSel',S.empSel);}catch(_){} aplicaTema(); render(); });
 render();
 initDb();
+
+/* ===================== 💬 PERGUNTAR — chat sem IA, lê o que já está no sistema ===================== */
+const CB={ msgs:[], ctx:{}, hist:[], aberto:false };
+try{ CB.hist=JSON.parse(localStorage.getItem('cb_hist')||'[]'); }catch(_){ CB.hist=[]; }
+const cbNorm = s => String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\w\s$,.%+-]/g,' ').replace(/\s+/g,' ').trim();
+const MESES_PT=['janeiro','fevereiro','marco','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+const MESES_AB=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+function cbMesTxt(m){ return m?`${MESES_PT[+m.slice(5,7)-1]}/${m.slice(0,4)}`:''; }
+function cbHoje(){ return new Date().toISOString().slice(0,7); }
+function cbLoja(t){ for(const e of EMPRESAS){ if(new RegExp('\\b'+cbNorm(e)+'\\b').test(t)) return e; } if(/\b(makenri|makenry)\b/.test(t)) return 'Makenry'; return null; }
+function cbMes(t){
+  const h=new Date(); const y=h.getFullYear();
+  if(/\bmes passado\b|\bultimo mes\b/.test(t)) return mesAnterior();
+  if(/\besse mes\b|\beste mes\b|\bmes atual\b|\bagora\b/.test(t)) return cbHoje();
+  const m=t.match(/\b(20\d\d)-(\d\d)\b/); if(m) return m[1]+'-'+m[2];
+  for(let i=0;i<12;i++){ if(new RegExp('\\b('+MESES_PT[i]+'|'+MESES_AB[i]+')\\b').test(t)){ const ya=t.match(/\b(20\d\d)\b/); const yy=ya?+ya[1]:y; const mm=`${yy}-${String(i+1).padStart(2,'0')}`; return mm; } }
+  return null;
+}
+const CB_ALIAS=[
+  [/\b(a4|220 ?x ?307)\b.*\b(175|0[,.]?07|07)\b|\b(175|0[,.]?07)\b.*\ba4\b/,'A4-07'],[/\b(a4|220 ?x ?307)\b.*\b(250|0[,.]?10|010)\b|\b(250|0[,.]?10)\b.*\ba4\b/,'A4-010'],[/\b(a4|220 ?x ?307)\b/,'A4-05'],
+  [/\b(a3|303 ?x ?426)\b.*\b(175|07)\b/,'A3-07'],[/\b(a3|303 ?x ?426)\b.*\b(250|010)\b/,'A3-010'],[/\b(a3|303 ?x ?426)\b/,'A3-05'],
+  [/\bcpf\b.*\b(175|07)\b/,'CPF-07'],[/\bcpf\b.*\b(250|010)\b/,'CPF-010'],[/\b(cpf|66 ?x ?99)\b/,'CPF-05'],
+  [/\brg\b.*\b(175|07)\b/,'RG-07'],[/\b(rg|80 ?x ?110)\b/,'RG-05'],
+  [/\b(cgc|a6|110 ?x ?170)\b/,'CGC-05'],[/\b(cnpj|121 ?x ?191)\b/,'CNPJ-05'],[/\b(cracha|cra)\b/,'CRA-05'],
+  [/\b(mo|meio oficio|170 ?x ?226)\b.*\b(175|07)\b/,'MO-07'],[/\b(mo|meio oficio|170 ?x ?226)\b/,'MO-05'],
+  [/\b(capa colorida|capas coloridas|ppc[- ]?cor)\b/,'PPC-COR'],[/\b(contracapa|contra capa|preta|ppc)\b/,'PPC'],[/\b(capa line|cristal|ppl)\b/,'PPL'],[/\b(capa|capas)\b/,'PPC'],
+  [/\b(saco|sacos|talher|talheres|stb)\b/,'STB'],
+  [/\b(bobina)\b.*\b30\b/,'BOB30'],[/\b(bobina)\b.*\b40\b/,'BOB40'],[/\b(bobina)\b.*\b250\b/,'BOB50-250'],[/\b(bobina)\b/,'BOB50'],
+  [/\b(colmeia|colmeias)\b.*\b50 ?x ?50\b/,'F50X50'],[/\b(colmeia|colmeias)\b/,'F38X50'],
+  [/\b(tesoura|tesouras)\b/,'TESOU'],[/\b(calculadora|calc)\b/,'CALC']
+];
+function cbProduto(t){
+  // SKU/pid exato primeiro
+  for(const pid in S.produtos){ const p=S.produtos[pid]; const k=cbNorm(p.sku||pid); if(k.length>=3 && new RegExp('\\b'+k.replace(/[-.]/g,'[- ]?')+'\\b').test(t)) return pid; }
+  for(const [re,pid] of CB_ALIAS){ if(re.test(t) && S.produtos[pid]) return pid; }
+  return null;
+}
+function cbAn(t){ const m=t.match(/\bmlb[- ]?(\d{6,})\b/); return m?'MLB'+m[1]:null; }
+function cbForn(t){ const nomes=[...new Set(Object.values(S.forn||{}).map(f=>f.nome).filter(Boolean))]; for(const n of nomes){ if(new RegExp('\\b'+cbNorm(n).split(/[\s/]+/)[0]+'\\b').test(t)) return n; } const pessoas={monica:'Prolam',erika:'Mares',aylton:'LM',guilherme:'Imballa',marcia:'AMP'}; for(const p in pessoas){ if(new RegExp('\\b'+p+'\\b').test(t)) return pessoas[p]; } return null; }
+// ---------- áreas (ordem importa) ----------
+const CB_AREAS=[
+  ['cmd_aprova',/\b(aprova|aprovar|aprove|aprovado)\b/],
+  ['cmd_recusa',/\b(recusa|recusar|recuse|rejeita|nega)\b/],
+  ['cmd_recebi',/\b(recebi|recebemos|chegou|chegaram|recebido)\b(?!.*\bnota)/],
+  ['cmd_pede',/\b(pede|pedir|faz um pedido|fazer pedido|cria um pedido|criar pedido|encomenda)\b/],
+  ['confml',/\bml\b.*\b(vendas|vendido)\b.*\d/],
+  ['abrir',/^(abre|abrir|vai pra|ir pra|ir para|vai para)\b|^(importar|backup|vinculos|entradas|orientacao)$/],
+  ['errado',/\b(errado|erro|erros|problema|problemas|pendencia|pendencias|o que ta faltando|o que esta faltando|falta algo|saude)\b/],
+  ['comprarHoje',/\b(o que comprar|que comprar|comprar hoje|compra do dia|lista de compra|lista de compras)\b/],
+  ['mensagemForn',/\b(mensagem|texto|msg|zap|whats|whatsapp)\b/],
+  ['precoCerto',/\b(preco certo|preco ideal|preco minimo|preco pra|preco para|que preco|a r\$? ?\d|por r\$? ?\d|da quanto de margem|quanto de margem|precific)/],
+  ['top',/\b(top|mais vendeu|mais vendidos|mais vende|ranking|melhores|campeoes|mais lucro)\b/],
+  ['comparar',/\b(contra|versus|vs|comparar|compara|comparacao)\b/],
+  ['gastoCompras',/\b(gastei|gastou|gasto|gastos|quanto comprei|quanto compramos|compras do mes|compras de)\b/],
+  ['fornecedorBarato',/\b(mais barato|melhor fornecedor|fornecedor mais|onde comprar|qual fornecedor)\b/],
+  ['divergencia',/\b(divergencia|divergencias|divergente|divergentes|estranho|estranhos|fora do padrao|preco estranho|vinculo errado|vinculos errados|conferir vinculos|conferir vinculo)\b/],
+  ['tendencia',/\b(crescimento|cresceu|crescendo|caiu|caindo|queda|subiu|subindo|tendencia|tendencias|variacao|evolucao|comparado com|em relacao ao mes)\b/],
+  ['projecao',/\b(projecao|projecoes|vai durar|dura quanto|quanto dura|quando acaba|vai acabar|cobertura|estoque morto|estoque vivo)\b/],
+  ['acaminho',/\b(a caminho|caminho|atrasado|atrasados|aprovados|esta pra chegar|pra chegar|para chegar|pendentes|pendente)\b/],
+  ['pedidos',/\b(comprar|compra|repor|reposicao|regua|quanto falta|preciso comprar|precisa comprar|pedido|pedidos)\b/],
+  ['margem',/\b(margem|margens|lucro|lucros|da dinheiro|prejuizo|rentab)/],
+  ['vendas',/\b(vendeu|vendas|venda|quantas|faturou|faturamento|bruto|recebe|recebeu|a receber)\b/],
+  ['custo',/\b(custo|custos|quanto paguei|quanto pago|icms|ipi|preco de compra|fornecedor)\b/],
+  ['vinculo',/\b(vinculo|vinculos|vinculado|anuncio|anuncios|mlb)\b/],
+  ['entradas',/\b(entrada|entradas|nota|notas|nf|nfe)\b/],
+  ['estoque',/\b(quanto tem|quanto temos|saldo|estoque|sobra|sobrou|tem de|tem no)\b/],
+];
+function cbArea(t){ for(const [a,re] of CB_AREAS){ if(re.test(t)) return a; } return null; }
+// ---------- utilidades de resposta ----------
+const cbEsc=esc;
+function cbCard(titulo, corpo, opts={}){ const abrir=opts.abrir?`<button class="btn sm sec" data-goto="${opts.abrir}" data-cb-loja="${cbEsc(opts.loja||'')}">abrir em ${cbEsc(opts.abrirNome||opts.abrir)}</button>`:''; return `<div class="cb-card">${titulo?`<div class="cb-t">${titulo}</div>`:''}${corpo}${abrir?`<div class="cb-acoes">${abrir}</div>`:''}</div>`; }
+const cbBig=(v,l)=>`<div class="cb-big">${v}</div><div class="cb-l">${l}</div>`;
+function cbSemLoja(){ return cbCard('De qual loja?','<div class="cb-chips">'+EMPRESAS.map(e=>`<button class="cb-chip" data-cb-q="${cbEsc(e)}">${cbEsc(e)}</button>`).join('')+'</div>'); }
+function cbSemProduto(){ return cbCard('De qual produto?','<div class="cb-chips">'+['A4','CPF','RG','A3','CGC','capa','saco de talher'].map(x=>`<button class="cb-chip" data-cb-q="${x}">${x}</button>`).join('')+'</div>'); }
+function cbQtd(pid,q){ const e=embDe(pid); const p=S.produtos[pid]||{}; if(e.mult>1) return `<b>${fmt(q/e.mult)}</b> ${e.plural} <span class="dim">(${fmt(q)} ${p.unidade==='folhas'?'folhas':(e.mult===5000?'sacos':'peças')})</span>`; return `<b>${fmt(q)}</b> ${p.unidade||'un'}`; }
+function cbSku(pid){ return (S.produtos[pid]||{}).sku||pid; }
+// ---------- margem por anúncio (mesma conta da aba Margem) ----------
+function cbMargem(mes, emp, filtroAn){
+  const icmsV=(Number(($('mgImp')||{}).value)||12)/100, emb=Number(($('mgEmb')||{}).value)||0.35; const A={};
+  for(const r of S.vendasRows){
+    if(r.mes!==mes||r.tp!=='item'||isCanc(r.est)||r.rec==null||!(r.env||r.cmp)) continue; if(emp&&r.emp!==emp) continue; if(filtroAn&&r.an!==filtroAn) continue;
+    const a=A[r.an]||(A[r.an]={an:r.an,tit:r.tit,emp:r.emp,n:0,rec:0,tax:0,fre:0,cp:0,icmsC:0,semCusto:false});
+    a.n++; a.rec+=Number(r.rec)||0; a.tax+=-(Number(r.tax)||0); a.fre+=-(Number(r.tarenv)||0)-(Number(r.recenv)||0);
+    const v=S.vinculos[seg(r.an)]; if(v&&v.itens&&v.itens.length){ for(const it of v.itens){ const cf=cfDe(it.pid); if(!cf||!cf.c){ a.semCusto=true; continue; } const c=(r.un||0)*(it.fator||0)*cf.c; a.cp+=c; a.icmsC+=c*(cf.icms||0); } } else a.semCusto=true;
+    if((r.d||'')>(a.ud||'')){ a.ud=r.d; a.tit=r.tit; }
+  }
+  return Object.values(A).map(a=>{ const P=a.rec/a.n, custo=a.cp/a.n, icC=a.icmsC/a.n; const imp=P*icmsV-icC+P*(1-icmsV)*PIS_COFINS-(custo-icC)*PIS_COFINS; const luc=P-a.tax/a.n-a.fre/a.n-imp-custo-emb; return Object.assign(a,{P,custo,imp,luc,mg:P?luc/P*100:0,lucMes:luc*a.n}); });
+}
+function cbFat(mes, emp){ const x={n:0,bruto:0,rec:0,nc:0,semBruto:0}; for(const r of S.vendasRows){ if(r.mes!==mes||r.emp!==emp) continue; const uma=r.tp==='pai'||(r.tp==='item'&&(r.env||r.cmp)); if(!uma) continue; x.n++; if(isCanc(r.est)||isDev(r.est)) x.nc++; if(r.rec==null) x.semBruto++; x.bruto+=Number(r.rec)||0; x.rec+=Number(r.tot)||0; } return x; }
+function cbProj(pid){
+  const pd=S.calc.porDia||{}, ref=S.calc.refD; if(!ref) return null; const ms=86400000, refT=new Date(ref+'T00:00:00').getTime(); let t30=0; for(const dd in (pd[pid]||{})){ const dias=(refT-new Date(dd+'T00:00:00').getTime())/ms; if(dias<30) t30+=pd[pid][dd]; }
+  const base=t30/30, s=saldoDe(pid), fluxo=Math.max(1,+(($('pjFluxo')||{}).value)||7), alvo=Math.max(1,+(($('pjAlvo')||{}).value)||30);
+  const morto=Math.ceil(base*leadDe(pid)), vivo=Math.ceil(base*fluxo), minimo=morto+vivo, prox=Math.ceil(base*alvo); const _m=embDe(pid).mult||1; const enviar=Math.max(0,Math.ceil((prox+minimo-s)/_m)*_m);
+  let t10=0; for(const dd in (pd[pid]||{})){ const dias=(refT-new Date(dd+'T00:00:00').getTime())/ms; if(dias<10) t10+=pd[pid][dd]; } const rec=t10/10; const tend=base>0?(rec/base-1)*100:0;
+  return {base,s,morto,vivo,minimo,prox,enviar,dura:(base>0&&s>0)?s/base:Infinity,lead:leadDe(pid),alvo,tend};
+}
+const CB_FRETE=[[79,8.00],[100,14.95],[120,18.51],[150,21.21],[200,24.67],[1e9,36.06]];
+function cbFreteFaixa(p){ for(const [c,f] of CB_FRETE){ if(p<c) return f; } return 36.06; }
+function cbPrecoPara(custo,icmsC,taxa,margem,icmsV,emb){ // resolve iterando as faixas de frete
+  const cl=custo-icmsC-(custo-icmsC)*PIS_COFINS; const A=1-taxa-icmsV-PIS_COFINS*(1-icmsV)-margem; let p=0; for(let i=0;i<6;i++){ const fr=cbFreteFaixa(p||1); p=(cl+fr+emb)/A; } return p;
+}
+// ---------- motor ----------
+function cbResponder(texto){
+  const t=cbNorm(texto); const c=CB.ctx;
+  // referências à lista anterior
+  if(c.lista && /^(e o|o|os|as|a)?\s*(\d+|segundo|terceiro|primeiro|resto|esses|essas|todos|tudo)\b/.test(t) && !cbArea(t) && c.lista.cmd){ return cbComando(c.lista.cmd, t); }
+  if(c.pend && /^(sim|confirma|confirmar|ok|pode|vai|manda)\b/.test(t)) return cbExecutar();
+  if(c.pend && /^(nao|cancela|cancelar|deixa)\b/.test(t)){ c.pend=null; return cbCard('','Cancelado. Nada foi mudado.'); }
+  let area=cbArea(t); const loja=cbLoja(t), pid=cbProduto(t), an=cbAn(t), mes=cbMes(t), forn=cbForn(t);
+  // contexto: completa o que faltar
+  if(loja) c.loja=loja; if(pid) c.pid=pid; if(an) c.an=an; if(mes) c.mes=mes; if(forn) c.forn=forn;
+  if(!area && (loja||pid||an||mes) && c.area) area=c.area;   // "e na nagare?" / "e o cpf?"
+  if(!area) return cbNaoEntendi(t);
+  c.area=area;
+  const L=c.loja||(S.empSel&&S.empSel!=='Todas'?S.empSel:null);
+  const OPT=['vendas','margem','top','comparar','gastoCompras','acaminho','entradas','comprarHoje','mensagemForn','vinculo','divergencia','tendencia'];
+  if(OPT.includes(area)){ if(!pid) c.pid=null; if(!an) c.an=null; if(area!=='margem'&&area!=='vendas'&&area!=='top'&&area!=='comparar'&&area!=='gastoCompras'&&!mes) c.mes=null; }
+  switch(area){
+    case 'cmd_aprova': case 'cmd_recusa': case 'cmd_recebi': case 'cmd_pede': return cbComando(area,t);
+    case 'confml': return cbConfML(t);
+    case 'abrir': { const m={importar:'importar',backup:'importar',vinculo:'vinculos',entradas:'entradas',orientacao:'orientacao',margem:'margem',projecao:'projecao',pedidos:'pedidos',aprovados:'aprovados',recebidos:'recebidos',estoque:'estoque',vendas:'vendas',produtos:'produtos',mes:'mes'}; for(const k in m){ if(t.includes(k)){ const b=document.querySelector(`.tab[data-t="${m[k]}"]`); if(b) b.click(); return cbCard('',`Abri a aba <b>${cbEsc(b?b.textContent.trim():m[k])}</b>.`); } } return cbCard('','Qual aba? Estoque, Pedidos, Aprovados, Recebidos, Vendas, Margem, Projeção, Entradas, Produtos, Vínculos ou Importar.'); }
+    case 'errado': { checarLancamentos(); const box=document.getElementById('avisoLanc'); const itens=[...box.querySelectorAll('li')].map(li=>li.innerText.replace(/\s*resolver →\s*$/,'')); const ok=!itens.length; return cbCard(ok?'✅ Nada errado':`⚠️ ${itens.length} coisa(s) pra olhar`, ok?'Vendas, notas, vínculos, entradas e backup em dia.':'<ol class="cb-ol">'+itens.map(x=>`<li>${cbEsc(x)}</li>`).join('')+'</ol>',{abrir:'estoque',abrirNome:'painel'}); }
+    case 'estoque': { if(!c.pid) return cbSemProduto(); const p=c.pid; if(!L){ const tot=saldoDe(p); return cbCard(`Estoque de ${cbSku(p)} — grupo`, cbBig(cbQtd(p,tot),'saldo hoje, todas as lojas')+'<div class="cb-chips">'+EMPRESAS.map(e=>`<button class="cb-chip" data-cb-q="${cbEsc(e)}">${cbEsc(e)}: ${fmt(saldoEmpDe(p,e)/(embDe(p).mult||1))}</button>`).join('')+'</div>',{abrir:'estoque'}); } const s=saldoEmpDe(p,L); const pj=cbProj(p); return cbCard(`Estoque de ${cbSku(p)} — ${L}`, cbBig(cbQtd(p,s),'saldo hoje nessa loja')+(pj&&pj.base>0?`<div class="cb-l">vende ${fmt(pj.base/(embDe(p).mult||1))} ${embDe(p).plural}/dia no grupo · dura ${pj.dura===Infinity?'—':Math.floor(pj.dura)+' dias'}</div>`:'')+(s<0?'<div class="cb-l" style="color:var(--danger)">negativo: falta a contagem física / estoque inicial</div>':''),{abrir:'estoque',loja:L}); }
+    case 'pedidos': { if(!c.pid) return cbSemProduto(); const p=c.pid; const r=reguaDePar(p); const lin=L?r.linhas.filter(l=>l.emp===L):r.linhas; const rows=lin.map(l=>`<tr><td>${cbEsc(l.emp)}</td><td class="r">${l.jp?fmt(l.jp/(embDe(p).mult||1)):'—'}</td><td class="r">${l.ac?fmt(l.ac/(embDe(p).mult||1)):'—'}</td><td class="r"><b>${l.comprar?fmt(l.comprar/(embDe(p).mult||1)):'—'}</b></td><td><span style="color:${l.cor}">●</span> ${cbEsc(l.sit)}</td></tr>`).join(''); return cbCard(`Quanto comprar de ${cbSku(p)} (${embDe(p).plural})`, `<table class="cb-tbl"><tr><th>Loja</th><th class="r">já pedido</th><th class="r">a caminho</th><th class="r">comprar</th><th>situação</th></tr>${rows}</table><div class="cb-l">projeção de ${DIAS_PROJ} dias de venda, já descontando o que foi pedido e o que está a caminho</div>`,{abrir:'pedidos',loja:L}); }
+    case 'acaminho': { const lista=Object.entries(S.pedidos).filter(([id,p])=>pedACaminho(id,p)&&(!L||p.empresa===L)&&(!c.pid||p.pid===c.pid)).sort((a,b)=>(a[1].decidido_em||'').localeCompare(b[1].decidido_em||'')); const pend=Object.entries(S.pedidos).filter(([,p])=>p.status==='pendente'&&(!L||p.empresa===L)&&(!c.pid||p.pid===c.pid)); if(/pendente/.test(t)){ return cbLista(pend,'Pedidos pendentes'+(L?' — '+L:''),'cmd_aprova','pedidos'); } if(!lista.length) return cbCard('Nada a caminho'+(L?' — '+L:''),'Nenhum pedido aprovado esperando chegar.'+(pend.length?` Tem <b>${pend.length}</b> pendente(s) esperando aprovação.`:''),{abrir:'aprovados',loja:L}); return cbLista(lista,'A caminho'+(L?' — '+L:''),'cmd_recebi','aprovados'); }
+    case 'vendas': { if(!L) return cbSemLoja(); const m=c.mes||cbHoje(); const x=cbFat(m,L); if(!x.n) return cbCard(`${L} — ${cbMesTxt(m)}`,'Nenhuma venda importada nesse mês. Importa o relatório do ML na aba Importar.',{abrir:'importar',loja:L}); return cbCard(`${L} — ${cbMesTxt(m)}`, cbBig(fmt(x.n)+' vendas', x.nc?`${fmt(x.nc)} canceladas/devolvidas`:'')+`<div class="cb-row"><div><div class="cb-med">${x.semBruto===x.n?'—':fmtBRL(x.bruto)}</div><div class="cb-l">vendido (bruto)${x.semBruto&&x.semBruto<x.n?' · parcial':''}</div></div><div><div class="cb-med">${fmtBRL(x.rec)}</div><div class="cb-l">você recebe</div></div></div>`+(x.semBruto===x.n?'<div class="cb-l">sem valor bruto: reimporta o relatório do mês</div>':''),{abrir:'vendas',loja:L}); }
+    case 'margem': { const m=c.mes||cbHoje(); if(c.an||c.pid){ let lista=cbMargem(m,L,c.an); if(!c.an&&c.pid){ lista=cbMargem(m,L).filter(a=>{ const v=S.vinculos[seg(a.an)]; return v&&(v.itens||[]).some(it=>it.pid===c.pid); }); } if(!lista.length) return cbCard('Margem','Sem venda com taxa e frete nesse mês/loja pra esse produto. Reimporta o relatório do mês.',{abrir:'margem'}); lista.sort((a,b)=>b.n-a.n); const tot=lista.reduce((s,a)=>({n:s.n+a.n,rec:s.rec+a.rec,l:s.l+a.lucMes}),{n:0,rec:0,l:0}); return cbCard(`Margem — ${c.an||cbSku(c.pid)} — ${cbMesTxt(m)}${L?' · '+L:''}`, cbBig(fmt(tot.rec?tot.l/tot.rec*100:0)+'%', `${fmt(tot.n)} vendas · lucro ${fmtBRL(tot.l)}`)+'<table class="cb-tbl">'+lista.slice(0,8).map(a=>`<tr><td>${cbEsc((a.tit||a.an).slice(0,34))}<div class="cb-l">${cbEsc(a.an)} · ${cbEsc(a.emp)}</div></td><td class="r">${fmt(a.n)}</td><td class="r">${fmtBRL(a.P)}</td><td class="r"><b style="color:${a.mg<15?'var(--danger)':(a.mg<20?'var(--warn)':'var(--accent-ink)')}">${fmt(a.mg)}%</b>${a.semCusto?' <span class="chip warn">sem custo</span>':''}</td></tr>`).join('')+'</table>',{abrir:'margem',loja:L}); } if(!L) return cbSemLoja(); const lista=cbMargem(m,L); if(!lista.length) return cbCard(`Margem — ${L} — ${cbMesTxt(m)}`,'Sem vendas com taxa e frete nesse mês. Reimporta o relatório do mês.',{abrir:'importar'}); const tot=lista.reduce((s,a)=>({n:s.n+a.n,rec:s.rec+a.rec,l:s.l+a.lucMes}),{n:0,rec:0,l:0}); const abaixo=lista.filter(a=>a.mg<15&&!a.semCusto).length; return cbCard(`Margem — ${L} — ${cbMesTxt(m)}`, cbBig(fmt(tot.rec?tot.l/tot.rec*100:0)+'%','margem média')+`<div class="cb-row"><div><div class="cb-med">${fmtBRL(tot.l)}</div><div class="cb-l">lucro no mês</div></div><div><div class="cb-med">${abaixo}</div><div class="cb-l">anúncios abaixo de 15%</div></div></div>`,{abrir:'margem',loja:L}); }
+    case 'custo': { if(!c.pid) return cbSemProduto(); const p=c.pid; const cf=cfDe(p); if(!cf||!cf.c) return cbCard(`Custo de ${cbSku(p)}`,'Sem custo cadastrado. Produtos → editar → "Custo c/ IPI" e "ICMS da nota".',{abrir:'produtos'}); const e=embDe(p); return cbCard(`Custo de ${cbSku(p)}`, cbBig(fmtBRL(cf.c)+` <span class="cb-l" style="display:inline">por ${(S.produtos[p]||{}).unidade==='folhas'?'folha':'unidade'}</span>`, `${e.mult>1?fmtBRL(cf.c*e.mult)+' por '+String(e.plural).replace(/s$/,'')+' · ':''}ICMS ${fmt((cf.icms||0)*100)}% · ${cbEsc(cf.forn||'')}${cf.data?' · '+cbEsc(cf.data):''}`)+`<div class="cb-l">custo líquido (com os créditos): ${fmtBRL(cf.c*(1-(cf.icms||0))*(1-PIS_COFINS))} por unidade</div>`,{abrir:'produtos'}); }
+    case 'fornecedorBarato': { if(!c.pid) return cbSemProduto(); const p=c.pid; const cf=cfDe(p); if(!cf||!cf.c) return cbCard('','Sem custo cadastrado pra esse produto.',{abrir:'produtos'}); return cbCard(`Fornecedor mais barato de ${cbSku(p)}`, cbBig(cbEsc(cf.forn||'—'),`${fmtBRL(cf.c)}/un com IPI · ICMS ${fmt((cf.icms||0)*100)}% · líquido ${fmtBRL(cf.c*(1-(cf.icms||0))*(1-PIS_COFINS))}`)+'<div class="cb-l">é o único cadastrado na plataforma; a comparação entre fornecedores está na planilha Notas de compra padronizadas</div>',{abrir:'produtos'}); }
+    case 'vinculo': { const anx=c.an; if(anx){ const v=S.vinculos[seg(anx)]; if(!v||!v.itens||!v.itens.length) return cbCard(anx,'Sem vínculo. Aba Vínculos → escolher produto e fator.',{abrir:'vinculos'}); return cbCard(cbEsc(v.titulo||anx), cbBig(v.itens.map(it=>`${cbSku(it.pid)} ×${fmt(it.fator)}`).join(' + '),'sai do estoque por venda')+`<div class="cb-l">${cbEsc(anx)} · loja ${cbEsc(lojasDe(anx).join(', ')||'?')}</div>`,{abrir:'vinculos'}); } const pend=Object.keys(S.calc.pend).length; return cbCard('Vínculos', pend?`<b>${pend}</b> anúncio(s) sem vínculo vendendo — essas vendas não baixam estoque.`:'Todos os anúncios com venda estão vinculados.',{abrir:'vinculos'}); }
+    case 'entradas': { const m=c.mes; const lista=S.entradas.filter(e=>(!L||empDe(e)===L)&&(!c.pid||e.pid===c.pid)&&(!m||(e.data||'').slice(0,7)===m)).sort((a,b)=>(b.data||'').localeCompare(a.data||'')).slice(0,8); if(!lista.length) return cbCard('Entradas','Nenhuma entrada com esse filtro.',{abrir:'entradas'}); return cbCard(`Últimas entradas${L?' — '+L:''}${c.pid?' · '+cbSku(c.pid):''}${m?' · '+cbMesTxt(m):''}`, '<table class="cb-tbl">'+lista.map(e=>`<tr><td>${fmtData(e.data)}</td><td>${cbSku(e.pid)}</td><td class="r">${cbQtd(e.pid,e.qtd)}</td><td>${cbEsc(e.forn||'')}${e.nf?' NF '+cbEsc(e.nf):''}</td></tr>`).join('')+'</table>',{abrir:'entradas',loja:L}); }
+    case 'projecao': { if(!c.pid) return cbSemProduto(); const p=c.pid; const pj=cbProj(p); if(!pj) return cbCard('','Sem vendas importadas.'); const m=embDe(p).mult||1, pl=embDe(p).plural; const q=v=>fmt(v/m)+' '+pl; const sit=pj.base<=0?'sem venda nos últimos 30 dias':(pj.s<pj.morto?'<b style="color:var(--danger)">JÁ FALTOU</b> — abaixo do estoque morto':(pj.s<pj.minimo?'<b style="color:var(--warn)">pedir hoje</b> — está no morto, vivo acabou':`coberto — dura ${Math.floor(pj.dura)} dias`)); return cbCard(`Projeção — ${cbSku(p)} (grupo)`, cbBig(q(pj.enviar),`comprar pra ${pj.alvo} dias`)+`<table class="cb-tbl"><tr><td>vende por dia</td><td class="r">${q(pj.base)}</td></tr><tr><td>tendência (últimos 10 d)</td><td class="r"><b style="color:${pj.tend>15?'var(--accent-ink)':(pj.tend<-15?'var(--danger)':'inherit')}">${pj.tend>0?'+':''}${fmt(pj.tend)}%</b></td></tr><tr><td>saldo hoje</td><td class="r">${q(pj.s)}</td></tr><tr><td>dura</td><td class="r">${pj.dura===Infinity?'—':Math.floor(pj.dura)+' dias'}</td></tr><tr><td>estoque morto (prazo ${pj.lead} d)</td><td class="r">${q(pj.morto)}</td></tr><tr><td>estoque vivo</td><td class="r">${q(pj.vivo)}</td></tr><tr><td>mínimo</td><td class="r">${q(pj.minimo)}</td></tr></table><div class="cb-l">${sit}</div>`,{abrir:'projecao'}); }
+    case 'divergencia': { const ref=S.calc.refD||''; const d0=(x=>{const d=new Date(ref+'T00:00'); d.setDate(d.getDate()-60); return d.toISOString().slice(0,10);})(); const G={};
+      for(const r of S.vendasRows){ if(r.tp!=='item'||!r.an||isCanc(r.est)||!(r.un>0)) continue; if((r.d||'').slice(0,10)<d0) continue; if(L&&r.emp!==L) continue; const v=S.vinculos[seg(r.an)]; if(!v||!v.itens||!v.itens.length) continue; const val=r.rec!=null?Number(r.rec):(r.tot!=null?Number(r.tot)/0.78:null); if(val==null||!(val>0)) continue; const key=v.itens.map(it=>it.pid).sort().join('+'); const unidades=r.un*v.itens.reduce((s2,it)=>s2+(it.fator||0),0); const a=(G[key]=G[key]||{}); const x=a[r.an]||(a[r.an]={an:r.an,emp:r.emp,tit:r.tit,n:0,val:0,un:0,itens:v.itens}); x.n++; x.val+=val; x.un+=unidades; }
+      const out=[]; for(const key in G){ const L2=Object.values(G[key]).filter(x=>x.un>0); if(L2.length<3) continue; const pu=L2.map(x=>x.val/x.un).sort((a,b)=>a-b); const med=pu[Math.floor(pu.length/2)]; for(const x of L2){ const p=x.val/x.un; const r2=p/med; if(r2>1.8||r2<0.55){ const fator=x.itens.reduce((s2,it)=>s2+(it.fator||0),0); out.push({an:x.an,emp:x.emp,tit:x.tit,n:x.n,vinc:x.itens.map(it=>`${cbSku(it.pid)} ×${fmt(it.fator)}`).join(' + '),p,med,prov:Math.round(fator*r2),fator}); } } }
+      out.sort((a,b)=>b.n-a.n); if(!out.length) return cbCard('Vínculos — divergência','Nenhum anúncio com preço por unidade fora do padrão dos irmãos (últimos 60 dias).',{abrir:'vinculos'});
+      return cbCard(`${out.length} vínculo(s) com cara de errado`, '<div class="cb-l">preço por folha/peça muito diferente dos anúncios irmãos — o fator provavelmente está errado</div><table class="cb-tbl">'+out.slice(0,12).map(x=>`<tr><td>${cbEsc((x.tit||x.an).slice(0,30))}<div class="cb-l">${cbEsc(x.an)} · ${cbEsc(x.emp)} · ${x.n} vendas</div></td><td><div>${cbEsc(x.vinc)}</div><div class="cb-l">${fmtBRL(x.p)}/un · irmãos ${fmtBRL(x.med)}/un</div></td><td class="r"><b>${x.prov>x.fator?'fator baixo?':'fator alto?'}</b><div class="cb-l">parece ×${fmt(x.prov)}</div></td></tr>`).join('')+'</table>',{abrir:'vinculos'}); }
+    case 'tendencia': { const ref=S.calc.refD||''; const dd=(n)=>{ const d=new Date(ref+'T00:00'); d.setDate(d.getDate()-n); return d.toISOString().slice(0,10); }; const a0=dd(30), b0=dd(60);
+      const porProd=/\b(produto|produtos|a4|cpf|rg|capa|saco|estoque)\b/.test(t)||!!c.pid; const porAn=/\b(anuncio|anuncios|mlb)\b/.test(t);
+      const emps=L?[L]:EMPRESAS; const tot={a:{n:0,v:0},b:{n:0,v:0}}; const P={}; const A={};
+      for(const r of S.vendasRows){ if(r.tp!=='item'||isCanc(r.est)||!emps.includes(r.emp)) continue; const d=(r.d||'').slice(0,10); if(d<b0||d>ref) continue; const per=d>=a0?'a':'b'; const val=r.rec!=null?Number(r.rec):(Number(r.tot)||0); tot[per].n++; tot[per].v+=val; const v=S.vinculos[seg(r.an)]; if(v&&v.itens) for(const it of v.itens){ if(c.pid&&it.pid!==c.pid) continue; const x=P[it.pid]||(P[it.pid]={a:0,b:0}); x[per]+=(r.un||0)*(it.fator||0); } const y=A[r.an]||(A[r.an]={tit:r.tit,emp:r.emp,a:0,b:0}); y[per]++; }
+      const pct=(a,b)=>b>0?((a/b-1)*100):(a>0?100:0); const seta=v=>`<b style="color:${v>10?'var(--accent-ink)':(v<-10?'var(--danger)':'inherit')}">${v>0?'+':''}${fmt(v)}%</b>`;
+      let h=`<table class="cb-tbl"><tr><th></th><th class="r">30 d anteriores</th><th class="r">últimos 30 d</th><th class="r">variação</th></tr><tr><td>vendas</td><td class="r">${fmt(tot.b.n)}</td><td class="r">${fmt(tot.a.n)}</td><td class="r">${seta(pct(tot.a.n,tot.b.n))}</td></tr><tr><td>vendido</td><td class="r">${fmtBRL(tot.b.v)}</td><td class="r">${fmtBRL(tot.a.v)}</td><td class="r">${seta(pct(tot.a.v,tot.b.v))}</td></tr></table>`;
+      const lista=porAn?Object.entries(A).map(([an,x])=>({k:(x.tit||an).slice(0,34)+' · '+x.emp,a:x.a,b:x.b,var:pct(x.a,x.b)})):Object.entries(P).map(([pid,x])=>({k:cbSku(pid),a:x.a/(embDe(pid).mult||1),b:x.b/(embDe(pid).mult||1),var:pct(x.a,x.b),un:embDe(pid).plural}));
+      const rel=lista.filter(x=>x.a+x.b>=(porAn?6:20)); const sobe=rel.filter(x=>x.var>10).sort((p,q)=>q.var-p.var).slice(0,5), cai=rel.filter(x=>x.var<-10).sort((p,q)=>p.var-q.var).slice(0,5);
+      const lin=x=>`<tr><td>${cbEsc(x.k)}</td><td class="r">${fmt(x.b)}${x.un?' '+x.un:''}</td><td class="r">${fmt(x.a)}${x.un?' '+x.un:''}</td><td class="r">${seta(x.var)}</td></tr>`;
+      if(sobe.length) h+=`<div class="cb-g">subindo (${porAn?'anúncios':'produtos'})</div><table class="cb-tbl">${sobe.map(lin).join('')}</table>`; if(cai.length) h+=`<div class="cb-g">caindo</div><table class="cb-tbl">${cai.map(lin).join('')}</table>`;
+      return cbCard(`Crescimento × queda${L?' — '+L:' — grupo'}`, h+`<div class="cb-l">últimos 30 dias até ${fmtData(ref)} contra os 30 anteriores · pergunte "por anúncio" ou o nome de um produto</div>`,{abrir:'projecao',loja:L}); }
+    case 'comprarHoje': { const emps=L?[L]:EMPRESAS; const out=[]; for(const p in S.produtos){ const r=reguaDePar(p); for(const l of r.linhas){ if(!emps.includes(l.emp)) continue; if(l.comprar>0) out.push({pid:p,emp:l.emp,q:l.comprar,sit:l.sit}); } } if(!out.length) return cbCard('Compra de hoje'+(L?' — '+L:''),'Nada pra comprar: tudo coberto pros próximos '+DIAS_PROJ+' dias.',{abrir:'pedidos'}); out.sort((a,b)=>a.emp.localeCompare(b.emp)||a.pid.localeCompare(b.pid)); CB.ctx.lista={cmd:'cmd_pede',itens:out.map((o,i)=>({n:i+1,pid:o.pid,emp:o.emp,q:o.q}))}; return cbCard('Compra de hoje'+(L?' — '+L:''), '<table class="cb-tbl">'+out.map((o,i)=>`<tr><td>${i+1}</td><td>${cbSku(o.pid)}</td><td>${cbEsc(o.emp)}</td><td class="r"><b>${fmt(o.q/(embDe(o.pid).mult||1))}</b> ${embDe(o.pid).plural}</td></tr>`).join('')+'</table><div class="cb-l">diga "pede todos" ou "pede o 1 e o 3" pra criar os pedidos</div>',{abrir:'pedidos',loja:L}); }
+    case 'mensagemForn': { const f=c.forn; const aFazer=Object.entries(S.pedidos).filter(([,p])=>p.status==='aprovado'&&!p.enviado_em&&(!L||p.empresa===L)).map(([id,p])=>Object.assign({_id:id},p)); const grupos={}; for(const p of aFazer){ const k=(p.fornecedor||fornDe(p.pid).nome||'(sem fornecedor)').trim(); (grupos[k]=grupos[k]||[]).push(p); } const alvo=f?Object.keys(grupos).find(k=>cbNorm(k).includes(cbNorm(f).split(/[\s/]+/)[0])):null; if(f&&!alvo) return cbCard('',`Nenhum pedido aprovado esperando mensagem pra <b>${cbEsc(f)}</b>.`,{abrir:'aprovados'}); if(!f){ const ks=Object.keys(grupos); if(!ks.length) return cbCard('','Nenhum pedido aprovado esperando mensagem.',{abrir:'aprovados'}); return cbCard('Mensagem pra quem?','<div class="cb-chips">'+ks.map(k=>`<button class="cb-chip" data-cb-q="mensagem pra ${cbEsc(k)}">${cbEsc(k)} (${grupos[k].length})</button>`).join('')+'</div>'); } const txt=pedGrupoTexto(alvo,grupos[alvo]); return cbCard(`Mensagem — ${cbEsc(alvo)}`, `<pre class="cb-pre">${cbEsc(txt)}</pre><div class="cb-acoes"><button class="btn sm cb-copy" data-txt="${cbEsc(txt)}">copiar</button></div>`,{abrir:'aprovados'}); }
+    case 'precoCerto': { if(!c.pid) return cbSemProduto(); const p=c.pid; const cf=cfDe(p); if(!cf||!cf.c) return cbCard('','Sem custo cadastrado pra esse produto.',{abrir:'produtos'}); const qm=t.match(/\b(\d{2,4})\s*(un|und|unid|folhas|pecas|pcs)?\b/); const qtd=qm?+qm[1]:(embDe(p).mult>1?embDe(p).mult:100); const premium=/premium/.test(t); const taxa=premium?0.17:0.12; const icmsV=(Number(($('mgImp')||{}).value)||12)/100, emb=Number(($('mgEmb')||{}).value)||0.35; const custo=cf.c*qtd, icmsC=custo*(cf.icms||0); const pm=t.match(/r\$?\s*(\d+(?:[.,]\d{1,2})?)/); if(pm){ const P=+pm[1].replace(',','.'); const fr=cbFreteFaixa(P); const imp=P*icmsV-icmsC+P*(1-icmsV)*PIS_COFINS-(custo-icmsC)*PIS_COFINS; const luc=P-P*taxa-fr-imp-custo-emb; return cbCard(`${cbSku(p)} · ${fmt(qtd)} un a ${fmtBRL(P)} (${premium?'Premium':'Clássico'})`, cbBig(`<span style="color:${luc/P*100<15?'var(--danger)':(luc/P*100<20?'var(--warn)':'var(--accent-ink)')}">${fmt(luc/P*100)}%</span>`,`lucro ${fmtBRL(luc)} por venda`)+`<div class="cb-l">taxa ${fmtBRL(P*taxa)} · frete ${fmtBRL(fr)} · impostos ${fmtBRL(imp)} · custo ${fmtBRL(custo)} · embalagem ${fmtBRL(emb)}</div>`); } const p20=cbPrecoPara(custo,icmsC,taxa,0.20,icmsV,emb), p15=cbPrecoPara(custo,icmsC,taxa,0.15,icmsV,emb); const deg=CB_FRETE.map(x=>x[0]).find(cut=>p20>=cut&&p20-cut<=3); return cbCard(`Preço certo — ${cbSku(p)} · ${fmt(qtd)} un (${premium?'Premium':'Clássico'})`, cbBig(fmtBRL(p20),'pra 20% de margem')+`<div class="cb-row"><div><div class="cb-med">${fmtBRL(p15)}</div><div class="cb-l">piso (15%)</div></div><div><div class="cb-med">${fmtBRL(custo)}</div><div class="cb-l">custo c/ IPI</div></div></div><div class="cb-l">frete da faixa ${fmtBRL(cbFreteFaixa(p20))} · taxa ${fmt(taxa*100)}% · ICMS ${fmt((cf.icms||0)*100)}% crédito${deg?` · <b style="color:var(--warn)">degrau</b>: logo acima de R$ ${deg} — vale fechar em R$ ${(deg-0.01).toFixed(2).replace('.',',')}`:''}</div>`); }
+    case 'top': { const m=c.mes||cbHoje(); const semana=/semana|7 dias/.test(t); const porLucro=/lucro/.test(t); if(!L) return cbSemLoja(); let lista; if(porLucro){ lista=cbMargem(m,L).sort((a,b)=>b.lucMes-a.lucMes).slice(0,10); if(!lista.length) return cbCard('','Sem vendas com taxa e frete nesse mês.'); return cbCard(`Mais lucro — ${L} — ${cbMesTxt(m)}`,'<table class="cb-tbl">'+lista.map((a,i)=>`<tr><td>${i+1}</td><td>${cbEsc((a.tit||a.an).slice(0,36))}</td><td class="r">${fmt(a.n)}</td><td class="r"><b>${fmtBRL(a.lucMes)}</b></td></tr>`).join('')+'</table>',{abrir:'margem',loja:L}); } const A={}; const ref=S.calc.refD||''; const d0=semana?(d=>{const x=new Date(ref+'T00:00'); x.setDate(x.getDate()-7); return x.toISOString().slice(0,10);})():null; for(const r of S.vendasRows){ if(r.tp!=='item'||r.emp!==L||isCanc(r.est)) continue; if(semana){ if((r.d||'').slice(0,10)<d0) continue; } else if(r.mes!==m) continue; const a=A[r.an]||(A[r.an]={an:r.an,tit:r.tit,n:0,un:0}); a.n++; a.un+=r.un||0; } lista=Object.values(A).sort((a,b)=>b.n-a.n).slice(0,10); if(!lista.length) return cbCard('','Sem vendas nesse período.'); return cbCard(`Mais vendidos — ${L} — ${semana?'últimos 7 dias':cbMesTxt(m)}`,'<table class="cb-tbl">'+lista.map((a,i)=>`<tr><td>${i+1}</td><td>${cbEsc((a.tit||a.an).slice(0,36))}<div class="cb-l">${cbEsc(a.an)}</div></td><td class="r"><b>${fmt(a.n)}</b> vendas</td></tr>`).join('')+'</table>',{abrir:'vendas',loja:L}); }
+    case 'comparar': { if(!L) return cbSemLoja(); const ms=[]; for(let i=0;i<12;i++){ const re=new RegExp('\\b('+MESES_PT[i]+'|'+MESES_AB[i]+')\\b','g'); if(re.test(t)) ms.push(`${new Date().getFullYear()}-${String(i+1).padStart(2,'0')}`); } let a=ms[0]||mesAnterior(), b=ms[1]||cbHoje(); if(a===b) b=cbHoje(); const xa=cbFat(a,L), xb=cbFat(b,L); const ma=cbMargem(a,L), mb=cbMargem(b,L); const mg=l=>{ const t2=l.reduce((s,x)=>({r:s.r+x.rec,l:s.l+x.lucMes}),{r:0,l:0}); return t2.r?fmt(t2.l/t2.r*100)+'%':'—'; }; const lu=l=>{ const t2=l.reduce((s,x)=>s+x.lucMes,0); return l.length?fmtBRL(t2):'—'; }; return cbCard(`${L} — ${cbMesTxt(a)} × ${cbMesTxt(b)}`, `<table class="cb-tbl"><tr><th></th><th class="r">${cbMesTxt(a)}</th><th class="r">${cbMesTxt(b)}</th></tr><tr><td>vendas</td><td class="r">${fmt(xa.n)}</td><td class="r">${fmt(xb.n)}</td></tr><tr><td>vendido (bruto)</td><td class="r">${xa.semBruto===xa.n?'—':fmtBRL(xa.bruto)}</td><td class="r">${xb.semBruto===xb.n?'—':fmtBRL(xb.bruto)}</td></tr><tr><td>você recebe</td><td class="r">${fmtBRL(xa.rec)}</td><td class="r">${fmtBRL(xb.rec)}</td></tr><tr><td>lucro</td><td class="r">${lu(ma)}</td><td class="r">${lu(mb)}</td></tr><tr><td>margem</td><td class="r">${mg(ma)}</td><td class="r">${mg(mb)}</td></tr></table><div class="cb-l">"—" = mês importado antes das colunas de taxa e frete</div>`,{abrir:'vendas',loja:L}); }
+    case 'gastoCompras': { const m=c.mes||cbHoje(); const g={}; let tot=0, semC=0; for(const e of S.entradas){ if((e.data||'').slice(0,7)!==m) continue; if(L&&empDe(e)!==L) continue; const cf=cfDe(e.pid); const v=(cf&&cf.c?cf.c:0)*(e.qtd||0); if(!(cf&&cf.c)) semC++; const k=e.forn||'(sem fornecedor)'; g[k]=(g[k]||0)+v; tot+=v; } if(!tot&&!semC) return cbCard(`Compras — ${cbMesTxt(m)}${L?' · '+L:''}`,'Nenhuma entrada nesse mês.',{abrir:'entradas'}); const ks=Object.entries(g).sort((a,b)=>b[1]-a[1]); return cbCard(`Compras — ${cbMesTxt(m)}${L?' · '+L:''}`, cbBig(fmtBRL(tot),'entradas × custo com IPI')+'<table class="cb-tbl">'+ks.map(([k,v])=>`<tr><td>${cbEsc(k)}</td><td class="r">${fmtBRL(v)}</td></tr>`).join('')+'</table>'+(semC?`<div class="cb-l">${semC} entrada(s) de produto sem custo cadastrado ficaram de fora</div>`:''),{abrir:'entradas',loja:L}); }
+  }
+  return cbNaoEntendi(t);
+}
+function cbLista(entries, titulo, cmd, aba){
+  const itens=entries.map(([id,p],i)=>({n:i+1,id,pid:p.pid,emp:p.empresa,q:+(p.qtd_aprovada!=null?p.qtd_aprovada:p.qtd)||0,sol:p.solicitante||'—',dias:diasDesde(p.decidido_em||p.criado)}));
+  CB.ctx.lista={cmd,itens};
+  const acao=cmd==='cmd_aprova'?'aprova':(cmd==='cmd_recebi'?'recebi':'');
+  return cbCard(titulo, '<table class="cb-tbl">'+itens.map(o=>`<tr><td>${o.n}</td><td>${cbSku(o.pid)}</td><td>${cbEsc(o.emp)}</td><td class="r">${fmt(o.q/(embDe(o.pid).mult||1))} ${embDe(o.pid).plural}</td><td class="cb-l">${cbEsc(o.sol)} · ${o.dias} d</td></tr>`).join('')+'</table>'+(acao?`<div class="cb-l">diga "${acao} todos", "${acao} o 1 e o 3" ou "${acao} o resto"</div>`:''),{abrir:aba});
+}
+function cbSelecao(t){ // quais itens da lista anterior
+  const L=CB.ctx.lista; if(!L) return null; const its=L.itens;
+  if(/\b(todos|tudo|todas|esses|essas|geral)\b/.test(t)) return its;
+  const ord={primeiro:1,segundo:2,terceiro:3,quarto:4,quinto:5}; const nums=new Set();
+  for(const k in ord){ if(new RegExp('\\b'+k+'\\b').test(t)) nums.add(ord[k]); }
+  for(const m of t.matchAll(/\b(\d{1,2})\b/g)){ nums.add(+m[1]); }
+  if(/\bresto\b|\bdemais\b|\boutros\b/.test(t)){ const feitos=new Set(L.feitos||[]); return its.filter(o=>!feitos.has(o.n)); }
+  if(nums.size) return its.filter(o=>nums.has(o.n));
+  return null;
+}
+function cbComando(cmd,t){
+  const c=CB.ctx; const L=c.loja||(S.empSel&&S.empSel!=='Todas'?S.empSel:null);
+  if(cmd==='cmd_pede'){
+    const qm=t.match(/\b(\d{1,5})\s*(pacotes?|pct|fardos?|un|unidades?|pecas?|folhas)?\b/); const pid=c.pid; 
+    if(c.lista&&c.lista.cmd==='cmd_pede'&&/\b(todos|tudo|resto|\d+|primeiro|segundo|terceiro)\b/.test(t)&&!qm?.[2]){ const sel=cbSelecao(t); if(!sel||!sel.length) return cbCard('','Quais? Diga "pede todos" ou "pede o 1 e o 3".'); c.pend={tipo:'pede',itens:sel.map(o=>({pid:o.pid,emp:o.emp,qtd:o.q}))}; return cbConfirmar(); }
+    if(!pid) return cbSemProduto(); if(!L) return cbSemLoja(); if(!qm) return cbCard('','Quantos? Ex.: "pede 50 pacotes de a4 pra makenry".');
+    const e=embDe(pid); let q=+qm[1]; const un=qm[2]||''; const qtd=/folha|peca|un/.test(un)?q:q*(e.mult||1);
+    c.pend={tipo:'pede',itens:[{pid,emp:L,qtd}]}; return cbConfirmar();
+  }
+  // aprova / recusa / recebi: precisa de lista
+  const alvoStatus = cmd==='cmd_recebi' ? 'acaminho' : 'pendente';
+  let itens;
+  const sel=cbSelecao(t);
+  if(sel&&c.lista&&((cmd==='cmd_recebi'&&c.lista.cmd==='cmd_recebi')||(cmd!=='cmd_recebi'&&c.lista.cmd==='cmd_aprova'))) itens=sel;
+  else {
+    const forn=cbForn(t);
+    const base=Object.entries(S.pedidos).filter(([id,p])=>(alvoStatus==='pendente'?p.status==='pendente':pedACaminho(id,p))&&(!L||p.empresa===L)&&(!c.pid||p.pid===c.pid)&&(!forn||cbNorm(p.fornecedor||fornDe(p.pid).nome||'').includes(cbNorm(forn).split(/[\s/]+/)[0])));
+    if(!base.length) return cbCard('', alvoStatus==='pendente'?`Nenhum pedido pendente${L?' na '+L:''}${c.pid?' de '+cbSku(c.pid):''}.`:`Nada a caminho${L?' na '+L:''}${c.pid?' de '+cbSku(c.pid):''}.`,{abrir:alvoStatus==='pendente'?'pedidos':'aprovados'});
+    if(!/\b(todos|tudo|todas|esses|essas|geral)\b/.test(t) && base.length>1 && !c.pid && !forn){ return cbLista(base, alvoStatus==='pendente'?'Pendentes'+(L?' — '+L:''):'A caminho'+(L?' — '+L:''), cmd==='cmd_recebi'?'cmd_recebi':'cmd_aprova', alvoStatus==='pendente'?'pedidos':'aprovados'); }
+    itens=base.map(([id,p],i)=>({n:i+1,id,pid:p.pid,emp:p.empresa,q:+(p.qtd_aprovada!=null?p.qtd_aprovada:p.qtd)||0}));
+  }
+  if(!itens||!itens.length) return cbCard('','Não achei esses. Diga os números da lista ou "todos".');
+  c.pend={tipo:cmd.replace('cmd_',''),itens}; return cbConfirmar();
+}
+function cbConfirmar(){
+  const p=CB.ctx.pend; const verbo={aprova:'Aprovar',recusa:'Recusar',recebi:'Marcar como recebido',pede:'Criar pedido'}[p.tipo];
+  const rows=p.itens.map(o=>`<tr><td>${cbSku(o.pid)}</td><td>${cbEsc(o.emp)}</td><td class="r"><b>${fmt((o.qtd!=null?o.qtd:o.q)/(embDe(o.pid).mult||1))}</b> ${embDe(o.pid).plural}</td></tr>`).join('');
+  return cbCard(`${verbo} ${p.itens.length} pedido(s)?`, `<table class="cb-tbl">${rows}</table><div class="cb-acoes"><button class="btn sm cb-ok">Confirmar</button><button class="btn sm sec cb-cancel">Cancelar</button></div>`);
+}
+async function cbExecutar(){
+  const p=CB.ctx.pend; if(!p) return cbCard('','Nada pra confirmar.'); CB.ctx.pend=null;
+  if(typeof needDb==='function'&&needDb()) return cbCard('','Precisa da senha de edição: aba Importar → Senha de edição → Conectar.',{abrir:'importar'});
+  let n=0; const hoje=new Date().toISOString().slice(0,10);
+  try{
+    for(const o of p.itens){
+      if(p.tipo==='pede'){ const id='p'+Date.now().toString(36)+Math.random().toString(36).slice(2,6); await pedWrite(id,{pid:o.pid,qtd:o.qtd,empresa:o.emp,solicitante:'chat',obs:'criado pelo chat',data:hoje,status:'pendente',criado:new Date().toISOString()}); n++; continue; }
+      const pd=S.pedidos[o.id]; if(!pd) continue;
+      if(p.tipo==='aprova'){ const f=fornDe(pd.pid); await pedWrite(o.id,Object.assign({},pd,{status:'aprovado',qtd_aprovada:pd.qtd,fornecedor:pd.fornecedor||f.nome||'',vendedor:pd.vendedor||f.vendedor||'',telefone:pd.telefone||f.telefone||'',aprovado_por:'chat',decidido_em:new Date().toISOString()})); n++; }
+      else if(p.tipo==='recusa'){ await pedWrite(o.id,Object.assign({},pd,{status:'recusado',decidido_por:'chat',decidido_em:new Date().toISOString()})); n++; }
+      else if(p.tipo==='recebi'){ const qa=o.q; const jaNota=gemeoEntrada(pd.pid,pd.empresa,qa,hoje,'nota'); if(!jaNota) await S.db.collection('entradas').add({pid:pd.pid,qtd:qa,empresa:pd.empresa,data:hoje,forn:pd.fornecedor||'Pedido',nf:'',obs:`Recebido (chat) · pedido de ${pd.solicitante||'—'} (→ ${pd.empresa}) [ped:${o.id}]`,criado:new Date().toISOString()}); await pedWrite(o.id,Object.assign({},pd,{status:'recebido',recebido_em:new Date().toISOString(),qtd_recebida:qa})); n++; }
+    }
+    if(p.tipo==='recebi'&&typeof loadTable==='function') await loadTable('entradas');
+    if(CB.ctx.lista){ CB.ctx.lista.feitos=[...(CB.ctx.lista.feitos||[]),...p.itens.map(o=>o.n).filter(Boolean)]; }
+    render();
+    const msg={aprova:`${n} pedido(s) aprovado(s) — ficaram a caminho.`,recusa:`${n} pedido(s) recusado(s).`,recebi:`${n} pedido(s) recebido(s) — entraram no estoque.`,pede:`${n} pedido(s) criado(s) como pendente.`}[p.tipo];
+    return cbCard('✔ Feito', msg,{abrir:{aprova:'aprovados',recusa:'pedidos',recebi:'recebidos',pede:'pedidos'}[p.tipo]});
+  }catch(err){ return cbCard('Erro', cbEsc(err.message||String(err))); }
+}
+function cbConfML(t){
+  const L=cbLoja(t)||CB.ctx.loja; const m=cbMes(t)||CB.ctx.mes||mesAnterior(); if(!L) return cbSemLoja();
+  const num=(t.match(/(\d[\d.]*(?:,\d+)?)\s*$/)||[])[1]; const nm=/\bvendas\b/.test(t)&&num?[0,num]:null, rm=/\bvendido\b/.test(t)&&num?[0,num]:null;
+  if(!nm&&!rm) return cbCard('','Ex.: "ML vendas makenry setembro 895" ou "ML vendido makenry setembro 72186,56".');
+  const k=`${m}|${L}`; const c=S.confML[k]||{}; if(nm) c.n=+String(nm[1]).replace(/\./g,''); if(rm) c.r=+String(rm[1]).replace(/\./g,'').replace(',','.'); c.em=new Date().toISOString().slice(0,10); S.confML[k]=c;
+  return (async()=>{ try{ await confMLWrite(); renderFaturamento(); const x=cbFat(m,L); const dn=c.n!=null?x.n-c.n:null; return cbCard(`Conferência ${L} — ${cbMesTxt(m)}`, `Gravado: ${nm?`ML vendas ${fmt(c.n)}`:''}${nm&&rm?' · ':''}${rm?`ML vendido ${fmtBRL(c.r)}`:''}.<div class="cb-l">plataforma: ${fmt(x.n)} vendas${dn!=null?(dn===0?' — <b style="color:var(--accent-ink)">bate</b>':` — <b style="color:var(--warn)">difere ${dn>0?'+':''}${dn}</b>`):''}</div>`,{abrir:'vendas',loja:L}); }catch(e){ return cbCard('Erro',cbEsc(e.message)); } })();
+}
+function cbNaoEntendi(t){
+  const sug=[['quanto tem de a4','estoque'],['o que comprar hoje','compra'],['o que está a caminho','a caminho'],['quanto vendeu esse mês','vendas'],['margem desse mês','margem'],['o que está errado','painel']];
+  return cbCard('Não entendi', 'Tenta de um desses jeitos:<div class="cb-chips">'+sug.map(([q])=>`<button class="cb-chip" data-cb-q="${q}">${q}</button>`).join('')+'</div>');
+}
+const CB_AJUDA=[
+  ['Estoque e compra',['quanto tem de a4 na makenry','o que comprar hoje','preciso comprar cpf','projeção da capa','o que está subindo e caindo','quanto gastei em compras em outubro']],
+  ['Pedidos',['o que está pendente','o que está a caminho','aprova todos','recebi o a4','pede 50 pacotes de a4 pra makenry','mensagem pra mônica']],
+  ['Vendas e margem',['quanto a nagare vendeu em setembro','margem da makenry','margem do kit 300','top 10 de outubro','setembro contra outubro','preço certo do a4 100 un','a4 100 un a R$ 55']],
+  ['Cadastro',['custo da capa','fornecedor mais barato do a4','vínculo do MLB4527438491','vínculos com divergência','últimas entradas da mek','o que está errado','ML vendas makenry setembro 895']]
+];
+function cbAjuda(){ return cbCard('O que dá para perguntar', CB_AJUDA.map(([g,qs])=>`<div class="cb-g">${g}</div><div class="cb-chips">${qs.map(q=>`<button class="cb-chip" data-cb-q="${cbEsc(q)}">${cbEsc(q)}</button>`).join('')}</div>`).join('')+'<div class="cb-l" style="margin-top:6px">Fale a loja uma vez e ele lembra. "e na nagare?", "e o cpf?" continuam a conversa. Ctrl/Cmd+K abre, Esc fecha.</div>'); }
+// ---------- interface ----------
+function cbMontar(){
+  if(document.getElementById('cbBtn')) return;
+  const st=document.createElement('style'); st.textContent=`
+  #cbBtn{position:fixed;right:18px;bottom:18px;z-index:900;border:0;border-radius:999px;padding:12px 18px;font:600 14px/1 inherit;background:var(--accent);color:#fff;box-shadow:0 6px 18px rgba(0,0,0,.25);cursor:pointer;display:flex;align-items:center;gap:8px}
+  #cbBtn .cb-badge{background:var(--danger);color:#fff;border-radius:999px;padding:2px 7px;font-size:11px}
+  #cbPanel{position:fixed;right:0;top:0;bottom:0;width:460px;max-width:100%;z-index:950;background:var(--surface);border-left:1px solid var(--line);display:flex;flex-direction:column;box-shadow:-8px 0 30px rgba(0,0,0,.2);transform:translateX(100%);transition:transform .2s}
+  #cbPanel.on{transform:none} @media(max-width:700px){#cbPanel{width:100%}}
+  .cb-h{display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid var(--line)} .cb-h b{flex:1;font-size:15px}
+  .cb-msgs{flex:1;overflow:auto;padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+  .cb-q{align-self:flex-end;background:var(--accent);color:#fff;padding:8px 12px;border-radius:14px 14px 4px 14px;max-width:85%;font-size:13.5px}
+  .cb-a{align-self:flex-start;max-width:96%;width:96%}
+  .cb-card{background:var(--surface2);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:13px}
+  .cb-t{font-weight:700;margin-bottom:6px} .cb-big{font-size:24px;font-weight:800;margin:2px 0} .cb-med{font-size:17px;font-weight:700} .cb-l{font-size:11.5px;color:var(--muted);margin-top:2px}
+  .cb-row{display:flex;gap:18px;margin-top:8px} .cb-tbl{width:100%;border-collapse:collapse;margin-top:6px;font-size:12.5px} .cb-tbl td,.cb-tbl th{padding:4px 6px;border-bottom:1px solid var(--line);text-align:left} .cb-tbl .r{text-align:right}
+  .cb-acoes{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap} .cb-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+  .cb-chip{border:1px solid var(--line);background:var(--surface);color:inherit;border-radius:999px;padding:5px 10px;font-size:12px;cursor:pointer} .cb-chip:hover{border-color:var(--accent)}
+  .cb-g{font-weight:700;font-size:12px;margin-top:8px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+  .cb-ol{margin:0;padding-left:18px;line-height:1.6} .cb-pre{white-space:pre-wrap;font:12.5px/1.45 inherit;margin:6px 0;background:var(--surface);padding:8px;border-radius:8px;border:1px solid var(--line)}
+  .cb-fb{align-self:flex-start;font-size:11px;color:var(--muted);background:none;border:0;cursor:pointer;margin-top:-6px;padding:0 4px} .cb-fb.on{color:var(--danger)}
+  .cb-in{display:flex;gap:6px;padding:10px 12px;border-top:1px solid var(--line)} .cb-in input{flex:1;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:inherit;font-size:14px}
+  .cb-hist{display:flex;gap:6px;flex-wrap:wrap;padding:0 12px 8px}`;
+  document.head.appendChild(st);
+  const btn=document.createElement('button'); btn.id='cbBtn'; btn.innerHTML='💬 Perguntar <span class="cb-badge" hidden></span>'; document.body.appendChild(btn);
+  const pn=document.createElement('div'); pn.id='cbPanel'; pn.innerHTML=`<div class="cb-h"><b>💬 Perguntar</b><button class="btn sm sec" id="cbNovo">＋ Novo chat</button><button class="btn sm sec" id="cbFechar" title="Esc">✕</button></div><div class="cb-msgs" id="cbMsgs"></div><div class="cb-hist" id="cbHist"></div><div class="cb-in"><input id="cbIn" placeholder="ex.: quanto tem de a4 na makenry" autocomplete="off"><button class="btn" id="cbIr">Ir</button></div>`; document.body.appendChild(pn);
+  const abrir=()=>{ pn.classList.add('on'); CB.aberto=true; if(!CB.msgs.length) cbAdd('a',cbAjuda(),true); cbHist(); setTimeout(()=>document.getElementById('cbIn').focus(),50); };
+  const fechar=()=>{ pn.classList.remove('on'); CB.aberto=false; };
+  btn.addEventListener('click',()=>CB.aberto?fechar():abrir());
+  document.getElementById('cbFechar').addEventListener('click',fechar);
+  document.getElementById('cbNovo').addEventListener('click',()=>{ CB.msgs=[]; CB.ctx={}; document.getElementById('cbMsgs').innerHTML=''; cbAdd('a',cbAjuda(),true); });
+  document.addEventListener('keydown',e=>{ if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){ e.preventDefault(); CB.aberto?fechar():abrir(); } if(e.key==='Escape'&&CB.aberto) fechar(); });
+  const enviar=()=>{ const i=document.getElementById('cbIn'); const q=i.value.trim(); if(!q) return; i.value=''; cbPerguntar(q); };
+  document.getElementById('cbIr').addEventListener('click',enviar); document.getElementById('cbIn').addEventListener('keydown',e=>{ if(e.key==='Enter') enviar(); });
+  pn.addEventListener('click',async e=>{
+    const ch=e.target.closest('[data-cb-q]'); if(ch){ cbPerguntar(ch.dataset.cbQ); return; }
+    if(e.target.closest('.cb-ok')){ const r=await cbExecutar(); cbAdd('a',r); return; }
+    if(e.target.closest('.cb-cancel')){ CB.ctx.pend=null; cbAdd('a',cbCard('','Cancelado. Nada foi mudado.')); return; }
+    const cp=e.target.closest('.cb-copy'); if(cp){ try{ await navigator.clipboard.writeText(cp.dataset.txt); cp.textContent='copiado ✔'; }catch(_){ cp.textContent='selecione e copie'; } return; }
+    const fb=e.target.closest('.cb-fb'); if(fb){ fb.classList.add('on'); fb.textContent='👎 anotado'; try{ const l=JSON.parse(localStorage.getItem('cb_fb')||'[]'); l.push({q:fb.dataset.q,em:new Date().toISOString()}); localStorage.setItem('cb_fb',JSON.stringify(l.slice(-50))); }catch(_){ } return; }
+    const gt=e.target.closest('[data-goto]'); if(gt){ const lj=gt.dataset.cbLoja; if(lj&&EMPRESAS.includes(lj)){ const b=document.querySelector(`.loja[data-emp="${lj}"]`); if(b) b.click(); } }
+  });
+}
+function cbHist(){ const h=document.getElementById('cbHist'); if(!h) return; h.innerHTML=CB.hist.slice(-6).reverse().map(q=>`<button class="cb-chip" data-cb-q="${cbEsc(q)}">${cbEsc(q)}</button>`).join(''); }
+function cbAdd(tipo,html,semFb){ const box=document.getElementById('cbMsgs'); const d=document.createElement('div'); d.className=tipo==='q'?'cb-q':'cb-a'; d.innerHTML=tipo==='q'?cbEsc(html):html; box.appendChild(d); if(tipo==='a'&&!semFb){ const f=document.createElement('button'); f.className='cb-fb'; f.dataset.q=CB._ultimaQ||''; f.textContent='👎 não era isso'; box.appendChild(f); } box.scrollTop=box.scrollHeight; CB.msgs.push({tipo,html}); }
+async function cbPerguntar(q){
+  CB._ultimaQ=q; cbAdd('q',q); CB.hist=[...CB.hist.filter(x=>x!==q),q].slice(-6); try{ localStorage.setItem('cb_hist',JSON.stringify(CB.hist)); }catch(_){ } cbHist();
+  let r; try{ r=cbResponder(q); if(r&&typeof r.then==='function') r=await r; }catch(err){ r=cbCard('Erro',cbEsc(err.message||String(err))); }
+  cbAdd('a',r);
+}
+function cbBadge(){ const b=document.querySelector('#cbBtn .cb-badge'); if(!b) return; const box=document.getElementById('avisoLanc'); const n=box?box.querySelectorAll('li').length:0; b.hidden=!n; b.textContent=n; }
+document.addEventListener('DOMContentLoaded',cbMontar); if(document.readyState!=='loading') cbMontar();
+
 </script>
 
 </body>
