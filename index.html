@@ -199,7 +199,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
   </nav>
   <div class="side-foot">
     <span id="connState">conectando ao banco…</span>
-    <div style="opacity:.6;margin-top:4px">Supabase · 4 lojas · <span id="versao">v2026-10-27c</span></div>
+    <div style="opacity:.6;margin-top:4px">Supabase · 4 lojas · <span id="versao">v2026-10-28a</span></div>
   </div>
 </aside>
 <div class="content">
@@ -244,6 +244,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
     <div class="card-h"><h2>Entrou × saiu no mês <span id="mesTit" class="dim" style="font-weight:400;font-size:13px"></span></h2>
       <div class="sp">
         <label class="f">Mês<select id="mesSel"></select></label>
+        <button class="btn sm" id="btnFecharMes" title="mês fechado: lançar, alterar ou apagar entradas e importar vendas nele só com confirmação">🔒 Fechar mês</button>
         <input type="text" id="qMes" placeholder="buscar SKU ou nome…" style="width:200px">
         <button class="btn sm sec" id="mesXls">⬇ Excel</button>
       </div>
@@ -265,7 +266,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
   <div id="vincLojas" style="margin:0 0 12px;display:flex;gap:6px;flex-wrap:wrap;align-items:center"></div>
   <div class="card">
     <div class="card-h"><h2>1 · Anúncios sem vínculo</h2><span class="dim" id="pendSub"></span>
-      <div class="sp"><button class="btn sm" id="btnAplicarSug" hidden></button><button class="btn sm sec xls" data-tbl="tblPend" data-nome="sem_vinculo" title="baixar em Excel">⬇ Excel</button><button class="btn sm sec ajuda" data-help="conferir" title="como usar">?</button></div></div>
+      <div class="sp"><button class="btn sm" id="btnXlsVinc" title="todos os anúncios vinculados: uma aba por loja, da menor margem pra maior, com vínculo em folhas/pacotes, vendas, preço praticado, custo, impostos e lucro">⬇ Excel completo dos vínculos</button><button class="btn sm" id="btnAplicarSug" hidden></button><button class="btn sm sec xls" data-tbl="tblPend" data-nome="sem_vinculo" title="baixar em Excel">⬇ Excel</button><button class="btn sm sec ajuda" data-help="conferir" title="como usar">?</button></div></div>
     <div class="tbl-wrap"><table id="tblPend"></table></div>
   </div>
   <p class="note">Vendas desses anúncios ainda não baixam estoque. Vincule o produto e defina o fator (quantidade de folhas/pacotes por unidade vendida) — a baixa é recalculada de todo o histórico na hora. Depois de salvar, o vínculo já vai direto pro bloco 3 (conferidos).</p>
@@ -496,6 +497,8 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
       <p><b>Produtos → editar</b> — é onde você troca o <b>custo com IPI</b> (por folha, peça ou saco) e o <b>ICMS da nota</b> de cada produto; a aba Margem passa a usar na hora, com o crédito calculado a partir desse ICMS. <b>Produtos</b> — cadastro: SKU, nome, unidade, custo da última nota, fornecedor e telefone (pra mensagem de pedido). "+ Produto" cria; lápis edita.</p>
       <p><b>Vínculos</b> — cada anúncio aparece com o código <b>MLB</b> (clica e abre o anúncio no ML) e a <b>loja</b> dona dele. No topo, quantos anúncios cada loja tem; escolhendo a loja no menu, a aba mostra só os MLB daquela loja. Liga cada anúncio do Mercado Livre a um produto e um fator (quantas folhas/peças 1 unidade vendida representa). Bloco de cima: anúncios esperando sua conferência (a plataforma sugere pelo título). Bloco de baixo: conferidos. Coluna <b>Loja</b> mostra em qual conta o anúncio vende. "Não vende mais" tira o anúncio da lista sem baixar estoque. Toda alteração fica gravada no histórico.</p>
       <p><b>💬 Perguntar</b> — botão no canto da tela (ou Ctrl/Cmd+K). Faz pergunta em português e responde em cartão com o que já está no sistema: estoque, quanto comprar, a caminho, vendas, margem, projeção (com tendência), crescimento e queda, vínculos com divergência, custo, vínculo, entradas, compra do dia, preço certo, top 10, mês contra mês, gastos em compras, o que está errado. Também executa com confirmação: "aprova todos", "recusa o 2", "recebi o a4", "pede 50 pacotes de a4 pra makenry", "mensagem pra mônica", "ML vendas makenry setembro 895". Lembra loja, produto e mês da conversa ("e na nagare?"); "＋ Novo chat" zera.</p>
+      <p><b>Vínculos → ⬇ Excel completo dos vínculos</b> — baixa todos os anúncios vinculados, uma aba por loja, da menor margem pra maior: vínculo em folhas/pacotes, vendas (90 d, 30 d, ano), preço praticado, taxa, frete, custo do kit, impostos, lucro, margem e situação.</p>
+      <p><b>Mês fechado → 🔒 Fechar mês</b> — tranca o mês: lançar, alterar ou apagar entrada com data nele, e importar vendas dele, passa a pedir uma confirmação ("está FECHADO, alterar mesmo assim?"). 🔓 Reabrir destrava. Fica gravado no banco, vale pra todo mundo.</p>
       <p><b>Pedido em 3 etapas</b> — <b>Pedidos</b> (criado) → <b>Aprovados</b> (encomendado ao fornecedor: fica <i>a caminho</i>, não entra no estoque) → <b>📦 Recebi</b> → <b>Recebidos</b> (entra no estoque). Na régua: <b>já pedido</b> = criado e não aprovado; <b>a caminho</b> = aprovado e não recebido (vermelho se passou do prazo do fornecedor); <b>quanto comprar</b> = projeção de 5 dias de venda menos já pedido e a caminho — desce a cada pedido e sobe conforme vende. Lançar a nota de um pedido a caminho marca ele como recebido sozinho.</p>
       <p><b>Margem</b> — lucro por anúncio no mês e na loja, com a conta da planilha Precificação de Produtos – Lucro Real (sem IRPJ): preço, taxa do ML e frete reais do relatório; custo com IPI e ICMS da nota do fornecedor mais barato; ICMS e PIS/COFINS a pagar; embalagem R$ 0,35. Ordena da menor margem pra maior; vermelho abaixo de 15%, amarelo até 20%, verde a partir de 20%; <b>degrau</b> avisa preço logo acima de R$ 79/100/120/150/200, onde o frete muda de faixa. Filtro <b>Estado do comprador</b> e coluna <b>Estados</b> (pra onde cada anúncio vende) — preenchidos nos meses importados a partir de 23/10.</p>
       <p><b>O que está errado agora</b> — o quadro no topo de toda aba: vendas sem importar, notas faltando, anúncio sem vínculo vendendo, compra lançada em dobro (com botão pra apagar), quantidade fora do padrão, faturamento não conferido com o ML e backup atrasado. Com uma loja escolhida no menu, mostra só os dela. Tudo em dia = faixa verde.</p>
@@ -827,6 +830,7 @@ function renderMes(){
   if(!S.mesSel || !meses.includes(S.mesSel)) S.mesSel = meses.includes(mesAnterior()) ? mesAnterior() : meses[0];
   if(sel.dataset.n!==String(meses.length)){ sel.innerHTML=meses.map(m=>`<option value="${m}">${m.slice(5)}/${m.slice(0,4)}</option>`).join(''); sel.dataset.n=String(meses.length); }
   sel.value=S.mesSel;
+  { const b=$('btnFecharMes'); if(b){ const f=mesFechado(S.mesSel); b.textContent=f?'🔓 Reabrir mês':'🔒 Fechar mês'; b.className='btn sm '+(f?'sec':''); b.dataset.mes=S.mesSel; } }
   const M=S.mesSel; const q=($('qMes').value||'').toLowerCase();
   const E={}, Sd={}, EE={}, SE={};
   for(const e of S.entradas){ if((e.data||'').slice(0,7)!==M || !empOk(e)) continue; E[e.pid]=(E[e.pid]||0)+(e.qtd||0); (EE[e.pid]=EE[e.pid]||{})[empDe(e)]=(EE[e.pid][empDe(e)]||0)+(e.qtd||0); }
@@ -850,7 +854,7 @@ function renderMes(){
       <td class="r num">${rs?'R$ '+fmt(rs):'—'}</td></tr>`;
   }
   $('tblMes').innerHTML = h + (pids.length?'':'<tr><td colspan="9"><div class="empty"><b>Nada nesse mês.</b></div></td></tr>');
-  $('mesTit').textContent=`— ${M.slice(5)}/${M.slice(0,4)}${todas?'':' · só '+S.empSel}`;
+  $('mesTit').textContent=`— ${M.slice(5)}/${M.slice(0,4)}${todas?'':' · só '+S.empSel}${mesFechado(M)?' · 🔒 FECHADO':''}`;
   $('mesTiles').innerHTML=`<div class="tile"><div class="v">${fmt(tE)} <span class="dim" style="font-size:14px">/ ${fmt(tS)}</span></div><div class="l">plastificação · entrou / saiu (pct)</div></div><div class="tile ${tE-tS<0?'alert':''}"><div class="v">${fmt(tE-tS)}</div><div class="l">plastificação · diferença (pct)</div></div><div class="tile"><div class="v">${fmt(uE)} <span class="dim" style="font-size:14px">/ ${fmt(uS)}</span></div><div class="l">capas, sacos e outros · entrou / saiu (un)</div></div><div class="tile"><div class="v">R$ ${fmt(rE)}</div><div class="l">comprado no mês (custo cadastrado)</div></div>`;
 }
 function renderEstoque(){
@@ -979,7 +983,7 @@ function renderConferir(){
 }
 S.conferidos = S.conferidos || {}; S.descont = S.descont || {}; S.confML = S.confML || {};
 async function loadConferidos(){
-  if(typeof SUPA!=='undefined' && SUPA){ const {data,error}=await SUPA.from('config').select('*').in('k',['conferidos','descontinuados','conf_vendas','ultimo_backup','margem_lr','custo_fiscal']); if(!error){ S.conferidos={}; S.descont={}; S.confML={}; (data||[]).forEach(r=>{ if(r.k==='conferidos') S.conferidos=r.v||{}; if(r.k==='descontinuados') S.descont=r.v||{}; if(r.k==='conf_vendas') S.confML=r.v||{}; if(r.k==='ultimo_backup') S.ultBackup=(r.v||{}).em||null; if(r.k==='margem_lr') S.mgParams=r.v||null; if(r.k==='custo_fiscal') S.custoFiscal=r.v||null; }); } }
+  if(typeof SUPA!=='undefined' && SUPA){ const {data,error}=await SUPA.from('config').select('*').in('k',['conferidos','descontinuados','conf_vendas','ultimo_backup','margem_lr','custo_fiscal','meses_fechados']); if(!error){ S.conferidos={}; S.descont={}; S.confML={}; (data||[]).forEach(r=>{ if(r.k==='conferidos') S.conferidos=r.v||{}; if(r.k==='descontinuados') S.descont=r.v||{}; if(r.k==='conf_vendas') S.confML=r.v||{}; if(r.k==='ultimo_backup') S.ultBackup=(r.v||{}).em||null; if(r.k==='margem_lr') S.mgParams=r.v||null; if(r.k==='custo_fiscal') S.custoFiscal=r.v||null; if(r.k==='meses_fechados') S.mesesFechados=Array.isArray(r.v)?r.v:[]; }); } }
 }
 async function confMLWrite(){
   if(typeof SUPA!=='undefined' && SUPA){ const {error}=await SUPA.from('config').upsert({k:'conf_vendas', v:S.confML}); if(error) throw new Error(rlsMsg(error)); }
@@ -1227,6 +1231,7 @@ function gemeoEntrada(pid, emp, qtd, data, procuro){ // procuro: 'pedido' (entra
     && (procuro==='pedido' ? (ehDePedido(e) && !e.nf) : !ehDePedido(e)) ) || null;
 }
 async function lancarOuCarimbar(d){ // d = {pid,qtd,empresa,data,forn,nf,obs}
+  if(!confirmaMesFechado(d.data,'Lançar entrada nesse mês')) throw new Error('cancelado: mês fechado');
   const g=gemeoEntrada(d.pid,d.empresa,d.qtd,d.data,'pedido');
   if(g){ await entradaUpdate(g._id,{nf:d.nf||g.nf||'', forn:d.forn||g.forn, obs:[g.obs,d.obs,d.nf?('NF '+d.nf+' carimbada'):'nota carimbada'].filter(Boolean).join(' · ')}); await loadTable('entradas'); return 'carimbou'; }
   await S.db.collection('entradas').add(Object.assign({criado:new Date().toISOString()}, d));
@@ -1236,6 +1241,7 @@ async function lancarOuCarimbar(d){ // d = {pid,qtd,empresa,data,forn,nf,obs}
 function enSelecionadas(){ return [...document.querySelectorAll('.en-sel:checked')].map(x=>x.dataset.id); }
 function enLoteUpd(){ const n=enSelecionadas().length; const b=$('enLote'); if(!b) return; b.style.display=n?'flex':'none'; $('enLoteN').textContent=n+' selecionada'+(n>1?'s':''); }
 async function entradaUpdate(eid,campos){
+  { const e0=S.entradas.find(x=>x._id===eid); if(e0&&!confirmaMesFechado(campos.data||e0.data,'Alterar essa entrada')) throw new Error('cancelado: mês fechado'); }
   if(typeof SUPA!=='undefined' && SUPA){ const {error}=await SUPA.from('entradas').update(campos).eq('id',eid); if(error) throw new Error(rlsMsg(error)); }
   else { await S.db.doc('entradas/'+eid).update(campos); }
 }
@@ -1455,6 +1461,7 @@ async function importVendas(file){
       (novas[mk]=novas[mk]||[]).push(row);
       if(tp==='pai') nPai++; else { nItem++; if(isCanc(est)) nCanc++; }
     }
+    { const mf=[...new Set(all.map(r=>r.mes).filter(m=>mesFechado(m)))]; if(mf.length && !window.confirm(`🔒 ${all.filter(r=>mesFechado(r.mes)).length} venda(s) desse relatório são de mês FECHADO (${mf.map(m=>m.slice(5)+'/'+m.slice(0,4)).join(', ')}).\n\nImportar mesmo assim?`)) throw new Error('cancelado: mês fechado'); }
     const semUf = e => e && /uf/i.test(e.message||'') && /column|coluna/i.test(e.message||'');
     if(conserta.length){ for(const x of conserta){ let {id, ...campos}=x; if(S.semColUf) delete campos.uf; if(!Object.keys(campos).length) continue; let {error}=await SUPA.from('vendas').update(campos).eq('id',id); if(error && semUf(error)){ S.semColUf=true; delete campos.uf; if(Object.keys(campos).length){ ({error}=await SUPA.from('vendas').update(campos).eq('id',id)); } else error=null; } if(error) throw new Error(rlsMsg(error)); } }
     const totalNovas = Object.values(novas).reduce((s,a)=>s+a.length,0);
@@ -1874,11 +1881,13 @@ async function pedDelete(id){
   delete S.pedidos[id];
 }
 async function entradaUpdateQtd(eid,qtd){
+  { const e0=S.entradas.find(x=>x._id===eid); if(e0&&!confirmaMesFechado(e0.data,'Alterar a quantidade')) throw new Error('cancelado: mês fechado'); }
   if(typeof SUPA!=='undefined' && SUPA){ const {error}=await SUPA.from('entradas').update({qtd}).eq('id',eid); if(error) throw new Error(rlsMsg(error)); }
   else { await S.db.doc('entradas/'+eid).update({qtd}); }
   await loadTable('entradas');
 }
 async function entradaDelete(eid){
+  { const e0=S.entradas.find(x=>x._id===eid); if(e0&&!confirmaMesFechado(e0.data,'Apagar essa entrada')) throw new Error('cancelado: mês fechado'); }
   if(typeof SUPA!=='undefined' && SUPA){ const {error}=await SUPA.from('entradas').delete().eq('id',eid); if(error) throw new Error(rlsMsg(error)); }
   else { await S.db.doc('entradas/'+eid).delete(); }
   await loadTable('entradas');
@@ -1997,7 +2006,7 @@ function saiPorEmp(pid){
 }
 function jaPedido(pid){ const out={}; for(const id in S.pedidos){ const p=S.pedidos[id]; if(p.status==='pendente'&&p.pid===pid) out[p.empresa||'?']=(out[p.empresa||'?']||0)+(+p.qtd||0); } return out; }
 function mesFechadoDe(pid){
-  const M=S.reguaMes||mesAnterior(); const E={}, Sd={};
+  const _hj=new Date().toISOString().slice(0,7); const M=S.reguaMes||(S.vendasRows.some(r=>r.mes===_hj)?_hj:mesAnterior()); const E={}, Sd={};
   for(const e of S.entradas){ if((e.data||'').slice(0,7)!==M||e.pid!==pid) continue; const x=empDe(e); E[x]=(E[x]||0)+(e.qtd||0); }
   for(const r of S.vendasRows){
     if(r.tp!=='item'||r.mes!==M) continue;
@@ -2010,6 +2019,10 @@ function mesFechadoDe(pid){
   return {mes:M, dias, E, Sd};
 }
 const DIAS_PROJ=5;
+/* ---- mês fechado: trava alterações; só passa com confirmação ---- */
+function mesFechado(m){ return (S.mesesFechados||[]).includes(String(m||'').slice(0,7)); }
+function confirmaMesFechado(data,acao){ const m=String(data||'').slice(0,7); if(!mesFechado(m)) return true; return window.confirm(`🔒 O mês ${m.slice(5)}/${m.slice(0,4)} está FECHADO.\n\n${acao||'Alterar'} mesmo assim?`); }
+async function mesesFechadosWrite(){ if(typeof SUPA!=='undefined'&&SUPA){ const {error}=await SUPA.from('config').upsert({k:'meses_fechados', v:S.mesesFechados||[]}); if(error) throw new Error(rlsMsg(error)); } }
 function fatorTxt(pid,f){ const p=S.produtos[pid]||{}; const e=embDe(pid); const n=Number(f)||0; const un=p.unidade==='folhas'?'folhas':(e.mult===5000?'sacos':(e.mult===50?'peças':(p.unidade||'un'))); return e.mult>1?`${fmt(n)} ${un} (= ${fmt(n/e.mult)} ${n/e.mult===1?String(e.plural).replace(/s$/,''):e.plural})`:`${fmt(n)} ${un}`; }
 function pedRecebido(id,p){ if(p.status==='recebido') return true; if(p.status!=='aprovado') return false; return S.entradas.some(e=>(e.obs||'').includes('[ped:'+id+']')); }
 function pedACaminho(id,p){ return p.status==='aprovado' && !pedRecebido(id,p); }
@@ -2051,7 +2064,7 @@ function reguaHTML(pid){
   const btn=(id,lab,on)=>`<button class="btn sm ${on?'':'sec'} rg-modo" data-modo="${id}" style="padding:3px 10px">${lab}</button>`;
   const mesesR=[...new Set(S.vendasRows.map(x=>x.mes).filter(m=>/^\d{4}-\d{2}$/.test(m)))].sort().reverse(); const hojeM=new Date().toISOString().slice(0,7);
   const selM=`<select class="rg-mes" style="padding:3px 6px;font-size:12px;${T?'opacity:.55':''}">${mesesR.map(m=>`<option value="${m}" ${m===r.mes?'selected':''}>${m.slice(5)}/${m.slice(0,4)}${m===hojeM?' (em andamento)':''}</option>`).join('')}</select>`;
-  const mesGrande=T?'PERÍODO TODO':`${MESES_PT[+r.mes.slice(5,7)-1].toUpperCase()}/${r.mes.slice(0,4)}${r.mes===new Date().toISOString().slice(0,7)?' <span style="font-size:13px;font-weight:600;color:var(--warn)">em andamento</span>':''}`;
+  const mesGrande=T?'PERÍODO TODO':`${MESES_PT[+r.mes.slice(5,7)-1].toUpperCase()}/${r.mes.slice(0,4)}${r.mes===new Date().toISOString().slice(0,7)?' <span style="font-size:13px;font-weight:600;color:var(--warn)">em andamento</span>':''}${mesFechado(r.mes)?' <span style="font-size:13px;font-weight:600">🔒 fechado</span>':''}`;
   let h=`<div style="margin-top:10px;font-size:12.5px"><div style="font-size:22px;font-weight:800;letter-spacing:.02em;margin:4px 0 6px">${mesGrande}</div><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><b>Régua da reposição — ${esc(p.sku)}</b> <span class="dim">base:</span> ${btn('mes','Mês',!T)} ${selM} ${btn('total','Período todo',T)} <span class="dim">· saldo acumulado do grupo ${dois(r.saldo)}</span></div><table style="margin-top:6px;width:100%"><tr><th>Empresa</th><th class="r">${T?'entrou (total)':'entrou '+mesTxt}</th><th class="r">${T?'saiu (total)':'saiu '+mesTxt}</th><th class="r">${T?'saldo':'diferença'}</th><th class="r" title="pedido criado, ainda não aprovado">já pedido</th><th class="r" title="aprovado e ainda não recebido">a caminho</th><th class="r">quanto comprar</th><th>situação</th><th></th></tr>`;
   const _lin=(S.empSel&&S.empSel!=='Todas')?r.linhas.filter(l=>l.emp===S.empSel):r.linhas;
   for(const l of _lin){
@@ -2190,6 +2203,26 @@ function pedMsgTexto(p){
   const pessoa=fornPessoa(p.fornecedor||fornDe(p.pid).nome,[p]);
   return `Olá, ${saudacao()}${pessoa?', '+pessoa:''}, tudo bem? Gostaria de fazer um pedido: ${pedQtdTxt(p)} de ${nome}, para a empresa ${p.empresa||''}. Obrigado!`;
 }
+document.addEventListener('click', async e=>{ const b=e.target.closest('#btnFecharMes'); if(!b) return; if(needDb()) return; const m=b.dataset.mes; if(!m) return; const f=mesFechado(m); if(!window.confirm(f?`Reabrir ${m.slice(5)}/${m.slice(0,4)}? Volta a aceitar alterações sem perguntar.`:`Fechar ${m.slice(5)}/${m.slice(0,4)}?\n\nDepois disso, lançar, alterar ou apagar entradas e importar vendas nesse mês só passa com uma confirmação.`)) return; S.mesesFechados=(S.mesesFechados||[]).filter(x=>x!==m); if(!f) S.mesesFechados.push(m); try{ await mesesFechadosWrite(); toast(f?'🔓 Mês reaberto':'🔒 Mês fechado'); render(); }catch(err){ toast('Erro: '+err.message); } });
+function xlsVinculosCompleto(){
+  const ref=S.calc.refD||new Date().toISOString().slice(0,10); const d90=(n=>{const d=new Date(ref+'T00:00'); d.setDate(d.getDate()-n); return d.toISOString().slice(0,10);}); const a90=d90(90), a30=d90(30);
+  const V={}; const ult={};
+  for(const r of S.vendasRows){ if(r.tp!=='item'||!r.an||isCanc(r.est)) continue; const k=seg(r.an); const x=V[k]||(V[k]={emp:r.emp,n:0,n90:0,n30:0,ult:''}); const d=(r.d||'').slice(0,10); if(r.mes>='2026-01') x.n++; if(d>=a90) x.n90++; if(d>=a30) x.n30++; if(d>x.ult){ x.ult=d; x.emp=r.emp||x.emp; } if(r.rec!=null&&r.un>0&&(!ult[k]||d>ult[k].d)) ult[k]={d,p:r.rec/r.un,tax:-(Number(r.tax)||0)/r.un,fre:(-(Number(r.tarenv)||0)-(Number(r.recenv)||0))/r.un}; }
+  const icmsV=(Number(($('mgImp')||{}).value)||12)/100, emb=Number(($('mgEmb')||{}).value)||0.35;
+  const linhas=[];
+  for(const k in S.vinculos){ const v=S.vinculos[k]; const it=v.itens||[]; if(!it.length) continue; const x=V[k]||{emp:(lojasDe(v.anuncio)[0]||''),n:0,n90:0,n30:0,ult:''}; const u=ult[k];
+    let custo=0,icmsC=0,semC=false; for(const i of it){ const cf=cfDe(i.pid); if(!cf||!cf.c||cf.semNota){ semC=true; continue; } const c=(i.fator||0)*cf.c; custo+=c; icmsC+=c*(cf.icms||0); }
+    let imp=null,luc=null,mg=null; if(u&&!semC){ imp=u.p*icmsV-icmsC+u.p*(1-icmsV)*PIS_COFINS-(custo-icmsC)*PIS_COFINS; luc=u.p-u.tax-u.fre-imp-custo-emb; mg=u.p?luc/u.p*100:null; }
+    const sit=semC?'sem custo cadastrado':(!u?'sem preço (reimportar mês)':(mg<15?'abaixo de 15%':(mg<20?'15–20%':'ok')));
+    linhas.push({'MLB':v.anuncio,'Loja':x.emp||'','Título':v.titulo||'','Vínculo (fator em folhas/peças por venda)':it.map(i=>`${(S.produtos[i.pid]||{}).sku||i.pid} × ${fatorTxt(i.pid,i.fator)}`).join(' + '),'Vendas últimos 90 d':x.n90,'Vendas últimos 30 d':x.n30,'Vendas 2026':x.n,'Última venda':x.ult,'Preço de venda (última, por un)':u?+u.p.toFixed(2):null,'Taxa ML (última)':u?+u.tax.toFixed(2):null,'Frete (última)':u?+u.fre.toFixed(2):null,'Custo do kit c/ IPI':semC?null:+custo.toFixed(2),'Crédito ICMS do kit':semC?null:+icmsC.toFixed(2),'Impostos a pagar':imp==null?null:+imp.toFixed(2),'Embalagem':emb,'Lucro por venda':luc==null?null:+luc.toFixed(2),'Margem %':mg==null?null:+mg.toFixed(1),'Situação':sit,'Link':'https://produto.mercadolivre.com.br/MLB-'+String(v.anuncio).replace(/^MLB-?/i,''),_mg:mg,_n:x.n90}); }
+  const wb=XLSX.utils.book_new(); const cols=[{wch:16},{wch:9},{wch:52},{wch:46},{wch:10},{wch:10},{wch:10},{wch:11},{wch:13},{wch:10},{wch:10},{wch:12},{wch:12},{wch:14},{wch:10},{wch:12},{wch:9},{wch:20},{wch:40}];
+  const ordem=(a,b)=>(a._mg==null)-(b._mg==null)||(a._mg??0)-(b._mg??0)||b._n-a._n;
+  for(const emp of EMPRESAS){ const L=linhas.filter(l=>l.Loja===emp).sort(ordem).map(({_mg,_n,...o})=>o); const ws=XLSX.utils.json_to_sheet(L.length?L:[{'(vazio)':''}]); ws['!cols']=cols; XLSX.utils.book_append_sheet(wb,ws,emp); }
+  const semLoja=linhas.filter(l=>!EMPRESAS.includes(l.Loja)).sort(ordem).map(({_mg,_n,...o})=>o); if(semLoja.length){ const ws=XLSX.utils.json_to_sheet(semLoja); ws['!cols']=cols; XLSX.utils.book_append_sheet(wb,ws,'Sem loja'); }
+  const leia=XLSX.utils.aoa_to_sheet([['Fator SEMPRE em folhas / peças / sacos por venda; entre parênteses, quantos pacotes (100 folhas / 50 peças) ou fardos (5.000 sacos).'],['Conta da margem = planilha Precificação de Produtos – Lucro Real, sem IRPJ: ICMS da venda − crédito ICMS da nota + PIS/COFINS 9,25% sobre o preço sem ICMS − crédito 9,25% sobre o custo sem ICMS; embalagem do campo da aba Margem.'],['Preço, taxa e frete = última venda com relatório completo. "sem preço" = só vendeu antes das colunas de taxa/frete.'],['Ordem em cada aba: menor margem → maior; sem custo e sem preço no fim.'],[`Gerado em ${new Date().toLocaleString('pt-BR')} · ${linhas.length} anúncios vinculados`]]); leia['!cols']=[{wch:150}]; XLSX.utils.book_append_sheet(wb,leia,'Leia');
+  XLSX.writeFile(wb,`VINCULOS_completo_${new Date().toISOString().slice(0,10)}.xlsx`); toast(`⬇ ${linhas.length} anúncios — uma aba por loja`);
+}
+document.addEventListener('click', e=>{ if(e.target.closest('#btnXlsVinc')) xlsVinculosCompleto(); });
 document.addEventListener('input', e=>{ const el=e.target; if(!el.classList||!(el.classList.contains('vi-fator')||el.classList.contains('vi-prod'))) return; const d=el.closest('.iten'); if(!d) return; const pid=d.querySelector('.vi-prod')?.value, f=d.querySelector('.vi-fator')?.value, l=d.querySelector('.vi-leitura'); if(l) l.textContent=(pid&&f&&S.produtos[pid])?fatorTxt(pid,f):'em folhas/peças por venda'; });
 document.addEventListener('click', async e=>{
   const rcb=e.target.closest('.ap-receb');
