@@ -199,7 +199,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
   </nav>
   <div class="side-foot">
     <span id="connState">conectando ao banco…</span>
-    <div style="opacity:.6;margin-top:4px">Supabase · 4 lojas · <span id="versao">v2026-10-28a</span></div>
+    <div style="opacity:.6;margin-top:4px">Supabase · 4 lojas · <span id="versao">v2026-10-30a</span></div>
   </div>
 </aside>
 <div class="content">
@@ -324,8 +324,10 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
       <div class="sp">
         <label class="f">Janela recente (dias)<input type="number" id="pjRec" value="10" min="1" style="width:70px"></label>
         <label class="f">Estoque vivo (dias de fluxo)<input type="number" id="pjFluxo" value="7" min="1" style="width:70px"></label>
-        <label class="f">Comprar para (dias)<input type="number" id="pjAlvo" value="30" min="1" style="width:70px"></label><button class="btn sm sec xls" data-tbl="tblProj" data-nome="projecao" title="baixar em Excel">⬇ Excel</button><button class="btn sm sec ajuda" data-help="projecao" title="como usar esta aba">?</button>
+        <label class="f">Comprar para (dias)<input type="number" id="pjAlvo" value="30" min="1" style="width:70px"></label>
+        <input type="text" id="qProj" placeholder="buscar produto: a4, cpf, capa…" style="width:200px" title="digite o produto: filtra a tabela e abre a projeção dele por loja"><button class="btn sm sec xls" data-tbl="tblProj" data-nome="projecao" title="baixar em Excel">⬇ Excel</button><button class="btn sm sec ajuda" data-help="projecao" title="como usar esta aba">?</button>
       </div></div>
+    <div id="pjLoja"></div>
     <div class="tbl-wrap"><table id="tblProj"></table></div>
   </div>
   <p class="note"><b>Como ler, com um exemplo:</b> capa PPC vendeu 30.000 peças nos últimos 30 dias → <b>1.000 por dia</b>. Lassane demora 14 dias → <b>estoque morto necessário = 14.000</b>: é o que tem que existir no dia em que o vivo acaba e você faz o pedido, pra aguentar até chegar. Fluxo de 7 dias → <b>estoque vivo necessário = 7.000</b>: o que gira no dia a dia. <b>Mínimo na prateleira = 21.000</b>: bateu nisso, pede. Comprar para 30 dias → <b>vai vender 30.000</b>. Saldo hoje 10.000 → <b>comprar = 30.000 + 21.000 − 10.000 = 41.000 peças</b>, e a observação diz até que dia comprar (o dia em que o saldo bate no mínimo). Toda conta usa o ritmo dos últimos 30 dias; a janela recente só marca tendência. Respeita a loja selecionada.</p>
@@ -396,7 +398,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
 
 <section id="s-recebidos" hidden>
   <div class="card">
-    <div class="card-h"><h2>Recebidos — chegou e entrou no estoque</h2><div class="sp"><button class="btn sm sec xls" data-tbl="tblReceb" data-nome="pedidos_recebidos" title="baixar em Excel">⬇ Excel</button></div></div>
+    <div class="card-h"><h2>Recebidos — chegou e entrou no estoque</h2><div class="sp"><input type="text" id="qReceb" placeholder="buscar produto, loja, fornecedor…" style="width:200px"><button class="btn sm sec xls" data-tbl="tblReceb" data-nome="pedidos_recebidos" title="baixar em Excel">⬇ Excel</button></div></div>
     <div class="tbl-wrap"><table id="tblReceb"></table></div>
   </div>
   <p class="note">Pedido aprovado fica <b>a caminho</b> (aba Aprovados e coluna "a caminho" da régua) até alguém clicar <b>📦 Recebi</b>. Aí ele entra no estoque e vem pra cá. Se a nota fiscal for lançada antes, o pedido é marcado como recebido sozinho, sem somar duas vezes.</p>
@@ -408,7 +410,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
   </div>
   <div class="card">
     <div class="card-h"><h2>Aprovados — a caminho</h2>
-      <div class="sp"><label class="tog" style="font-size:12px"><input type="checkbox" id="apRec"> mostrar recusados</label><button class="btn sm sec xls" data-tbl="tblAprov" data-nome="pedidos_aprovados" title="baixar em Excel">⬇ Excel</button><button class="btn sm sec ajuda" data-help="aprovados" title="como usar esta aba">?</button></div></div>
+      <div class="sp"><input type="text" id="qAprov" placeholder="buscar produto, loja, fornecedor…" style="width:200px"><label class="tog" style="font-size:12px"><input type="checkbox" id="apRec"> mostrar recusados</label><button class="btn sm sec xls" data-tbl="tblAprov" data-nome="pedidos_aprovados" title="baixar em Excel">⬇ Excel</button><button class="btn sm sec ajuda" data-help="aprovados" title="como usar esta aba">?</button></div></div>
     <div class="tbl-wrap"><table id="tblAprov"></table></div>
   </div>
   <p class="note">Todo aprovado já virou entrada no estoque (na data da decisão, origem "Pedido de …"). Em cima, os pedidos aprovados que ainda não foram mandados, agrupados por fornecedor — um botão copia a mensagem com todos os produtos daquele fornecedor de uma vez. Copiar marca como enviado.</p>
@@ -497,6 +499,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
       <p><b>Produtos → editar</b> — é onde você troca o <b>custo com IPI</b> (por folha, peça ou saco) e o <b>ICMS da nota</b> de cada produto; a aba Margem passa a usar na hora, com o crédito calculado a partir desse ICMS. <b>Produtos</b> — cadastro: SKU, nome, unidade, custo da última nota, fornecedor e telefone (pra mensagem de pedido). "+ Produto" cria; lápis edita.</p>
       <p><b>Vínculos</b> — cada anúncio aparece com o código <b>MLB</b> (clica e abre o anúncio no ML) e a <b>loja</b> dona dele. No topo, quantos anúncios cada loja tem; escolhendo a loja no menu, a aba mostra só os MLB daquela loja. Liga cada anúncio do Mercado Livre a um produto e um fator (quantas folhas/peças 1 unidade vendida representa). Bloco de cima: anúncios esperando sua conferência (a plataforma sugere pelo título). Bloco de baixo: conferidos. Coluna <b>Loja</b> mostra em qual conta o anúncio vende. "Não vende mais" tira o anúncio da lista sem baixar estoque. Toda alteração fica gravada no histórico.</p>
       <p><b>💬 Perguntar</b> — botão no canto da tela (ou Ctrl/Cmd+K). Faz pergunta em português e responde em cartão com o que já está no sistema: estoque, quanto comprar, a caminho, vendas, margem, projeção (com tendência), crescimento e queda, vínculos com divergência, custo, vínculo, entradas, compra do dia, preço certo, top 10, mês contra mês, gastos em compras, o que está errado. Também executa com confirmação: "aprova todos", "recusa o 2", "recebi o a4", "pede 50 pacotes de a4 pra makenry", "mensagem pra mônica", "ML vendas makenry setembro 895". Lembra loja, produto e mês da conversa ("e na nagare?"); "＋ Novo chat" zera.</p>
+      <p><b>Projeção → busca</b> — digita o produto (a4, cpf, capa…): a tabela filtra e aparece em cima a <b>projeção por loja</b> daquele produto: vende por dia, saldo, a caminho, dura, morto, vivo, mínimo e quanto comprar em cada loja. <b>Aprovados</b> e <b>Recebidos</b> também ganharam campo de busca (produto, loja, fornecedor, quem pediu, NF).</p>
       <p><b>Vínculos → ⬇ Excel completo dos vínculos</b> — baixa todos os anúncios vinculados, uma aba por loja, da menor margem pra maior: vínculo em folhas/pacotes, vendas (90 d, 30 d, ano), preço praticado, taxa, frete, custo do kit, impostos, lucro, margem e situação.</p>
       <p><b>Mês fechado → 🔒 Fechar mês</b> — tranca o mês: lançar, alterar ou apagar entrada com data nele, e importar vendas dele, passa a pedir uma confirmação ("está FECHADO, alterar mesmo assim?"). 🔓 Reabrir destrava. Fica gravado no banco, vale pra todo mundo.</p>
       <p><b>Pedido em 3 etapas</b> — <b>Pedidos</b> (criado) → <b>Aprovados</b> (encomendado ao fornecedor: fica <i>a caminho</i>, não entra no estoque) → <b>📦 Recebi</b> → <b>Recebidos</b> (entra no estoque). Na régua: <b>já pedido</b> = criado e não aprovado; <b>a caminho</b> = aprovado e não recebido (vermelho se passou do prazo do fornecedor); <b>quanto comprar</b> = projeção de 5 dias de venda menos já pedido e a caminho — desce a cada pedido e sobe conforme vende. Lançar a nota de um pedido a caminho marca ele como recebido sozinho.</p>
@@ -1165,13 +1168,38 @@ function renderProdutos(){
   if(semCusto) h+=`<tr><td colspan="9" class="dim">${semCusto} produto(s) sem custo — clique em editar e preencha o custo com IPI e o ICMS da nota.</td></tr>`;
   $('tblProdutos').innerHTML=any?h:'<tr><td><div class="empty">Nenhum produto.</div></td></tr>';
 }
+function projPorLojaHTML(pid,alvo,fluxo){
+  const p=S.produtos[pid]||{}; const e=embDe(pid); const _m=e.mult||1; const un=p.unidade==='folhas'?'folhas':(e.mult===5000?'sacos':(e.mult===50?'peças':(p.unidade||'un')));
+  const q=v=>_m>1?`<b>${fmt(v/_m)}</b> ${e.plural} <span class="dim">(${fmt(v)} ${un})</span>`:`<b>${fmt(v)}</b> ${un}`;
+  const sd=saiPorEmp(pid), cam=aCaminhoDe(pid), jp=jaPedido(pid), lead=leadDe(pid);
+  let rows='', totComprar=0;
+  for(const emp of EMPRESAS){
+    const base=sd[emp]||0, s=saldoEmpDe(pid,emp), ac=cam.out[emp]||0, pend=jp[emp]||0;
+    const morto=Math.ceil(base*lead), vivo=Math.ceil(base*fluxo), minimo=morto+vivo, prox=Math.ceil(base*alvo);
+    const comprar=Math.max(0,Math.ceil((prox+minimo-s-ac-pend)/_m)*_m); totComprar+=comprar;
+    const dura=(base>0&&s>0)?Math.floor(s/base):null;
+    let sit, cor;
+    if(base<=0){ sit='sem venda nos últimos 30 dias'; cor='#8a8f98'; }
+    else if(s+ac<morto){ sit='JÁ FALTOU — abaixo do estoque morto'; cor='var(--danger)'; }
+    else if(s+ac<minimo){ sit='pedir hoje — está no morto'; cor='var(--warn)'; }
+    else if(comprar>0){ sit=`comprar pra ter ${alvo} dias`; cor='var(--warn)'; }
+    else { sit=`tem estoque pra ${alvo} dias`; cor='var(--accent-ink)'; }
+    rows+=`<tr><td><span class="chip emp-${esc(emp)}">${esc(emp)}</span></td><td class="r num">${q(base)}</td><td class="r num ${s<0?'neg':''}">${q(s)}</td><td class="r num">${ac?q(ac):'—'}${pend?`<div class="dim" style="font-size:11px">+ ${fmt(pend/_m)} ${e.plural} pendente</div>`:''}</td><td class="r num">${dura==null?'—':dura+' dias'}</td><td class="r num">${q(morto)}</td><td class="r num">${q(vivo)}</td><td class="r num">${q(minimo)}</td><td class="r num">${comprar?q(comprar):'—'}</td><td><span style="color:${cor}">●</span> ${esc(sit)}</td></tr>`;
+  }
+  return `<div class="card" style="margin:10px 0"><div class="card-h"><h2>${esc(p.sku||pid)} — projeção por loja</h2><span class="dim">prazo do fornecedor ${lead} d · estoque vivo ${fluxo} d · comprar para ${alvo} d · ritmo = últimos 30 dias de cada loja</span></div>
+  <div class="tbl-wrap"><table><tr><th>Loja</th><th class="r">vende por dia</th><th class="r">saldo hoje</th><th class="r">a caminho</th><th class="r">dura</th><th class="r">estoque morto</th><th class="r">estoque vivo</th><th class="r">mínimo</th><th class="r">comprar</th><th>situação</th></tr>${rows}<tr style="background:var(--surface2)"><td><b>Total</b></td><td colspan="7"></td><td class="r num">${totComprar?q(totComprar):'—'}</td><td class="dim" style="font-size:12px">comprar = ${alvo} dias de venda + mínimo − saldo − a caminho − pendente</td></tr></table></div>
+  <div class="dim" style="font-size:11.5px;padding:6px 12px">saldo negativo = falta o estoque inicial dessa loja (contagem física); a conta por loja só fica certa depois disso.</div></div>`;
+}
 function renderProjecao(){
   const rec=Math.max(1,+($('pjRec').value)||10), alvo=Math.max(1,+($('pjAlvo').value)||30), fluxo=Math.max(1,+($('pjFluxo').value)||7);
   const pd=S.calc.porDia||{}, ref=S.calc.refD;
   if(!ref){ $('tblProj').innerHTML='<tr><td><div class="empty"><b>Sem vendas importadas.</b> Importe o relatório ML na aba Importar pra projeção funcionar.</div></td></tr>'; return; }
   const ms=86400000, refT=new Date(ref+'T00:00:00').getTime();
   let h=`<tr><th>SKU</th><th>Produto</th><th class="r">Vendeu (últimos 30 dias)</th><th class="r">Por dia (÷30)</th><th>Tendência (${rec}d)</th><th class="r">Saldo hoje</th><th class="r">Dura</th><th>Fornecedor · prazo</th><th class="r" title="por dia × prazo do fornecedor: o que tem que existir quando o vivo acabar, pra aguentar até a entrega">Estoque morto (necessário)</th><th class="r" title="por dia × ${fluxo} dias de fluxo: o que gira no dia a dia">Estoque vivo (necessário)</th><th class="r" title="morto + vivo: abaixo disso é hora de pedir">Mínimo na prateleira</th><th class="r" title="por dia × ${alvo} dias">Vai vender em ${alvo}d</th><th class="r" title="vai vender em ${alvo}d + morto + vivo − saldo, arredondado pra pacote">Comprar p/ ${alvo}d</th><th>Observação de compra</th></tr>`;
-  const pids=Object.keys(pd).sort((a,b)=>(S.produtos[a]?.sku||a).localeCompare(S.produtos[b]?.sku||b));
+  const qP=(($('qProj')||{}).value||'').toLowerCase().trim();
+  const bate=pid=>!qP||`${S.produtos[pid]?.sku||pid} ${S.produtos[pid]?.nome||''}`.toLowerCase().includes(qP);
+  const pids=Object.keys(pd).filter(bate).sort((a,b)=>(S.produtos[a]?.sku||a).localeCompare(S.produtos[b]?.sku||b));
+  { const box=$('pjLoja'); if(box){ box.innerHTML=''; if(qP){ const alvoPid=pids.find(p=>(S.produtos[p]?.sku||p).toLowerCase()===qP)||pids[0]; if(alvoPid){ box.innerHTML=projPorLojaHTML(alvoPid,alvo,fluxo); } } } }
   let any=false;
   const compra={};
   const calc=(pid)=>{ let t30=0; for(const dd in (pd[pid]||{})){ const dias=(refT-new Date(dd+'T00:00:00').getTime())/ms; if(dias<30) t30+=pd[pid][dd]; } const base=t30/30; const s2=saldoDe(pid); const morto=Math.ceil(base*leadDe(pid)), vivo=Math.ceil(base*fluxo), prox=Math.ceil(base*alvo); const _m=embDe(pid).mult||1; return Math.max(0, Math.ceil((prox+morto+vivo-s2)/_m)*_m); };
@@ -1608,6 +1636,9 @@ $('qProd').addEventListener('input', renderEstoque);
 $('mgMes').addEventListener('change', e=>{ S.mgMes=e.target.value; renderMargem(); });
 $('qMg').addEventListener('input', renderMargem);
 $('mgUf').addEventListener('change', renderMargem);
+$('qProj').addEventListener('input', renderProjecao);
+$('qAprov').addEventListener('input', renderAprovados);
+$('qReceb').addEventListener('input', renderRecebidos);
 for(const id of ['mgImp','mgEmb']) $(id).addEventListener('change', async ()=>{ renderMargem(); S.mgParams={icmsV:Number($('mgImp').value)||0, emb:Number($('mgEmb').value)||0}; try{ if(typeof SUPA!=='undefined'&&SUPA) await SUPA.from('config').upsert({k:'margem_lr', v:S.mgParams}); }catch(_){} });
 $('qMes').addEventListener('input', renderMes);
 $('mesSel').addEventListener('change', e=>{ S.mesSel=e.target.value; renderMes(); });
@@ -2169,7 +2200,8 @@ async function marcarEnviados(ids){
 }
 function renderRecebidos(){
   const t=document.getElementById('tblReceb'); if(!t) return;
-  const rows=Object.entries(S.pedidos).filter(([id,p])=>pedRecebido(id,p)&&(S.empSel==='Todas'||!S.empSel||p.empresa===S.empSel))
+  const qR=(($('qReceb')||{}).value||'').toLowerCase(); const okR=p=>!qR||`${(S.produtos[p.pid]||{}).sku||p.pid} ${(S.produtos[p.pid]||{}).nome||''} ${p.empresa||''} ${p.fornecedor||''} ${p.solicitante||''} ${p.nf||''}`.toLowerCase().includes(qR);
+  const rows=Object.entries(S.pedidos).filter(([id,p])=>pedRecebido(id,p)&&(S.empSel==='Todas'||!S.empSel||p.empresa===S.empSel)&&okR(p))
     .map(([id,p])=>[id,p,p.recebido_em||p.decidido_em||''] ).sort((a,b)=>b[2].localeCompare(a[2]));
   if(!rows.length){ t.innerHTML='<tr><td><div class="empty"><b>Nada recebido ainda.</b></div></td></tr>'; return; }
   let h='<tr><th>Recebido em</th><th>SKU</th><th class="r">Quantidade</th><th>Empresa</th><th>Fornecedor</th><th>Aprovado em</th><th class="r">Dias até chegar</th><th>NF</th></tr>';
@@ -2184,7 +2216,8 @@ function renderAprovados(){
   renderApGrupos();
   const t=document.getElementById('tblAprov'); if(!t) return;
   const incRec=document.getElementById('apRec')&&document.getElementById('apRec').checked;
-  const rows=Object.entries(S.pedidos).filter(([id,p])=>(pedACaminho(id,p)||(incRec&&p.status==='recusado'))&&(S.empSel==='Todas'||!S.empSel||p.empresa===S.empSel)).sort((a,b)=>(b[1].decidido_em||'').localeCompare(a[1].decidido_em||''));
+  const qA=(($('qAprov')||{}).value||'').toLowerCase(); const okQ=p=>!qA||`${(S.produtos[p.pid]||{}).sku||p.pid} ${(S.produtos[p.pid]||{}).nome||''} ${p.empresa||''} ${p.fornecedor||''} ${p.solicitante||''} ${p.vendedor||''}`.toLowerCase().includes(qA);
+  const rows=Object.entries(S.pedidos).filter(([id,p])=>(pedACaminho(id,p)||(incRec&&p.status==='recusado'))&&(S.empSel==='Todas'||!S.empSel||p.empresa===S.empSel)&&okQ(p)).sort((a,b)=>(b[1].decidido_em||'').localeCompare(a[1].decidido_em||''));
   if(!rows.length){ t.innerHTML='<tr><td><div class="empty"><b>Nada a caminho.</b><br>Pedido aprovado aparece aqui até alguém marcar 📦 Recebi — aí ele vai pra aba Recebidos e entra no estoque.</div></td></tr>'; return; }
   let h='<tr><th>Decidido</th><th>Status</th><th>SKU</th><th class="r">Pedida → aprovada</th><th>Empresa</th><th>Solicitante</th><th>Fornecedor</th><th>Vendedor</th><th>Telefone</th><th>Mandado</th><th></th></tr>';
   for(const [id,p] of rows){
