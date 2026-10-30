@@ -199,7 +199,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
   </nav>
   <div class="side-foot">
     <span id="connState">conectando ao banco…</span>
-    <div style="opacity:.6;margin-top:4px">Supabase · 4 lojas · <span id="versao">v2026-10-30a</span></div>
+    <div style="opacity:.6;margin-top:4px">Supabase · 4 lojas · <span id="versao">v2026-10-30b</span></div>
   </div>
 </aside>
 <div class="content">
@@ -381,6 +381,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
         <label class="f">Data<input type="date" id="pdData"></label>
         <label class="f">Obs<input type="text" id="pdObs" style="width:180px"></label>
         <button class="btn" id="pdCriar">Criar pedido (Pendente)</button>
+        <button class="btn sec" id="pdDividir" title="você diz o produto e o total; a plataforma divide entre as lojas e cria um pedido pendente por loja">⚖ Dividir entre as lojas</button>
       </div>
       <div id="pdInfoPrev"></div>
       <div id="pdRegua"></div>
@@ -388,7 +389,8 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
     </div>
   </div>
   <div class="card">
-    <div class="card-h"><h2>Pedidos pendentes</h2><span class="dim" id="pedSub"></span></div>
+    <div class="card-h"><h2>Pedidos pendentes</h2><span class="dim" id="pedSub"></span><div class="sp"><button class="btn sm sec" id="pdRedistribuir" title="pega os pendentes de um produto (todas as lojas), soma e redistribui entre as lojas sem apagar pedido: troca quantidade/loja nos próprios pedidos">⚖ Redistribuir pendentes</button></div></div>
+    <div id="pdDivBox"></div>
     <div id="pedBanner"></div>
     <div class="tbl-wrap"><table id="tblPedPend"></table></div>
   </div>
@@ -499,6 +501,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
       <p><b>Produtos → editar</b> — é onde você troca o <b>custo com IPI</b> (por folha, peça ou saco) e o <b>ICMS da nota</b> de cada produto; a aba Margem passa a usar na hora, com o crédito calculado a partir desse ICMS. <b>Produtos</b> — cadastro: SKU, nome, unidade, custo da última nota, fornecedor e telefone (pra mensagem de pedido). "+ Produto" cria; lápis edita.</p>
       <p><b>Vínculos</b> — cada anúncio aparece com o código <b>MLB</b> (clica e abre o anúncio no ML) e a <b>loja</b> dona dele. No topo, quantos anúncios cada loja tem; escolhendo a loja no menu, a aba mostra só os MLB daquela loja. Liga cada anúncio do Mercado Livre a um produto e um fator (quantas folhas/peças 1 unidade vendida representa). Bloco de cima: anúncios esperando sua conferência (a plataforma sugere pelo título). Bloco de baixo: conferidos. Coluna <b>Loja</b> mostra em qual conta o anúncio vende. "Não vende mais" tira o anúncio da lista sem baixar estoque. Toda alteração fica gravada no histórico.</p>
       <p><b>💬 Perguntar</b> — botão no canto da tela (ou Ctrl/Cmd+K). Faz pergunta em português e responde em cartão com o que já está no sistema: estoque, quanto comprar, a caminho, vendas, margem, projeção (com tendência), crescimento e queda, vínculos com divergência, custo, vínculo, entradas, compra do dia, preço certo, top 10, mês contra mês, gastos em compras, o que está errado. Também executa com confirmação: "aprova todos", "recusa o 2", "recebi o a4", "pede 50 pacotes de a4 pra makenry", "mensagem pra mônica", "ML vendas makenry setembro 895". Lembra loja, produto e mês da conversa ("e na nagare?"); "＋ Novo chat" zera.</p>
+      <p><b>Pedidos → ⚖ Dividir entre as lojas</b> — escolhe o produto e digita o total em pacotes; a plataforma mostra saldo · a caminho · pendente · vende/dia por loja e divide o total (pacotes inteiros, sobra pra quem tem o maior resto) criando um pedido pendente por loja. Dois jeitos de dividir: <b>projeção</b> (falta pra 5 dias de venda — padrão) ou <b>saldo</b> (só quem continua negativo). <b>⚖ Redistribuir pendentes</b> faz o mesmo com os pedidos pendentes que já existem do produto: soma tudo e troca loja/quantidade nos próprios pedidos, sem apagar (pedido que ficar sem quantidade é recusado com o motivo). Se nenhuma loja precisar, avisa e não mexe. Nada é aprovado — só cria/ajusta pendentes.</p>
       <p><b>Projeção → busca</b> — digita o produto (a4, cpf, capa…): a tabela filtra e aparece em cima a <b>projeção por loja</b> daquele produto: vende por dia, saldo, a caminho, dura, morto, vivo, mínimo e quanto comprar em cada loja. <b>Aprovados</b> e <b>Recebidos</b> também ganharam campo de busca (produto, loja, fornecedor, quem pediu, NF).</p>
       <p><b>Vínculos → ⬇ Excel completo dos vínculos</b> — baixa todos os anúncios vinculados, uma aba por loja, da menor margem pra maior: vínculo em folhas/pacotes, vendas (90 d, 30 d, ano), preço praticado, taxa, frete, custo do kit, impostos, lucro, margem e situação.</p>
       <p><b>Mês fechado → 🔒 Fechar mês</b> — tranca o mês: lançar, alterar ou apagar entrada com data nele, e importar vendas dele, passa a pedir uma confirmação ("está FECHADO, alterar mesmo assim?"). 🔓 Reabrir destrava. Fica gravado no banco, vale pra todo mundo.</p>
@@ -2059,6 +2062,34 @@ function pedRecebido(id,p){ if(p.status==='recebido') return true; if(p.status!=
 function pedACaminho(id,p){ return p.status==='aprovado' && !pedRecebido(id,p); }
 function aCaminhoDe(pid){ const out={}, lista={}; for(const id in S.pedidos){ const p=S.pedidos[id]; if(p.pid!==pid||!pedACaminho(id,p)) continue; const q=+(p.qtd_aprovada!=null?p.qtd_aprovada:p.qtd)||0; const e=p.empresa||'?'; out[e]=(out[e]||0)+q; (lista[e]=lista[e]||[]).push({id,q,em:p.decidido_em||p.criado,forn:p.fornecedor||''}); } return {out,lista}; }
 function diasDesde(iso){ return iso?Math.floor((Date.now()-new Date(iso).getTime())/864e5):0; }
+/* ===== divisão entre as lojas (pedido): pelo saldo ou pela projeção ===== */
+function divisaoCalc(pid,totalUn,modo,ignorarPend){
+  const sai30=saiPorEmp(pid), cam=aCaminhoDe(pid), jp=ignorarPend?{}:jaPedido(pid); const linhas=[];
+  for(const e of EMPRESAS){
+    const saldo=saldoEmpDe(pid,e), ac=cam.out[e]||0, pend=jp[e]||0, ritmo=sai30[e]||0;
+    let falta;
+    if(modo==='saldo') falta=Math.max(0,-(saldo+ac+pend));                          // só quem continua negativo depois do que vem
+    else falta=ritmo>0?Math.max(0,ritmo*DIAS_PROJ-ac-pend-Math.max(0,saldo)):0;     // falta pra 5 dias de venda (saldo negativo não conta como dívida)
+    linhas.push({emp:e,saldo,ac,pend,ritmo,falta,aloc:0});
+  }
+  const m=embDe(pid).mult||1; const totPct=Math.round(totalUn/m); const somaF=linhas.reduce((a,l)=>a+l.falta,0);
+  if(!somaF||!totPct) return {linhas,totPct,ninguem:true,modo};
+  let usados=0; const restos=[];
+  for(const l of linhas){ const exato=totPct*l.falta/somaF; l.aloc=Math.floor(exato); usados+=l.aloc; restos.push([exato-l.aloc,l]); }
+  restos.sort((a,b)=>b[0]-a[0]); let sobra=totPct-usados; for(const [,l] of restos){ if(sobra<=0) break; if(l.falta>0){ l.aloc++; sobra--; } }
+  return {linhas,totPct,ninguem:false,modo};
+}
+function divisaoHTML(pid,r,titulo,rodape){
+  const m=embDe(pid).mult||1, pl=embDe(pid).plural; const q=v=>fmt(v/m);
+  const pS=r.modo==='saldo';
+  return `<div class="card" style="margin:8px 0;border:1px solid var(--accent)"><div class="card-h"><h2>${esc(titulo)}</h2><span class="dim">regra: ${pS?'só recebe quem continua negativo somando saldo + a caminho + pendente; proporcional ao tamanho do negativo':'falta pra '+DIAS_PROJ+' dias de venda (ritmo dos últimos 30 dias) − a caminho − pendente − saldo positivo; proporcional à falta'} · pacotes inteiros, sobra pra quem tem o maior resto</span></div>
+  <table style="width:100%"><tr><th>Loja</th><th class="r">saldo (período todo)</th><th class="r">a caminho</th><th class="r">pendente</th><th class="r">vende/dia</th><th class="r">${pS?'negativo':'falta (5 d)'}</th><th class="r"><b>recebe</b></th></tr>
+  ${r.linhas.map(l=>`<tr><td><span class="chip emp-${esc(l.emp)}">${esc(l.emp)}</span></td><td class="r num ${l.saldo<0?'neg':''}">${q(l.saldo)}</td><td class="r num">${l.ac?q(l.ac):'—'}</td><td class="r num">${l.pend?q(l.pend):'—'}</td><td class="r num">${l.ritmo?q(l.ritmo):'—'}</td><td class="r num">${l.falta?q(l.falta):'—'}</td><td class="r num"><b>${l.aloc?fmt(l.aloc):'—'}</b> ${l.aloc?pl:''}</td></tr>`).join('')}
+  <tr style="background:var(--surface2)"><td><b>Total</b></td><td colspan="5"></td><td class="r num"><b>${fmt(r.totPct)}</b> ${pl}</td></tr></table>
+  ${r.ninguem?'<div class="msg warn" style="margin-top:8px">Nenhuma loja precisa — '+(pS?'ninguém fica negativo somando saldo e o que está a caminho.':'o ritmo de venda já está coberto pelo que há em saldo, a caminho e pendente.')+' Não criei nada.</div>':''}
+  <div class="dim" style="font-size:11.5px;margin-top:6px">saldo negativo por falta de estoque inicial (sem contagem física) distorce a regra do saldo — nesse caso prefira a projeção.</div>
+  ${rodape||''}</div>`;
+}
 function reguaDe(pid){
   const modo=S.reguaBase||'mes';                       // 'mes' = mês fechado · 'total' = período todo
   const mf=mesFechadoDe(pid), ped=jaPedido(pid), sai30=saiPorEmp(pid), cam=aCaminhoDe(pid);
@@ -2275,6 +2306,45 @@ document.addEventListener('click', async e=>{
   if(rg){ S.reguaBase=rg.dataset.modo; try{ localStorage.setItem('reguaBase',S.reguaBase); }catch(_){ } renderPedidos(); return; }
   const us=e.target.closest('.pd-usar');
   if(us){ const q=document.getElementById('pdQtd'), emp=document.getElementById('pdEmp'), pid=document.getElementById('pdProd').value; if(q) q.value=Math.ceil(Number(us.dataset.q)/embDe(pid).mult); if(emp) emp.value=us.dataset.emp; return; }
+  if(e.target.closest('#pdDividir')||e.target.closest('#pdRedistribuir')||e.target.closest('.pd-div-modo')){
+    const box=document.getElementById('pdDivBox'); const msg=document.getElementById('pdMsg');
+    const redis = !!e.target.closest('#pdRedistribuir') || box.dataset.redis==='1' && !e.target.closest('#pdDividir');
+    const pid=document.getElementById('pdProd').value; if(!pid){ msg.innerHTML='<div class="msg bad">Escolha o produto primeiro.</div>'; return; }
+    const modo=(e.target.closest('.pd-div-modo')||{}).dataset?.modo||box.dataset.modo||'projecao';
+    let totalUn, pendIds=[];
+    if(redis){ pendIds=Object.entries(S.pedidos).filter(([,p])=>p.status==='pendente'&&p.pid===pid).map(([id,p])=>({id,p})); totalUn=pendIds.reduce((a,x)=>a+(+x.p.qtd||0),0); if(!totalUn){ msg.innerHTML='<div class="msg bad">Não tem pedido pendente desse produto pra redistribuir.</div>'; box.innerHTML=''; return; } }
+    else { const qp=Number(document.getElementById('pdQtd').value); if(!(qp>0)){ msg.innerHTML='<div class="msg bad">Digite o total em pacotes no campo de quantidade.</div>'; return; } totalUn=qp*(embDe(pid).mult||1); }
+    const r=divisaoCalc(pid,totalUn,modo,redis); box.dataset.modo=modo; box.dataset.redis=redis?'1':'';
+    const pl=embDe(pid).plural;
+    const antes = redis ? `<div class="dim" style="font-size:12px;margin-top:6px"><b>Como está (${pendIds.length} pendente${pendIds.length>1?'s':''}):</b> ${pendIds.map(x=>`${esc(x.p.empresa)} ${fmt((+x.p.qtd||0)/(embDe(pid).mult||1))} ${pl}`).join(' · ')}</div>` : '';
+    const rod = `${antes}<div class="cb-acoes" style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap"><span class="dim" style="font-size:12px;align-self:center">dividir pela:</span><button class="btn sm ${modo==='projecao'?'':'sec'} pd-div-modo" data-modo="projecao">projeção</button><button class="btn sm ${modo==='saldo'?'':'sec'} pd-div-modo" data-modo="saldo">saldo</button>${r.ninguem?'':`<button class="btn sm pd-div-ok" style="margin-left:auto">${redis?'Redistribuir nos pedidos':'Criar '+r.linhas.filter(l=>l.aloc>0).length+' pedido(s) pendente(s)'}</button>`}<button class="btn sm sec pd-div-cancel">fechar</button></div>`;
+    box.innerHTML=divisaoHTML(pid,r,`${redis?'Redistribuir':'Dividir'} ${fmt(r.totPct)} ${pl} de ${esc((S.produtos[pid]||{}).sku||pid)} entre as lojas`,rod);
+    box.dataset.pid=pid; box.dataset.aloc=JSON.stringify(r.linhas.map(l=>[l.emp,l.aloc])); box.dataset.pend=JSON.stringify(pendIds.map(x=>x.id));
+    box.scrollIntoView({behavior:'smooth',block:'nearest'}); return;
+  }
+  if(e.target.closest('.pd-div-cancel')){ const box=document.getElementById('pdDivBox'); box.innerHTML=''; box.dataset.redis=''; return; }
+  if(e.target.closest('.pd-div-ok')){
+    const box=document.getElementById('pdDivBox'); const msg=document.getElementById('pdMsg'); if(needDb(msg)) return;
+    const pid=box.dataset.pid, m=embDe(pid).mult||1; const aloc=JSON.parse(box.dataset.aloc||'[]').filter(([,a])=>a>0); const pendIds=JSON.parse(box.dataset.pend||'[]'); const redis=box.dataset.redis==='1';
+    const hoje=new Date().toISOString().slice(0,10); const solic=document.getElementById('pdSolic').value.trim()||'—';
+    try{
+      if(redis){
+        // reaproveita os pedidos existentes: troca loja/quantidade; se faltar pedido, cria; se sobrar, recusa com motivo
+        for(let i=0;i<Math.max(aloc.length,pendIds.length);i++){
+          const a=aloc[i], id=pendIds[i];
+          if(a&&id){ const p=S.pedidos[id]; await pedWrite(id,Object.assign({},p,{empresa:a[0],qtd:a[1]*m,obs:((p.obs||'')+` · redistribuído ${hoje} (era ${p.empresa} ${fmt((+p.qtd||0)/m)})`).replace(/^ · /,'')})); }
+          else if(a&&!id){ const nid='p'+Date.now().toString(36)+Math.random().toString(36).slice(2,6); await pedWrite(nid,{pid,qtd:a[1]*m,empresa:a[0],solicitante:solic,obs:`criado na redistribuição ${hoje}`,data:hoje,status:'pendente',criado:new Date().toISOString()}); }
+          else if(!a&&id){ const p=S.pedidos[id]; await pedWrite(id,Object.assign({},p,{status:'recusado',decidido_por:'redistribuição',decidido_em:new Date().toISOString(),obs:((p.obs||'')+` · zerado na redistribuição ${hoje}`).replace(/^ · /,'')})); }
+        }
+        toast(`⚖ Redistribuído: ${aloc.map(([e,a])=>e+' '+fmt(a)).join(' · ')}`);
+      } else {
+        for(const [emp,a] of aloc){ const nid='p'+Date.now().toString(36)+Math.random().toString(36).slice(2,6); await pedWrite(nid,{pid,qtd:a*m,empresa:emp,solicitante:solic,obs:(document.getElementById('pdObs').value.trim()||'')+' [dividido entre as lojas]',data:document.getElementById('pdData').value||hoje,status:'pendente',criado:new Date().toISOString()}); }
+        toast(`⚖ ${aloc.length} pedido(s) criado(s): ${aloc.map(([e,a])=>e+' '+fmt(a)).join(' · ')}`);
+      }
+      box.innerHTML=''; box.dataset.redis=''; render();
+    }catch(err){ msg.innerHTML=`<div class="msg bad">${esc(err.message||String(err))}</div>`; }
+    return;
+  }
   if(e.target.closest('#pdCriar')){
     const msg=document.getElementById('pdMsg'); if(needDb(msg)) return;
     const pid=document.getElementById('pdProd').value; let qtd=Number(document.getElementById('pdQtd').value);
