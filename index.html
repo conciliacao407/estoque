@@ -199,7 +199,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
   </nav>
   <div class="side-foot">
     <span id="connState">conectando ao banco…</span>
-    <div style="opacity:.6;margin-top:4px">Supabase · 4 lojas · <span id="versao">v2026-10-30b</span></div>
+    <div style="opacity:.6;margin-top:4px">Supabase · 4 lojas · <span id="versao">v2026-11-04a</span></div>
   </div>
 </aside>
 <div class="content">
@@ -501,6 +501,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
       <p><b>Produtos → editar</b> — é onde você troca o <b>custo com IPI</b> (por folha, peça ou saco) e o <b>ICMS da nota</b> de cada produto; a aba Margem passa a usar na hora, com o crédito calculado a partir desse ICMS. <b>Produtos</b> — cadastro: SKU, nome, unidade, custo da última nota, fornecedor e telefone (pra mensagem de pedido). "+ Produto" cria; lápis edita.</p>
       <p><b>Vínculos</b> — cada anúncio aparece com o código <b>MLB</b> (clica e abre o anúncio no ML) e a <b>loja</b> dona dele. No topo, quantos anúncios cada loja tem; escolhendo a loja no menu, a aba mostra só os MLB daquela loja. Liga cada anúncio do Mercado Livre a um produto e um fator (quantas folhas/peças 1 unidade vendida representa). Bloco de cima: anúncios esperando sua conferência (a plataforma sugere pelo título). Bloco de baixo: conferidos. Coluna <b>Loja</b> mostra em qual conta o anúncio vende. "Não vende mais" tira o anúncio da lista sem baixar estoque. Toda alteração fica gravada no histórico.</p>
       <p><b>💬 Perguntar</b> — botão no canto da tela (ou Ctrl/Cmd+K). Faz pergunta em português e responde em cartão com o que já está no sistema: estoque, quanto comprar, a caminho, vendas, margem, projeção (com tendência), crescimento e queda, vínculos com divergência, custo, vínculo, entradas, compra do dia, preço certo, top 10, mês contra mês, gastos em compras, o que está errado. Também executa com confirmação: "aprova todos", "recusa o 2", "recebi o a4", "pede 50 pacotes de a4 pra makenry", "mensagem pra mônica", "ML vendas makenry setembro 895". Lembra loja, produto e mês da conversa ("e na nagare?"); "＋ Novo chat" zera.</p>
+      <p><b>Meses</b> — os seletores de mês (Vendas, Mês fechado, régua de reposição, Margem) listam todos os meses até dezembro/2027, mesmo sem dado ainda; a tela abre no último mês com movimento.</p>
       <p><b>Pedidos → ⚖ Dividir entre as lojas</b> — escolhe o produto e digita o total em pacotes; a plataforma mostra saldo · a caminho · pendente · vende/dia por loja e divide o total (pacotes inteiros, sobra pra quem tem o maior resto) criando um pedido pendente por loja. Dois jeitos de dividir: <b>projeção</b> (falta pra 5 dias de venda — padrão) ou <b>saldo</b> (só quem continua negativo). <b>⚖ Redistribuir pendentes</b> faz o mesmo com os pedidos pendentes que já existem do produto: soma tudo e troca loja/quantidade nos próprios pedidos, sem apagar (pedido que ficar sem quantidade é recusado com o motivo). Se nenhuma loja precisar, avisa e não mexe. Nada é aprovado — só cria/ajusta pendentes.</p>
       <p><b>Projeção → busca</b> — digita o produto (a4, cpf, capa…): a tabela filtra e aparece em cima a <b>projeção por loja</b> daquele produto: vende por dia, saldo, a caminho, dura, morto, vivo, mínimo e quanto comprar em cada loja. <b>Aprovados</b> e <b>Recebidos</b> também ganharam campo de busca (produto, loja, fornecedor, quem pediu, NF).</p>
       <p><b>Vínculos → ⬇ Excel completo dos vínculos</b> — baixa todos os anúncios vinculados, uma aba por loja, da menor margem pra maior: vínculo em folhas/pacotes, vendas (90 d, 30 d, ano), preço praticado, taxa, frete, custo do kit, impostos, lucro, margem e situação.</p>
@@ -760,10 +761,10 @@ function cfDe(pid){ const c=(S.custoFiscal&&S.custoFiscal[pid])||CUSTO_FISCAL_PA
 const PIS_COFINS=0.0925;
 function renderMargem(){
   const t=$('tblMg'); if(!t) return;
-  const meses=[...new Set(S.vendasRows.filter(r=>r.rec!=null).map(r=>r.mes))].filter(m=>/^\d{4}-\d{2}$/.test(m)).sort().reverse();
+  const comRec=[...new Set(S.vendasRows.filter(r=>r.rec!=null).map(r=>r.mes))].filter(m=>/^\d{4}-\d{2}$/.test(m)).sort().reverse(); const meses=mesesAte2027(comRec);
   const sel=$('mgMes');
-  if(!meses.length){ t.innerHTML='<tr><td><div class="empty"><b>Nenhum mês com taxa e frete ainda.</b><br>Reimporte o relatório de vendas do mês na aba Importar — a plataforma completa preço, taxa e frete das vendas que já estão no banco.</div></td></tr>'; $('mgTiles').innerHTML=''; return; }
-  if(!S.mgMes||!meses.includes(S.mgMes)) S.mgMes=meses[0];
+  if(!comRec.length){ t.innerHTML='<tr><td><div class="empty"><b>Nenhum mês com taxa e frete ainda.</b><br>Reimporte o relatório de vendas do mês na aba Importar — a plataforma completa preço, taxa e frete das vendas que já estão no banco.</div></td></tr>'; $('mgTiles').innerHTML=''; return; }
+  if(!S.mgMes||!meses.includes(S.mgMes)) S.mgMes=comRec[0]||meses[0];
   if(sel.dataset.n!==meses.join()){ sel.innerHTML=meses.map(m=>`<option value="${m}">${m.slice(5)}/${m.slice(0,4)}</option>`).join(''); sel.dataset.n=meses.join(); }
   sel.value=S.mgMes;
   if(S.mgParams && !S._mgPar){ $('mgImp').value=S.mgParams.icmsV; $('mgEmb').value=S.mgParams.emb; S._mgPar=true; }
@@ -831,9 +832,9 @@ function saldoDe(pid){
 function mesAnterior(){ const d=new Date(); d.setDate(1); d.setMonth(d.getMonth()-1); return d.toISOString().slice(0,7); }
 function renderMes(){
   const sel=$('mesSel'); if(!sel) return;
-  const meses=[...new Set([...S.vendasRows.map(r=>r.mes), ...S.entradas.map(e=>(e.data||'').slice(0,7))].filter(m=>/^\d{4}-\d{2}$/.test(m)))].sort().reverse();
-  if(!meses.length){ $('tblMes').innerHTML='<tr><td><div class="empty"><b>Nada importado ainda.</b></div></td></tr>'; return; }
-  if(!S.mesSel || !meses.includes(S.mesSel)) S.mesSel = meses.includes(mesAnterior()) ? mesAnterior() : meses[0];
+  const comDadoMF=[...new Set([...S.vendasRows.map(r=>r.mes), ...S.entradas.map(e=>(e.data||'').slice(0,7))].filter(m=>/^\d{4}-\d{2}$/.test(m)))].sort().reverse(); const meses=mesesAte2027(comDadoMF);
+  if(!comDadoMF.length){ $('tblMes').innerHTML='<tr><td><div class="empty"><b>Nada importado ainda.</b></div></td></tr>'; return; }
+  if(!S.mesSel || !meses.includes(S.mesSel)) S.mesSel = meses.includes(mesAnterior()) ? mesAnterior() : comDadoMF[0];
   if(sel.dataset.n!==String(meses.length)){ sel.innerHTML=meses.map(m=>`<option value="${m}">${m.slice(5)}/${m.slice(0,4)}</option>`).join(''); sel.dataset.n=String(meses.length); }
   sel.value=S.mesSel;
   { const b=$('btnFecharMes'); if(b){ const f=mesFechado(S.mesSel); b.textContent=f?'🔓 Reabrir mês':'🔒 Fechar mês'; b.className='btn sm '+(f?'sec':''); b.dataset.mes=S.mesSel; } }
@@ -1105,9 +1106,9 @@ function renderFaturamento(){
   $('vdResTit').innerHTML=`— ${cur.slice(5)}/${cur.slice(0,4)} · <b>Vendido</b> = o que o ML mostra como venda · <b>Você recebe</b> = o que ele repassa depois de taxa, frete e cancelamento`+(falta.length?` · <span style="color:var(--warn)">sem valor bruto em ${falta.join(', ')}: reimporte o relatório do mês dessas lojas</span>`:'');
 }
 function renderVendas(){
-  const meses = [...new Set(S.vendasRows.map(r=>r.mes))].sort().reverse();
+  const comDado=[...new Set(S.vendasRows.map(r=>r.mes))].filter(m=>/^\d{4}-\d{2}$/.test(m)).sort().reverse(); const meses=mesesAte2027(comDado);
   const sel = $('selMes');
-  const cur = S.mesVd && meses.includes(S.mesVd) ? S.mesVd : (meses[0]||'');
+  const cur = (S.mesVd && meses.includes(S.mesVd) && (S.mesVdManual || comDado.includes(S.mesVd))) ? S.mesVd : (comDado[0]||meses[0]||'');
   S.mesVd = cur; S.vdLoteIds=null; renderFaturamento();
   sel.innerHTML = meses.map(m=>`<option value="${m}" ${m===cur?'selected':''}>${fmtMes(m)}</option>`).join('') || '<option>—</option>';
   const q = ($('qVendas').value||'').toLowerCase();
@@ -1652,7 +1653,7 @@ $('pjAlvo').addEventListener('input', renderProjecao);
 $('pjFluxo').addEventListener('input', renderProjecao);
 $('qVinc').addEventListener('input', renderVinculos);
 $('qVendas').addEventListener('input', renderVendas);
-$('selMes').addEventListener('change', e=>{ S.mesVd=e.target.value; renderVendas(); });
+$('selMes').addEventListener('change', e=>{ S.mesVd=e.target.value; S.mesVdManual=true; renderVendas(); });
 
 $('btnNovoProd').addEventListener('click', ()=>{ $('novoProdBox').hidden=!$('novoProdBox').hidden; });
 $('npCancelar').addEventListener('click', ()=>{ $('novoProdBox').hidden=true; });
@@ -2053,6 +2054,8 @@ function mesFechadoDe(pid){
   return {mes:M, dias, E, Sd};
 }
 const DIAS_PROJ=5;
+/* todos os meses, do primeiro com dado até dez/2027 (mais novo primeiro) */
+function mesesAte2027(lista){ const ok=(lista||[]).filter(m=>/^\d{4}-\d{2}$/.test(m)).sort(); const ini=ok[0]||'2026-01'; const out=[]; let [y,m]=ini.split('-').map(Number); while(y<2027||(y===2027&&m<=12)){ out.push(`${y}-${String(m).padStart(2,'0')}`); m++; if(m>12){ m=1; y++; } } return out.reverse(); }
 /* ---- mês fechado: trava alterações; só passa com confirmação ---- */
 function mesFechado(m){ return (S.mesesFechados||[]).includes(String(m||'').slice(0,7)); }
 function confirmaMesFechado(data,acao){ const m=String(data||'').slice(0,7); if(!mesFechado(m)) return true; return window.confirm(`🔒 O mês ${m.slice(5)}/${m.slice(0,4)} está FECHADO.\n\n${acao||'Alterar'} mesmo assim?`); }
@@ -2124,7 +2127,7 @@ function reguaHTML(pid){
   const total=((S.empSel&&S.empSel!=='Todas')?r.linhas.filter(l=>l.emp===S.empSel):r.linhas).reduce((t,l)=>t+l.comprar,0);
   const mesTxt=`${r.mes.slice(5)}/${r.mes.slice(0,4)}`; const T=r.modo==='total';
   const btn=(id,lab,on)=>`<button class="btn sm ${on?'':'sec'} rg-modo" data-modo="${id}" style="padding:3px 10px">${lab}</button>`;
-  const mesesR=[...new Set(S.vendasRows.map(x=>x.mes).filter(m=>/^\d{4}-\d{2}$/.test(m)))].sort().reverse(); const hojeM=new Date().toISOString().slice(0,7);
+  const mesesR=mesesAte2027(S.vendasRows.map(x=>x.mes)); const hojeM=new Date().toISOString().slice(0,7);
   const selM=`<select class="rg-mes" style="padding:3px 6px;font-size:12px;${T?'opacity:.55':''}">${mesesR.map(m=>`<option value="${m}" ${m===r.mes?'selected':''}>${m.slice(5)}/${m.slice(0,4)}${m===hojeM?' (em andamento)':''}</option>`).join('')}</select>`;
   const mesGrande=T?'PERÍODO TODO':`${MESES_PT[+r.mes.slice(5,7)-1].toUpperCase()}/${r.mes.slice(0,4)}${r.mes===new Date().toISOString().slice(0,7)?' <span style="font-size:13px;font-weight:600;color:var(--warn)">em andamento</span>':''}${mesFechado(r.mes)?' <span style="font-size:13px;font-weight:600">🔒 fechado</span>':''}`;
   let h=`<div style="margin-top:10px;font-size:12.5px"><div style="font-size:22px;font-weight:800;letter-spacing:.02em;margin:4px 0 6px">${mesGrande}</div><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><b>Régua da reposição — ${esc(p.sku)}</b> <span class="dim">base:</span> ${btn('mes','Mês',!T)} ${selM} ${btn('total','Período todo',T)} <span class="dim">· saldo acumulado do grupo ${dois(r.saldo)}</span></div><table style="margin-top:6px;width:100%"><tr><th>Empresa</th><th class="r">${T?'entrou (total)':'entrou '+mesTxt}</th><th class="r">${T?'saiu (total)':'saiu '+mesTxt}</th><th class="r">${T?'saldo':'diferença'}</th><th class="r" title="pedido criado, ainda não aprovado">já pedido</th><th class="r" title="aprovado e ainda não recebido">a caminho</th><th class="r">quanto comprar</th><th>situação</th><th></th></tr>`;
