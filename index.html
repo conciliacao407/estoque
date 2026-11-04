@@ -199,7 +199,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
   </nav>
   <div class="side-foot">
     <span id="connState">conectando ao banco…</span>
-    <div style="opacity:.6;margin-top:4px">Supabase · 4 lojas · <span id="versao">v2026-11-04a</span></div>
+    <div style="opacity:.6;margin-top:4px">Supabase · 4 lojas · <span id="versao">v2026-11-04b</span></div>
   </div>
 </aside>
 <div class="content">
@@ -1493,7 +1493,6 @@ async function importVendas(file){
       (novas[mk]=novas[mk]||[]).push(row);
       if(tp==='pai') nPai++; else { nItem++; if(isCanc(est)) nCanc++; }
     }
-    { const mf=[...new Set(all.map(r=>r.mes).filter(m=>mesFechado(m)))]; if(mf.length && !window.confirm(`🔒 ${all.filter(r=>mesFechado(r.mes)).length} venda(s) desse relatório são de mês FECHADO (${mf.map(m=>m.slice(5)+'/'+m.slice(0,4)).join(', ')}).\n\nImportar mesmo assim?`)) throw new Error('cancelado: mês fechado'); }
     const semUf = e => e && /uf/i.test(e.message||'') && /column|coluna/i.test(e.message||'');
     if(conserta.length){ for(const x of conserta){ let {id, ...campos}=x; if(S.semColUf) delete campos.uf; if(!Object.keys(campos).length) continue; let {error}=await SUPA.from('vendas').update(campos).eq('id',id); if(error && semUf(error)){ S.semColUf=true; delete campos.uf; if(Object.keys(campos).length){ ({error}=await SUPA.from('vendas').update(campos).eq('id',id)); } else error=null; } if(error) throw new Error(rlsMsg(error)); } }
     const totalNovas = Object.values(novas).reduce((s,a)=>s+a.length,0);
@@ -1501,6 +1500,7 @@ async function importVendas(file){
     box.innerHTML='<div class="msg ok">Gravando no banco…</div>';
     const all=[];
     for(const mk in novas) for(const row of novas[mk]) all.push(Object.assign({mes:mk}, row));
+    { const mf=[...new Set(all.map(r=>r.mes).filter(m=>mesFechado(m)))]; if(mf.length && !window.confirm(`🔒 ${all.filter(r=>mesFechado(r.mes)).length} venda(s) desse relatório são de mês FECHADO (${mf.map(m=>m.slice(5)+'/'+m.slice(0,4)).join(', ')}).\n\nImportar mesmo assim?`)) throw new Error('cancelado: mês fechado'); }
     for(let i=0;i<all.length;i+=500){
       let lote=all.slice(i,i+500); if(S.semColUf) lote=lote.map(r=>{ const o={...r}; delete o.uf; return o; });
       let {error} = await SUPA.from('vendas').upsert(lote, {onConflict:'id', ignoreDuplicates:true});
