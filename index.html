@@ -199,7 +199,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
   </nav>
   <div class="side-foot">
     <span id="connState">conectando ao banco…</span>
-    <div style="opacity:.6;margin-top:4px">Supabase · 4 lojas · <span id="versao">v2026-11-10a</span></div>
+    <div style="opacity:.6;margin-top:4px">Supabase · 4 lojas · <span id="versao">v2026-11-12a</span></div>
   </div>
 </aside>
 <div class="content">
@@ -501,7 +501,7 @@ details.novo-prod summary{cursor:pointer;font-weight:600;font-size:12.5px;color:
       <p><b>Vínculos</b> — cada anúncio aparece com o código <b>MLB</b> (clica e abre o anúncio no ML) e a <b>loja</b> dona dele. No topo, quantos anúncios cada loja tem; escolhendo a loja no menu, a aba mostra só os MLB daquela loja. Liga cada anúncio do Mercado Livre a um produto e um fator (quantas folhas/peças 1 unidade vendida representa). Bloco de cima: anúncios esperando sua conferência (a plataforma sugere pelo título). Bloco de baixo: conferidos. Coluna <b>Loja</b> mostra em qual conta o anúncio vende. "Não vende mais" tira o anúncio da lista sem baixar estoque. Toda alteração fica gravada no histórico.</p>
       <p><b>💬 Perguntar</b> — botão no canto da tela (ou Ctrl/Cmd+K). Faz pergunta em português e responde em cartão com o que já está no sistema: estoque, quanto comprar, a caminho, vendas, margem, projeção (com tendência), crescimento e queda, vínculos com divergência, custo, vínculo, entradas, compra do dia, preço certo, top 10, mês contra mês, gastos em compras, o que está errado. Também executa com confirmação: "aprova todos", "recusa o 2", "recebi o a4", "pede 50 pacotes de a4 pra makenry", "mensagem pra mônica", "ML vendas makenry setembro 895". Lembra loja, produto e mês da conversa ("e na nagare?"); "＋ Novo chat" zera.</p>
       <p><b>Meses</b> — os seletores de mês (Vendas, Mês fechado, régua de reposição, Margem) listam todos os meses até dezembro/2027, mesmo sem dado ainda; a tela abre no último mês com movimento.</p>
-      <p><b>Pedidos → Comprar</b> — escolhe o produto e aparece uma linha por loja: vende/dia · tem (a caminho + pendente) · <b>precisa</b> (X dias de venda − o que tem; X é o campo "Cobrir", gravado, começa em 5) · <b>pedir</b> (já vem igual ao precisa, pode mexer). Mudar o Total reparte na proporção do precisa; mudar uma loja só soma. <b>Criar pedidos</b> faz um pendente por loja. Saldo fica fora da conta até a contagem física; entrou/saiu do mês está na aba Mês fechado.</p>
+      <p><b>Pedidos → régua da reposição</b> — por loja: entrou e saiu (mês escolhido ou período todo), diferença, já pedido, a caminho, quanto comprar (5 dias de venda − já pedido − a caminho). Embaixo, <b>Distribuir uma compra entre as lojas</b>: digita o total em pacotes e clica em Distribuir — reparte na proporção do que cada loja <b>vendeu</b> na base escolhida (mês ou período todo), em pacotes inteiros; dá pra ajustar cada loja e <b>Criar pedidos</b> faz um pendente por loja.</p>
       <p><b>Projeção → busca</b> — digita o produto (a4, cpf, capa…): a tabela filtra e aparece em cima a <b>projeção por loja</b> daquele produto: vende por dia, saldo, a caminho, dura, morto, vivo, mínimo e quanto comprar em cada loja. <b>Aprovados</b> e <b>Recebidos</b> também ganharam campo de busca (produto, loja, fornecedor, quem pediu, NF).</p>
       <p><b>Vínculos → ⬇ Excel completo dos vínculos</b> — baixa todos os anúncios vinculados, uma aba por loja, da menor margem pra maior: vínculo em folhas/pacotes, vendas (90 d, 30 d, ano), preço praticado, taxa, frete, custo do kit, impostos, lucro, margem e situação.</p>
       <p><b>Mês fechado → 🔒 Fechar mês</b> — tranca o mês: lançar, alterar ou apagar entrada com data nele, e importar vendas dele, passa a pedir uma confirmação ("está FECHADO, alterar mesmo assim?"). 🔓 Reabrir destrava. Fica gravado no banco, vale pra todo mundo.</p>
@@ -2120,18 +2120,27 @@ function reguaDe(pid){
 function reguaDePar(pid){ const r=reguaDe(pid); const par=capaParDe(pid); if(!par) return r; const r2=reguaDe(par); for(const l of r.linhas){ const l2=r2.linhas.find(x=>x.emp===l.emp); if(l2 && l2.comprar>l.comprar){ l.comprar=l2.comprar; l.igualado=true; } } return r; }
 function reguaHTML(pid){
   const p=S.produtos[pid]; if(!p) return '';
-  const r=reguaDePar(pid); const e=embDe(pid); const m=e.mult||1; const pl=e.plural; const dias=S.compraDias||DIAS_PROJ;
-  const lin=(S.empSel&&S.empSel!=='Todas')?r.linhas.filter(l=>l.emp===S.empSel):r.linhas;
-  const q=v=>m>1?fmt(v/m):fmt(v);
-  const tot=lin.reduce((t,l)=>t+l.comprar,0);
-  let h=`<div class="card" style="margin-top:10px;border:1px solid var(--accent)"><div class="card-h"><h2>Comprar — ${esc(p.sku)}</h2><div class="sp"><label class="f" title="quantos dias de venda a compra tem que cobrir — fica gravado">Cobrir (dias de venda)<input type="number" id="cpDias" value="${dias}" min="1" max="60" style="width:60px"></label></div></div>
-  <table style="width:100%"><tr><th>Loja</th><th class="r">vende/dia</th><th class="r">tem (a caminho + pendente)</th><th class="r">precisa</th><th class="r"><b>pedir</b> (${esc(pl)})</th><th>situação</th></tr>`;
-  for(const l of lin){
-    const tem=(l.ac||0)+(l.jp||0);
-    h+=`<tr><td><span class="chip emp-${esc(l.emp)}">${esc(l.emp)}</span></td><td class="r num">${q(l.sd)}</td><td class="r num">${tem?q(tem):'—'}${l.atras?' <span class="chip bad">atrasado</span>':''}</td><td class="r num">${l.comprar?q(l.comprar):'—'}</td><td class="r"><input type="number" class="cp-pedir" data-emp="${esc(l.emp)}" data-precisa="${l.comprar/m}" value="${l.comprar/m}" min="0" step="1" style="width:80px;text-align:right"></td><td><span style="color:${l.cor}">●</span> ${esc(l.sit)}</td></tr>`;
+  const r=reguaDePar(pid);
+  const fl=p.unidade==='folhas';
+  const dois=v=>fl?`<b>${fmt(v)}</b> folhas <span class="dim">·</span> <b>${fmt(v/100)}</b> pct`:`<b>${fmt(v)}</b> ${esc(p.unidade||'un')}`;
+  const total=((S.empSel&&S.empSel!=='Todas')?r.linhas.filter(l=>l.emp===S.empSel):r.linhas).reduce((t,l)=>t+l.comprar,0);
+  const mesTxt=`${r.mes.slice(5)}/${r.mes.slice(0,4)}`; const T=r.modo==='total';
+  const btn=(id,lab,on)=>`<button class="btn sm ${on?'':'sec'} rg-modo" data-modo="${id}" style="padding:3px 10px">${lab}</button>`;
+  const mesesR=mesesAte2027(S.vendasRows.map(x=>x.mes)); const hojeM=new Date().toISOString().slice(0,7);
+  const selM=`<select class="rg-mes" style="padding:3px 6px;font-size:12px;${T?'opacity:.55':''}">${mesesR.map(m=>`<option value="${m}" ${m===r.mes?'selected':''}>${m.slice(5)}/${m.slice(0,4)}${m===hojeM?' (em andamento)':''}</option>`).join('')}</select>`;
+  const mesGrande=T?'PERÍODO TODO':`${MESES_PT[+r.mes.slice(5,7)-1].toUpperCase()}/${r.mes.slice(0,4)}${r.mes===new Date().toISOString().slice(0,7)?' <span style="font-size:13px;font-weight:600;color:var(--warn)">em andamento</span>':''}${mesFechado(r.mes)?' <span style="font-size:13px;font-weight:600">🔒 fechado</span>':''}`;
+  let h=`<div style="margin-top:10px;font-size:12.5px"><div style="font-size:22px;font-weight:800;letter-spacing:.02em;margin:4px 0 6px">${mesGrande}</div><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><b>Régua da reposição — ${esc(p.sku)}</b> <span class="dim">base:</span> ${btn('mes','Mês',!T)} ${selM} ${btn('total','Período todo',T)} <span class="dim">· saldo acumulado do grupo ${dois(r.saldo)}</span></div><table style="margin-top:6px;width:100%"><tr><th>Empresa</th><th class="r">${T?'entrou (total)':'entrou '+mesTxt}</th><th class="r">${T?'saiu (total)':'saiu '+mesTxt}</th><th class="r">${T?'saldo':'diferença'}</th><th class="r" title="pedido criado, ainda não aprovado">já pedido</th><th class="r" title="aprovado e ainda não recebido">a caminho</th><th class="r">quanto comprar</th><th>situação</th><th></th></tr>`;
+  const _lin=(S.empSel&&S.empSel!=='Todas')?r.linhas.filter(l=>l.emp===S.empSel):r.linhas;
+  for(const l of _lin){
+    const acTip=(l.acL||[]).map(x=>`${fmtData((x.em||'').slice(0,10))} · ${fl?fmt(x.q/100)+' pct':fmt(x.q)} · há ${diasDesde(x.em)} dia(s)${x.forn?' · '+x.forn:''}`).join('\n');
+    h+=`<tr><td>${esc(l.emp)}</td><td class="r num">${dois(l.ent)}</td><td class="r num">${dois(l.saiu)}</td><td class="r num ${l.aloc<0?'neg':''}">${dois(l.aloc)}</td><td class="r num">${l.jp?dois(l.jp):'—'}</td><td class="r num" title="${esc(acTip)}">${l.ac?dois(l.ac)+(l.atras?' <span class="chip bad">atrasado</span>':''):'—'}</td><td class="r num">${l.comprar?dois(l.comprar):'—'}${l.igualado?' <span class="dim" title="igualado ao par capa/contracapa (1:1)">=</span>':''}</td><td><span style="color:${l.cor}">●</span> ${esc(l.sit)}</td><td>${l.comprar?`<button class="btn sm sec pd-usar" data-emp="${esc(l.emp)}" data-q="${l.comprar}">usar</button>`:''}</td></tr>`;
   }
-  h+=`<tr style="background:var(--surface2)"><td><b>Total</b></td><td colspan="3"></td><td class="r"><input type="number" id="cpTotal" value="${tot/m}" min="0" step="1" style="width:80px;text-align:right;font-weight:700"></td><td><button class="btn sm" id="cpCriar">Criar pedidos (pendentes)</button></td></tr></table>
-  <div class="dim" style="font-size:11.5px;margin-top:6px"><b>precisa</b> = ${dias} dias de venda (ritmo dos últimos 30 dias) − a caminho − pendente, em ${esc(pl)} inteiros${capaParDe(pid)?' · capa e contracapa iguais (1:1)':''}. Mude o <b>Total</b> e ele reparte na proporção do "precisa"; mude uma loja e o total só soma. Saldo não entra na conta até a contagem física.</div></div>`;
+  const partes=_lin.filter(l=>l.comprar>0).map(l=>`${esc(l.emp)} ${fl?fmt(l.comprar/100)+' pct':fmt(l.comprar)+' '+esc(p.unidade||'un')}`).join(' · ');
+  h+=`<tr style="background:var(--surface2)"><td><b>Pedido total</b></td><td></td><td></td><td></td><td></td><td></td><td class="r num">${total?dois(total):'—'}</td><td colspan="2" class="dim" style="font-size:12px">${total?'cada uma deve: '+partes:'nenhuma empresa precisa comprar agora'}</td></tr>`;
+  const e=embDe(pid); const pl=e.plural||'un';
+  h+=`</table><div class="dim" style="margin-top:4px;font-size:11.5px"><b>quanto comprar</b> = projeção de ${DIAS_PROJ} dias de venda (ritmo dos últimos 30 dias), já descontando o <b>já pedido</b> e o que está <b>a caminho</b> · desce a cada pedido e sobe conforme vende · entrou/saiu/diferença: ${T?'período todo':'mês '+mesTxt}${fl?' · 100 folhas = 1 pacote fechado':' · produto em '+(p.unidade||'un')+' — não tem pacote fechado'}</div>
+  <div style="margin-top:10px;padding:10px;border:1px solid var(--accent);border-radius:8px"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><b>Distribuir uma compra entre as lojas</b> <span class="dim">— na proporção do que cada uma vendeu (${T?'período todo':'mês '+mesTxt})</span>
+  <label class="f" style="margin-left:auto">Total em ${esc(pl)}<input type="number" id="dsTotal" min="1" step="1" style="width:90px"></label><button class="btn sm" id="dsCalc">Distribuir</button></div><div id="dsBox"></div></div></div>`;
   return h;
 }
 function dupla(v,pid){ const p=S.produtos[pid]; const fl=p&&p.unidade==='folhas'; const emb=(typeof embDe==='function')?embDe(pid):null; if(fl) return `<span style="display:inline-block;white-space:nowrap;line-height:1.2">${fmt(v)} fl<br><span class="dim" style="font-size:11px;font-weight:400">${fmt(v/100)} pct</span></span>`; if(emb&&emb.mult===50) return `<span style="display:inline-block;white-space:nowrap;line-height:1.2">${fmt(v)} un<br><span class="dim" style="font-size:11px;font-weight:400">${fmt(v/50)} pct</span></span>`; return fmt(v); }
@@ -2285,6 +2294,7 @@ function xlsVinculosCompleto(){
 }
 document.addEventListener('click', e=>{ if(e.target.closest('#btnXlsVinc')) xlsVinculosCompleto(); });
 document.addEventListener('input', e=>{ const el=e.target; if(!el.id&&!el.classList) return;
+  if(el.classList.contains('ds-aloc')){ const t=document.getElementById('dsSoma'); if(t) t.textContent=fmt([...document.querySelectorAll('.ds-aloc')].reduce((a,i)=>a+(Number(i.value)||0),0)); return; }
   if(el.classList.contains('cp-pedir')){ const t=document.getElementById('cpTotal'); if(t) t.value=[...document.querySelectorAll('.cp-pedir')].reduce((a,i)=>a+(Number(i.value)||0),0); return; }
   if(el.id==='cpTotal'){ const ins=[...document.querySelectorAll('.cp-pedir')]; const tot=Math.max(0,Math.round(Number(el.value)||0)); const pre=ins.map(i=>Number(i.dataset.precisa)||0); let soma=pre.reduce((a,b)=>a+b,0); const base=soma>0?pre:ins.map(i=>1); soma=base.reduce((a,b)=>a+b,0); let usados=0; const restos=[]; ins.forEach((i,k)=>{ const ex=tot*base[k]/soma; const v=Math.floor(ex); i.value=v; usados+=v; restos.push([ex-v,i]); }); restos.sort((a,b)=>b[0]-a[0]); let sobra=tot-usados; for(const [,i] of restos){ if(sobra<=0) break; i.value=Number(i.value)+1; sobra--; } return; }
 });
@@ -2308,6 +2318,29 @@ document.addEventListener('click', async e=>{
   if(rg){ S.reguaBase=rg.dataset.modo; try{ localStorage.setItem('reguaBase',S.reguaBase); }catch(_){ } renderPedidos(); return; }
   const us=e.target.closest('.pd-usar');
   if(us){ const q=document.getElementById('pdQtd'), emp=document.getElementById('pdEmp'), pid=document.getElementById('pdProd').value; if(q) q.value=Math.ceil(Number(us.dataset.q)/embDe(pid).mult); if(emp) emp.value=us.dataset.emp; return; }
+  if(e.target.closest('#dsCalc')){
+    const pid=document.getElementById('pdProd').value; const msg=document.getElementById('pdMsg'); if(!pid){ msg.innerHTML='<div class="msg bad">Escolha o produto.</div>'; return; }
+    const tot=Math.round(Number(document.getElementById('dsTotal').value)||0); if(!(tot>0)){ msg.innerHTML='<div class="msg bad">Digite o total.</div>'; return; }
+    const r=reguaDePar(pid); const lin=(S.empSel&&S.empSel!=='Todas')?r.linhas.filter(l=>l.emp===S.empSel):r.linhas; const e2=embDe(pid); const m=e2.mult||1; const pl=e2.plural||'un';
+    const base=lin.map(l=>Math.max(0,l.saiu||0)); let soma=base.reduce((a,b)=>a+b,0); const usar=soma>0?base:lin.map(()=>1); soma=usar.reduce((a,b)=>a+b,0);
+    let usados=0; const restos=[]; const aloc=lin.map((l,k)=>{ const ex=tot*usar[k]/soma; const v=Math.floor(ex); usados+=v; restos.push([ex-v,k]); return v; });
+    restos.sort((a,b)=>b[0]-a[0]); let sobra=tot-usados; for(const [,k] of restos){ if(sobra<=0) break; aloc[k]++; sobra--; }
+    const box=document.getElementById('dsBox');
+    box.innerHTML=`<table style="margin-top:8px;width:100%"><tr><th>Loja</th><th class="r">vendeu (${r.modo==='total'?'período':'mês'})</th><th class="r">fatia</th><th class="r"><b>recebe</b> (${esc(pl)})</th></tr>${lin.map((l,k)=>`<tr><td><span class="chip emp-${esc(l.emp)}">${esc(l.emp)}</span></td><td class="r num">${m>1?fmt((l.saiu||0)/m):fmt(l.saiu||0)}</td><td class="r num">${soma?Math.round(usar[k]/soma*100):0}%</td><td class="r"><input type="number" class="ds-aloc" data-emp="${esc(l.emp)}" value="${aloc[k]}" min="0" step="1" style="width:80px;text-align:right"></td></tr>`).join('')}<tr style="background:var(--surface2)"><td><b>Total</b></td><td></td><td></td><td class="r num"><b id="dsSoma">${fmt(tot)}</b> ${esc(pl)}</td></tr></table>
+    <div style="display:flex;gap:6px;margin-top:8px;justify-content:flex-end"><button class="btn sm sec" id="dsFechar">fechar</button><button class="btn sm" id="dsCriar">Criar pedidos (pendentes)</button></div>${soma===lin.length&&base.reduce((a,b)=>a+b,0)===0?'<div class="msg warn" style="margin-top:6px">Nenhuma loja vendeu nesse período — dividi por igual. Troque a base pra "Período todo" se quiser a proporção real.</div>':''}`;
+    return;
+  }
+  if(e.target.closest('#dsFechar')){ document.getElementById('dsBox').innerHTML=''; return; }
+  if(e.target.closest('#dsCriar')){
+    const msg=document.getElementById('pdMsg'); if(needDb(msg)) return;
+    const pid=document.getElementById('pdProd').value; const m=embDe(pid).mult||1; const hoje=new Date().toISOString().slice(0,10); const solic=document.getElementById('pdSolic').value.trim()||'—';
+    const itens=[...document.querySelectorAll('.ds-aloc')].map(i=>[i.dataset.emp, Math.round(Number(i.value)||0)]).filter(([,v])=>v>0);
+    if(!itens.length){ msg.innerHTML='<div class="msg bad">Nenhuma loja com quantidade.</div>'; return; }
+    try{ for(const [emp,v] of itens){ const nid='p'+Date.now().toString(36)+Math.random().toString(36).slice(2,6); await pedWrite(nid,{pid,qtd:v*m,empresa:emp,solicitante:solic,obs:(document.getElementById('pdObs').value.trim()||'')+' [distribuído]',data:document.getElementById('pdData').value||hoje,status:'pendente',criado:new Date().toISOString()}); }
+      toast(`✔ ${itens.length} pedido(s): ${itens.map(([e2,v])=>e2+' '+fmt(v)).join(' · ')}`); render(); }
+    catch(err){ msg.innerHTML=`<div class="msg bad">${esc(err.message||String(err))}</div>`; }
+    return;
+  }
   if(e.target.closest('#cpCriar')){
     const msg=document.getElementById('pdMsg'); if(needDb(msg)) return;
     const pid=document.getElementById('pdProd').value; const m=embDe(pid).mult||1; const hoje=new Date().toISOString().slice(0,10); const solic=document.getElementById('pdSolic').value.trim()||'—';
